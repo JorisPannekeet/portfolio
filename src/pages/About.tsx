@@ -20,18 +20,18 @@ export function About() {
       <div className="grid lg:grid-cols-[1fr,320px] gap-16 lg:gap-24">
         <article className="prose-content">
           <header className="mb-16">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex gap-4 items-center mb-6">
               <div className="w-12 h-px bg-gradient-to-r from-amber-500 to-transparent" />
-              <span className="text-sm font-medium text-stone-500 uppercase tracking-wider">About</span>
+              <span className="text-sm font-medium tracking-wider uppercase text-stone-500">About</span>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl font-semibold text-stone-100 tracking-tight mb-6">
+            <h1 className="mb-6 text-4xl font-semibold tracking-tight sm:text-5xl text-stone-100">
               Building the web
               <br />
               <span className="text-stone-500">for over a decade</span>
             </h1>
 
-            <p className="text-lg text-stone-400 leading-relaxed max-w-2xl">
+            <p className="max-w-2xl text-lg leading-relaxed text-stone-400">
               I'm a frontend developer with around 11 years of experience. My expertise 
               lies in developing efficient and scalable applications using React and 
               TypeScript. I also have a strong background in design, HTML, CSS, WEB3, 
@@ -98,20 +98,20 @@ export function About() {
           </section>
         </article>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start space-y-8">
+        <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
           <div className="p-6 rounded-2xl border border-stone-800 bg-stone-900/30">
-            <h3 className="text-sm font-medium text-stone-500 uppercase tracking-wider mb-4">
+            <h3 className="mb-4 text-sm font-medium tracking-wider uppercase text-stone-500">
               Tech Stack
             </h3>
             <div className="space-y-4">
               {techStack.map((group) => (
                 <div key={group.category}>
-                  <span className="text-xs text-stone-600 mb-2 block">{group.category}</span>
+                  <span className="block mb-2 text-xs text-stone-600">{group.category}</span>
                   <div className="flex flex-wrap gap-1.5">
                     {group.items.map((item) => (
                       <span 
                         key={item}
-                        className="px-2 py-1 text-xs rounded-md bg-stone-800/50 text-stone-400 border border-stone-800"
+                        className="px-2 py-1 text-xs rounded-md border bg-stone-800/50 text-stone-400 border-stone-800"
                       >
                         {item}
                       </span>
@@ -123,12 +123,12 @@ export function About() {
           </div>
 
           <div className="p-6 rounded-2xl border border-stone-800 bg-stone-900/30">
-            <h3 className="text-sm font-medium text-stone-500 uppercase tracking-wider mb-4">
+            <h3 className="mb-4 text-sm font-medium tracking-wider uppercase text-stone-500">
               Beyond Work
             </h3>
             <div className="space-y-3">
               {passions.map((passion) => (
-                <div key={passion.label} className="flex items-center gap-3">
+                <div key={passion.label} className="flex gap-3 items-center">
                   <span className="text-lg">{passion.emoji}</span>
                   <span className="text-sm text-stone-400">{passion.label}</span>
                 </div>
@@ -136,18 +136,18 @@ export function About() {
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20">
-            <h3 className="text-sm font-medium text-amber-400 mb-3">
+          <div className="p-6 bg-gradient-to-br rounded-2xl border from-amber-500/10 to-amber-600/5 border-amber-500/20">
+            <h3 className="mb-3 text-sm font-medium text-amber-400">
               Open for opportunities
             </h3>
-            <p className="text-sm text-stone-400 mb-4">
+            <p className="mb-4 text-sm text-stone-400">
               Looking for complex frontend challenges and team leadership roles.
             </p>
             <a 
-              href="https://linkedin.com" 
+              href="https://www.linkedin.com/in/joris-pannekeet-75ba4130/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
+              className="inline-flex gap-2 items-center text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
             >
               Connect on LinkedIn
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
