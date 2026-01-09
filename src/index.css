@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+
+  body {
+    @apply bg-stone-950 text-stone-300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    @apply bg-amber-500/30 text-amber-100;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-amber-500;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+@layer components {
+  .prose-content {
+    @apply max-w-prose;
+  }
+
+  .prose-content p {
+    @apply mb-4 leading-relaxed text-stone-400;
+  }
+
+  .prose-content h2 {
+    @apply mt-16 mb-6 text-2xl font-semibold text-stone-100 flex items-center gap-3;
+  }
+
+  .prose-content h2::before {
+    content: '';
+    @apply w-8 h-px bg-gradient-to-r from-amber-500 to-transparent;
+  }
+
+  .prose-content h3 {
+    @apply mt-8 mb-3 text-lg font-medium text-stone-200;
+  }
+
+  .prose-content ul {
+    @apply mb-4 ml-0 list-none space-y-3;
+  }
+
+  .prose-content li {
+    @apply text-stone-400 pl-6 relative;
+  }
+
+  .prose-content li::before {
+    content: '→';
+    @apply absolute left-0 text-amber-500/60;
+  }
+
+  .prose-content code {
+    @apply rounded bg-stone-800/80 px-1.5 py-0.5 font-mono text-sm text-amber-300;
+  }
+
+  .prose-content pre {
+    @apply my-6 overflow-x-auto rounded-xl bg-stone-900 p-5 border border-stone-800;
+  }
+
+  .prose-content pre code {
+    @apply bg-transparent p-0 text-stone-300;
+  }
+
+  .prose-content a {
+    @apply text-amber-400 underline underline-offset-4 decoration-amber-500/30 hover:decoration-amber-500 transition-colors;
+  }
+
+  .prose-content strong {
+    @apply text-stone-200 font-medium;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-stone-100 via-stone-200 to-stone-400;
+  }
+
+  .glow {
+    box-shadow: 0 0 40px -10px rgba(251, 191, 36, 0.3);
+  }
+
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    @apply border-stone-700 bg-stone-900/80;
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.1), 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
