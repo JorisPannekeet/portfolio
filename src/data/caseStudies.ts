@@ -6,7 +6,7 @@ export const caseStudies: CaseStudyDetail[] = [
     title: 'Building an AI Service for Application Generation',
     subtitle: 'Architecting a scalable backend system to bring AI-powered app generation to a no-code platform',
     company: 'Betty Blocks',
-    year: 2024,
+    year: 2025,
     tags: ['AI Integration', 'Node.js', 'WebSockets', 'Architecture'],
     summary: 'Led the development of a backend Node.js system that handles AI-powered application generation at scale, featuring dynamic prompt engineering, real-time streaming, and micro-frontend architecture.',
     
@@ -111,7 +111,7 @@ ws.on('message', async (data) => {
     title: 'Building a Fast and Scalable Component Tree',
     subtitle: 'Replacing a buggy tree view with a high-performance solution using React optimization patterns',
     company: 'Betty Blocks',
-    year: 2023,
+    year: 2024,
     tags: ['React', 'Performance', 'UI Components', 'Initiative'],
     summary: 'Identified performance issues in the platform\'s page builder tree view and took initiative to build a proof-of-concept that became the production solution—faster, more reliable, and scalable to thousands of components.',
     
