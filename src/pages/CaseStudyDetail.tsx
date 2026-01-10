@@ -19,7 +19,7 @@ export function CaseStudyDetail() {
       <nav className="mb-12">
         <Link 
           to="/case-studies" 
-          className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-amber-400 transition-colors"
+          className="inline-flex gap-2 items-center text-sm transition-colors text-stone-500 hover:text-amber-400"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
@@ -29,17 +29,17 @@ export function CaseStudyDetail() {
       </nav>
 
       <header className="mb-16">
-        <div className="flex items-center gap-3 text-sm mb-4">
+        <div className="flex gap-3 items-center mb-4 text-sm">
           <span className="text-amber-500">{caseStudy.company}</span>
           <span className="text-stone-700">·</span>
           <span className="text-stone-500">{caseStudy.year}</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-semibold text-stone-100 tracking-tight mb-4">
+        <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl text-stone-100">
           {caseStudy.title}
         </h1>
 
-        <p className="text-xl text-stone-400 mb-6">
+        <p className="mb-6 text-xl text-stone-400">
           {caseStudy.subtitle}
         </p>
 
@@ -82,7 +82,7 @@ export function CaseStudyDetail() {
         <section>
           <h2>Architectural Decisions</h2>
           {caseStudy.architecturalDecisions.map((decision, i) => (
-            <div key={i} className="mb-8 p-6 rounded-xl border border-stone-800 bg-stone-900/30">
+            <div key={i} className="p-6 mb-8 rounded-xl border border-stone-800 bg-stone-900/30">
               <h3 className="!mt-0 text-amber-400">{decision.title}</h3>
               <p className="!mb-2"><strong>Decision:</strong> {decision.decision}</p>
               <p className="!mb-0"><strong>Rationale:</strong> {decision.rationale}</p>
@@ -123,6 +123,7 @@ export function CaseStudyDetail() {
         {caseStudy.codeSnippets.length > 0 && (
           <section>
             <h2>Code Examples</h2>
+            <p>Disclaimer: These examples are simplified and do not reflect the actual codebase.</p>
             {caseStudy.codeSnippets.map((snippet, i) => (
               <div key={i} className="mb-10">
                 <h3>{snippet.title}</h3>
@@ -144,7 +145,7 @@ export function CaseStudyDetail() {
               <div key={i} className="mb-8">
                 <h3>{diagram.title}</h3>
                 <p className="text-stone-500">{diagram.description}</p>
-                <div className="mt-4 rounded-xl bg-stone-900 p-8 text-center text-stone-500 font-mono text-sm border border-stone-800">
+                <div className="p-8 mt-4 font-mono text-sm text-center rounded-xl border bg-stone-900 text-stone-500 border-stone-800">
                   {diagram.placeholder}
                 </div>
               </div>
@@ -153,20 +154,20 @@ export function CaseStudyDetail() {
         )}
       </article>
 
-      <nav className="mt-20 pt-10 border-t border-stone-800">
+      <nav className="pt-10 mt-20 border-t border-stone-800">
         <div className="flex justify-between">
           {prevStudy ? (
             <Link 
               to={`/case-studies/${prevStudy.slug}`}
               className="group"
             >
-              <span className="text-sm text-stone-600 flex items-center gap-1 mb-1">
+              <span className="flex gap-1 items-center mb-1 text-sm text-stone-600">
                 <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                 </svg>
                 Previous
               </span>
-              <p className="font-medium text-stone-300 group-hover:text-amber-400 transition-colors">
+              <p className="font-medium transition-colors text-stone-300 group-hover:text-amber-400">
                 {prevStudy.title}
               </p>
             </Link>
@@ -175,15 +176,15 @@ export function CaseStudyDetail() {
           {nextStudy && (
             <Link 
               to={`/case-studies/${nextStudy.slug}`}
-              className="group text-right"
+              className="text-right group"
             >
-              <span className="text-sm text-stone-600 flex items-center justify-end gap-1 mb-1">
+              <span className="flex gap-1 justify-end items-center mb-1 text-sm text-stone-600">
                 Next
                 <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </span>
-              <p className="font-medium text-stone-300 group-hover:text-amber-400 transition-colors">
+              <p className="font-medium transition-colors text-stone-300 group-hover:text-amber-400">
                 {nextStudy.title}
               </p>
             </Link>

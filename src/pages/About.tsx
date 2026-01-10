@@ -8,6 +8,7 @@ const techStack = [
 ]
 
 const passions = [
+  { emoji: '👶', label: 'Being a father' },
   { emoji: '🐕', label: 'Yoshi (my dog)' },
   { emoji: '🏍️', label: 'Motorcycles & cars' },
   { emoji: '🎮', label: 'Games & movies' },
@@ -81,8 +82,8 @@ export function About() {
             <h2>Beyond Code</h2>
             
             <p>
-              When I'm not coding, you'll probably find me walking my dog Yoshi, riding motorcycles, 
-              playing games, watching movies, or at the gym. I believe balance is essential—the best 
+              When I'm not coding, you'll probably find spending time with my family, walking my dog Yoshi, riding motorcycle, 
+              playing games or watching movies. I believe balance is essential—the best 
               ideas often come when you step away from the screen.
             </p>
           </section>
@@ -93,8 +94,16 @@ export function About() {
             <p>
               I'm always interested in discussing new opportunities, especially those involving 
               complex frontend challenges, team leadership, or building developer tools. The best 
-              way to reach me is via LinkedIn or GitHub.
+              way to reach me is via LinkedIn or my email.
             </p>
+            <a 
+              href="mailto:jorispannekeet@gmail.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex gap-2 items-center text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
+            >
+              jorispannekeet@gmail.com
+            </a>
           </section>
         </article>
 
@@ -141,18 +150,27 @@ export function About() {
               Open for opportunities
             </h3>
             <p className="mb-4 text-sm text-stone-400">
-              Looking for complex frontend challenges and team leadership roles.
+              Looking for complex frontend challenges, team leadership roles or just a fun product to work on.
             </p>
             <a 
               href="https://www.linkedin.com/in/joris-pannekeet-75ba4130/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex gap-2 items-center text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
+              className="inline-flex gap-2 items-center mb-3 text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
             >
               Connect on LinkedIn
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
+            </a>
+            <p className="mb-4 text-sm text-stone-400">Or send me an email:</p>
+            <a 
+              href="mailto:jorispannekeet@gmail.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex gap-2 items-center text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
+            >
+              jorispannekeet@gmail.com
             </a>
           </div>
         </aside>
