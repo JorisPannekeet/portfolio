@@ -4,16 +4,16 @@ export function HowIWork() {
   return (
     <Container narrow>
       <header className="mb-16">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex gap-4 items-center mb-6">
           <div className="w-12 h-px bg-gradient-to-r from-amber-500 to-transparent" />
-          <span className="text-sm font-medium text-stone-500 uppercase tracking-wider">Approach</span>
+          <span className="text-sm font-medium tracking-wider uppercase text-stone-500">Approach</span>
         </div>
         
-        <h1 className="text-4xl sm:text-5xl font-semibold text-stone-100 tracking-tight mb-6">
+        <h1 className="mb-6 text-4xl font-semibold tracking-tight sm:text-5xl text-stone-100">
           How I Work
         </h1>
 
-        <p className="text-lg text-stone-400 leading-relaxed">
+        <p className="text-lg leading-relaxed text-stone-400">
           My approach to frontend architecture and development. Written for 
           technical collaborators who want to understand how I think about 
           building software.
@@ -64,37 +64,6 @@ export function HowIWork() {
             The goal is to make it obvious where code lives and to make 
             feature boundaries visible. When a feature is deleted, you 
             delete one folder.
-          </p>
-        </section>
-
-        <section>
-          <h2>Thinking About Abstractions</h2>
-          
-          <p>
-            The hardest part of software development is choosing the right 
-            abstractions. Too few, and you repeat yourself. Too many, and 
-            you can't understand your own code.
-          </p>
-
-          <h3>The Rule of Three</h3>
-          <p>
-            I don't abstract on the first occurrence, or even the second. 
-            When I see the same pattern three times, I understand it well 
-            enough to abstract it correctly. Premature abstraction is worse 
-            than duplication.
-          </p>
-
-          <h3>Abstraction Tests</h3>
-          <p>Before creating an abstraction, I ask:</p>
-          <ul>
-            <li>Can I explain what this abstracts in one sentence?</li>
-            <li>Does it hide complexity or just move it?</li>
-            <li>Will the next developer understand when to use it?</li>
-            <li>What happens when requirements change—does this make changes easier or harder?</li>
-          </ul>
-
-          <p>
-            If I can't answer these confidently, the abstraction isn't ready.
           </p>
         </section>
 
