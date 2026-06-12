@@ -3,8 +3,46 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark theme (default) — channel values are space-separated RGB for Tailwind's
+     alpha-modifier support, e.g. bg-stone-900/80. */
+  :root {
+    --stone-950: 12 10 9;
+    --stone-900: 28 25 23;
+    --stone-850: 35 31 28;
+    --stone-800: 41 37 36;
+    --stone-700: 68 64 60;
+    --stone-600: 87 83 78;
+    --stone-500: 120 113 108;
+    --stone-400: 168 162 158;
+    --stone-300: 214 211 209;
+    --stone-200: 231 229 228;
+    --stone-100: 245 245 244;
+    --stone-50: 250 250 249;
+  }
+
+  /* Light theme — the neutral ramp is inverted so existing dark-first classes
+     (e.g. bg-stone-950, text-stone-100) resolve to a light palette. */
+  .light {
+    --stone-950: 250 250 249;
+    --stone-900: 245 245 244;
+    --stone-850: 235 234 233;
+    --stone-800: 231 229 228;
+    --stone-700: 214 211 209;
+    --stone-600: 168 162 158;
+    --stone-500: 120 113 108;
+    --stone-400: 87 83 78;
+    --stone-300: 68 64 60;
+    --stone-200: 41 37 36;
+    --stone-100: 28 25 23;
+    --stone-50: 12 10 9;
+  }
+
   html {
     scroll-behavior: smooth;
+  }
+
+  body {
+    @apply transition-colors duration-300;
   }
 
   @media (prefers-reduced-motion: reduce) {

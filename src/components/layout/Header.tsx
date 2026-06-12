@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import { Container } from './Container'
+import { ThemeToggle } from '@/components/ui'
 
 const navItems = [
   { to: '/case-studies', label: 'Work' },
@@ -32,23 +33,26 @@ export function Header() {
             </span>
           </Link>
 
-          <ul className="flex items-center gap-1">
-            {navItems.map(({ to, label }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  className={({ isActive }) => [
-                    'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-                    isActive 
-                      ? 'text-amber-400 bg-amber-500/10' 
-                      : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/50',
-                  ].join(' ')}
-                >
-                  {label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center gap-1">
+            <ul className="flex items-center gap-1">
+              {navItems.map(({ to, label }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    className={({ isActive }) => [
+                      'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                      isActive
+                        ? 'text-amber-400 bg-amber-500/10'
+                        : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/50',
+                    ].join(' ')}
+                  >
+                    {label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+            <ThemeToggle />
+          </div>
         </nav>
       </Container>
     </header>

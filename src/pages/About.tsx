@@ -51,14 +51,15 @@ export function About() {
             </p>
 
             <p>
-              Currently, I'm at Betty Blocks where I lead and maintain a huge frontend codebase, 
-              build and deploy NPM packages and micro-services. I've increased team performance 
-              by 20% by observing and acting on the team's needs.
+              Currently, I'm a fullstack developer at Onesix. Before that, I spent over 7 years
+              at Betty Blocks where I led and maintained a huge frontend codebase, built and
+              deployed NPM packages and micro-services. I increased team performance by 20% by
+              observing and acting on the team's needs.
             </p>
 
             <p>
-              Before that, I spent 3 years at Nine Degrees, a web development agency where I 
-              gained full-stack experience and worked with various clients on diverse projects.
+              Earlier in my career, I spent 3 years at Nine Degrees, a web development agency
+              where I gained full-stack experience and worked with various clients on diverse projects.
             </p>
           </section>
 

@@ -12,9 +12,15 @@ const skills = [
 
 const experience = [
   {
+    role: 'Fullstack Developer',
+    company: 'Onesix',
+    period: 'May 2026 — Present',
+    type: 'Agency',
+  },
+  {
     role: 'Frontend Developer',
     company: 'Betty Blocks',
-    period: '2018 — Present',
+    period: '2018 — April 2026',
     type: 'SaaS',
   },
   {
@@ -33,13 +39,6 @@ export function Home() {
       <section className="min-h-[70vh] flex items-center py-12">
         <div className="grid lg:grid-cols-[1fr,400px] gap-12 lg:gap-16 items-center w-full">
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow" />
-                Available for opportunities
-              </span>
-            </div>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-stone-100 tracking-tight leading-tight">
               Hi, I'm <span className="text-amber-400">Joris</span>
               <br />
