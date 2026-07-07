@@ -1,196 +1,101 @@
-import { useParams, Link, Navigate } from 'react-router-dom'
-import { Container } from '@/components/layout'
-import { getCaseStudyBySlug, caseStudies } from '@/data/caseStudies'
+import { useRef } from 'react'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import { useReveals } from '@/lib/motion'
+import { content } from '@/data/content'
+import { getCaseStudyBySlug } from '@/data/caseStudies'
+import { Panel } from '@/components/Panel'
 
 export function CaseStudyDetail() {
-  const { slug } = useParams<{ slug: string }>()
-  const caseStudy = slug ? getCaseStudyBySlug(slug) : undefined
+  const { slug } = useParams()
+  const scope = useRef<HTMLDivElement>(null)
+  useReveals(scope)
 
-  if (!caseStudy) {
-    return <Navigate to="/case-studies" replace />
-  }
-
-  const currentIndex = caseStudies.findIndex(cs => cs.slug === slug)
-  const prevStudy = currentIndex > 0 ? caseStudies[currentIndex - 1] : undefined
-  const nextStudy = currentIndex < caseStudies.length - 1 ? caseStudies[currentIndex + 1] : undefined
+  const study = slug ? getCaseStudyBySlug(slug) : undefined
+  if (!study) return <Navigate to="/case-studies" replace />
 
   return (
-    <Container narrow>
-      <nav className="mb-12">
-        <Link 
-          to="/case-studies" 
-          className="inline-flex gap-2 items-center text-sm transition-colors text-stone-500 hover:text-amber-400"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-          </svg>
-          Back to Case Studies
-        </Link>
-      </nav>
-
-      <header className="mb-16">
-        <div className="flex gap-3 items-center mb-4 text-sm">
-          <span className="text-amber-500">{caseStudy.company}</span>
-          <span className="text-stone-700">·</span>
-          <span className="text-stone-500">{caseStudy.year}</span>
+    <div className="container container--narrow" ref={scope}>
+      <header className="page-head" data-reveal>
+        <Link to="/case-studies" className="backlink">← Back to sortie log</Link>
+        <div className="plate__meta">
+          <span className="chip chip--red">{study.company}</span>
+          <span className="stencil stencil--ink">{study.year}</span>
         </div>
-
-        <h1 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl text-stone-100">
-          {caseStudy.title}
-        </h1>
-
-        <p className="mb-6 text-xl text-stone-400">
-          {caseStudy.subtitle}
-        </p>
-
-        <div className="flex flex-wrap gap-2">
-          {caseStudy.tags.map((tag) => (
-            <span 
-              key={tag}
-              className="px-3 py-1.5 rounded-lg bg-stone-800/50 text-sm font-medium text-stone-400 border border-stone-800"
-            >
-              {tag}
-            </span>
-          ))}
+        <h1>{study.title}</h1>
+        <p>{study.subtitle}</p>
+        <div className="plate__tags">
+          {study.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
         </div>
       </header>
 
-      <article className="prose-content">
-        <section>
-          <h2>Context</h2>
-          {caseStudy.context.split('\n\n').map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-        </section>
+      <Panel code="SEC-01 // BRIEFING" title="Context">
+        <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.context}</p>
+      </Panel>
 
-        <section>
-          <h2>The Problem</h2>
-          {caseStudy.problem.split('\n\n').map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-        </section>
+      <Panel code="SEC-02 // THREAT ANALYSIS" title="The Problem">
+        <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.problem}</p>
+      </Panel>
 
-        <section>
-          <h2>Constraints</h2>
-          <ul>
-            {caseStudy.constraints.map((constraint, i) => (
-              <li key={i}>{constraint}</li>
-            ))}
-          </ul>
-        </section>
+      <Panel code="SEC-03 // OPERATIONAL LIMITS" title="Constraints">
+        <ul className="constraints">
+          {study.constraints.map((c) => <li key={c}>{c}</li>)}
+        </ul>
+      </Panel>
 
-        <section>
-          <h2>Architectural Decisions</h2>
-          {caseStudy.architecturalDecisions.map((decision, i) => (
-            <div key={i} className="p-6 mb-8 rounded-xl border border-stone-800 bg-stone-900/30">
-              <h3 className="!mt-0 text-amber-400">{decision.title}</h3>
-              <p className="!mb-2"><strong>Decision:</strong> {decision.decision}</p>
-              <p className="!mb-0"><strong>Rationale:</strong> {decision.rationale}</p>
+      <Panel code="SEC-04 // FRAME DESIGN" title="Architectural Decisions">
+        {study.architecturalDecisions.map((d) => (
+          <article className="cut decision" key={d.title}>
+            <h3>{d.title}</h3>
+            <p><span className="stencil">Decision:</span>{d.decision}</p>
+            <p><span className="stencil stencil--ink">Rationale:</span>{d.rationale}</p>
+          </article>
+        ))}
+      </Panel>
+
+      <Panel code="SEC-05 // COUNTERWEIGHTS" title="Trade-offs">
+        {study.tradeoffs.map((t) => (
+          <div className="tradeoff" key={t.choice}>
+            <h3>{t.choice}</h3>
+            <p>{t.tradeoff}</p>
+          </div>
+        ))}
+      </Panel>
+
+      <Panel code="SEC-06 // MISSION OUTCOME" title="Result">
+        <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.result}</p>
+      </Panel>
+
+      {study.codeSnippets.length > 0 && (
+        <Panel code="SEC-07 // INTERNALS" title="Code Examples">
+          <p className="disclaimer">{content.codeDisclaimer}</p>
+          {study.codeSnippets.map((snippet) => (
+            <div className="codeblock" key={snippet.title}>
+              <div className="codeblock__head">
+                <span>{snippet.title}</span>
+                <span className="stencil">{snippet.language}</span>
+              </div>
+              <pre><code>{snippet.code}</code></pre>
+              {snippet.explanation && (
+                <p style={{ fontSize: 15, color: 'var(--ink-soft)', marginTop: 12 }}>
+                  {snippet.explanation}
+                </p>
+              )}
             </div>
           ))}
-        </section>
+        </Panel>
+      )}
 
-        <section>
-          <h2>Trade-offs</h2>
-          <p>
-            Every architectural decision involves trade-offs. Here's what we 
-            accepted as downsides and how we mitigated them:
-          </p>
-          <div className="space-y-4">
-            {caseStudy.tradeoffs.map((tradeoff, i) => (
-              <div key={i} className="pl-5 border-l-2 border-amber-500/30">
-                <p className="!mb-1 font-medium text-stone-200">{tradeoff.choice}</p>
-                <p className="!mb-0 text-stone-500">{tradeoff.tradeoff}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h2>Result</h2>
-          {caseStudy.result.split('\n').map((line, i) => (
-            line.startsWith('-') ? null : <p key={i}>{line}</p>
+      {study.diagrams && study.diagrams.length > 0 && (
+        <Panel code="SEC-08 // SCHEMATICS" title="Architecture Diagrams">
+          {study.diagrams.map((diagram) => (
+            <div key={diagram.title} style={{ marginBottom: 12 }}>
+              <h3 style={{ fontSize: 16 }}>{diagram.title}</h3>
+              <p style={{ fontSize: 14, color: 'var(--ink-soft)' }}>{diagram.description}</p>
+              <div className="diagram">{diagram.placeholder}</div>
+            </div>
           ))}
-          <ul>
-            {caseStudy.result.split('\n')
-              .filter(line => line.startsWith('-'))
-              .map((line, i) => (
-                <li key={i}>{line.substring(2)}</li>
-              ))}
-          </ul>
-        </section>
-
-        {caseStudy.codeSnippets.length > 0 && (
-          <section>
-            <h2>Code Examples</h2>
-            <p>Disclaimer: These examples are simplified and do not reflect the actual codebase.</p>
-            {caseStudy.codeSnippets.map((snippet, i) => (
-              <div key={i} className="mb-10">
-                <h3>{snippet.title}</h3>
-                {snippet.explanation && (
-                  <p>{snippet.explanation}</p>
-                )}
-                <pre>
-                  <code>{snippet.code}</code>
-                </pre>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {caseStudy.diagrams && caseStudy.diagrams.length > 0 && (
-          <section>
-            <h2>Architecture Diagrams</h2>
-            {caseStudy.diagrams.map((diagram, i) => (
-              <div key={i} className="mb-8">
-                <h3>{diagram.title}</h3>
-                <p className="text-stone-500">{diagram.description}</p>
-                <div className="p-8 mt-4 font-mono text-sm text-center rounded-xl border bg-stone-900 text-stone-500 border-stone-800">
-                  {diagram.placeholder}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-      </article>
-
-      <nav className="pt-10 mt-20 border-t border-stone-800">
-        <div className="flex justify-between">
-          {prevStudy ? (
-            <Link 
-              to={`/case-studies/${prevStudy.slug}`}
-              className="group"
-            >
-              <span className="flex gap-1 items-center mb-1 text-sm text-stone-600">
-                <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-                </svg>
-                Previous
-              </span>
-              <p className="font-medium transition-colors text-stone-300 group-hover:text-amber-400">
-                {prevStudy.title}
-              </p>
-            </Link>
-          ) : <div />}
-          
-          {nextStudy && (
-            <Link 
-              to={`/case-studies/${nextStudy.slug}`}
-              className="text-right group"
-            >
-              <span className="flex gap-1 justify-end items-center mb-1 text-sm text-stone-600">
-                Next
-                <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </span>
-              <p className="font-medium transition-colors text-stone-300 group-hover:text-amber-400">
-                {nextStudy.title}
-              </p>
-            </Link>
-          )}
-        </div>
-      </nav>
-    </Container>
+        </Panel>
+      )}
+    </div>
   )
 }

@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "title": "Joris Pannekeet | Senior Frontend Developer",
+    "description": "Senior Frontend Developer with 11 years of experience in React, TypeScript, and building scalable web applications.",
+    "name": "Joris Pannekeet"
+  },
+  "navigation": [
+    { "path": "/case-studies", "label": "Work" },
+    { "path": "/how-i-work", "label": "Approach" },
+    { "path": "/components", "label": "Components" },
+    { "path": "/about", "label": "About" }
+  ],
+  "links": {
+    "github": "https://github.com/JorisPannekeet",
+    "linkedin": "https://www.linkedin.com/in/joris-pannekeet-75ba4130/",
+    "email": "jorispannekeet@gmail.com"
+  },
+  "assets": {
+    "photo": "public/me.jpeg",
+    "favicon": "public/favicon.svg (old design — replace)"
+  },
+  "home": {
+    "hero": {
+      "greeting": "Hi, I'm Joris",
+      "title": "Senior Frontend Developer",
+      "subtitle": "With some backend experience as well.",
+      "intro": "11 years crafting digital experiences. I specialize in building efficient, scalable applications with React and TypeScript. Experience in UX/UI design, large scale projects, Ai integrations, WEB3, and game development.",
+      "cta_primary": "View my work",
+      "cta_secondary": "About me"
+    },
+    "skills": [
+      { "name": "React", "years": 8 },
+      { "name": "TypeScript", "years": 6 },
+      { "name": "Node.js", "years": 7 },
+      { "name": "Tailwind", "years": 4 }
+    ],
+    "experience": [
+      { "role": "Fullstack Developer", "company": "Onesix", "period": "May 2026 — Present", "type": "Agency" },
+      { "role": "Frontend Developer", "company": "Betty Blocks", "period": "2018 — April 2026", "type": "SaaS" },
+      { "role": "Fullstack Developer", "company": "Nine Degrees", "period": "2015 — 2017", "type": "Agency" }
+    ],
+    "approach": [
+      { "title": "Pragmatic Solutions", "text": "I prefer mature, well-understood tools over exciting new ones. Innovation should happen in your product, not your infrastructure." },
+      { "title": "Performance First", "text": "I've improved team performance by 20% by observing and acting on real needs. Every decision has performance implications." },
+      { "title": "Team Leadership", "text": "I lead and maintain large codebases, build NPM packages and micro-services. Good architecture comes from good collaboration." }
+    ]
+  },
+  "caseStudiesPage": {
+    "heading": "Case Studies",
+    "intro": "Detailed breakdowns of projects I've worked on. Each case study includes context, constraints, architectural decisions, and honest discussion of trade-offs.",
+    "codeDisclaimer": "Disclaimer: These examples are simplified and do not reflect the actual codebase.",
+    "source": "src/data/caseStudies.ts — kept verbatim, all 3 studies with full context/problem/constraints/decisions/tradeoffs/results/code/diagrams",
+    "studies": [
+      { "slug": "ai-application-generator", "title": "Building an AI Service for Application Generation", "company": "Betty Blocks", "year": 2025 },
+      { "slug": "scalable-component-tree", "title": "Building a Fast and Scalable Component Tree", "company": "Betty Blocks", "year": 2024 },
+      { "slug": "team-performance-alignment", "title": "Helping Development Teams Perform", "company": "Betty Blocks", "year": 2023 }
+    ]
+  },
+  "howIWork": {
+    "heading": "How I Work",
+    "intro": "My approach to frontend architecture and development. Written for technical collaborators who want to understand how I think about building software.",
+    "source": "src/pages/HowIWork.tsx — all prose kept verbatim",
+    "sections": [
+      "Frontend Architecture (incl. folder-structure code block)",
+      "State Management Philosophy (state hierarchy list, server state)",
+      "Performance & Accessibility (both checklists)",
+      "When I Keep Things Simple (don't-need-that-library list, rewrite question, framework churn)",
+      "Working With Teams (practices list)"
+    ]
+  },
+  "about": {
+    "heading": "Building the web for over a decade",
+    "intro": "I'm a frontend developer with around 11 years of experience. My expertise lies in developing efficient and scalable applications using React and TypeScript. I also have a strong background in design, HTML, CSS, WEB3, and game development.",
+    "journey": [
+      "Throughout my career, I've worked with a diverse range of clients and projects, ranging from small-scale startups to large enterprise-level corporations. My work has always been focused on creating dynamic and engaging user experiences, while ensuring high performance and accessibility standards.",
+      "Currently, I'm a fullstack developer at Onesix. Before that, I spent over 7 years at Betty Blocks where I led and maintained a huge frontend codebase, built and deployed NPM packages and micro-services. I increased team performance by 20% by observing and acting on the team's needs.",
+      "Earlier in my career, I spent 3 years at Nine Degrees, a web development agency where I gained full-stack experience and worked with various clients on diverse projects."
+    ],
+    "whatDrivesMe": [
+      "My passion for technology and innovation has driven me to constantly learn and evolve, staying up-to-date with the latest trends and best practices in the industry. As a result, I am able to offer cutting-edge solutions that are tailored to unique needs.",
+      "I believe the best code is often the code you don't write. I focus on solving real problems for real users, choosing pragmatic solutions over exciting new technology for its own sake."
+    ],
+    "beyondCode": "When I'm not coding, you'll probably find spending time with my family, walking my dog Yoshi, riding motorcycle, playing games or watching movies. I believe balance is essential—the best ideas often come when you step away from the screen.",
+    "letsConnect": "I'm always interested in discussing new opportunities, especially those involving complex frontend challenges, team leadership, or building developer tools. The best way to reach me is via LinkedIn or my email.",
+    "techStack": [
+      { "category": "Core", "items": ["React", "TypeScript", "JavaScript", "HTML", "CSS"] },
+      { "category": "Styling", "items": ["Tailwind", "Styled Components", "CSS Modules"] },
+      { "category": "State", "items": ["Redux", "Zustand", "React Query"] },
+      { "category": "Tools", "items": ["Git", "NPM", "Jest", "Node.js"] }
+    ],
+    "passions": [
+      { "emoji": "👶", "label": "Being a father" },
+      { "emoji": "🐕", "label": "Yoshi (my dog)" },
+      { "emoji": "🏍️", "label": "Motorcycles & cars" },
+      { "emoji": "🎮", "label": "Games & movies" },
+      { "emoji": "💪", "label": "Working out" }
+    ],
+    "openForOpportunities": "Looking for complex frontend challenges, team leadership roles or just a fun product to work on."
+  },
+  "componentsPage": {
+    "note": "AMBIGUOUS — this page showcases the OLD design system (Button/Input/Card). Discarding the design makes its content obsolete. See open questions.",
+    "heading": "Components",
+    "intro": "A small but complete component library built for this portfolio. Each component is designed with accessibility, composition, and maintainability in mind."
+  },
+  "footer": {
+    "credit": "© {year} · Built with React, TypeScript & Tailwind"
+  },
+  "discarded": {
+    "themeToggle": "Light/dark switcher — new design is a single light mecha theme",
+    "allStyling": "Tailwind stone/amber theme, Card/Button/Input components, favicon design"
+  }
+}

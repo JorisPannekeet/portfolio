@@ -1,51 +1,7 @@
-import { Container } from '@/components/layout'
+import { useRef } from 'react'
+import { useReveals } from '@/lib/motion'
 
-export function HowIWork() {
-  return (
-    <Container narrow>
-      <header className="mb-16">
-        <div className="flex gap-4 items-center mb-6">
-          <div className="w-12 h-px bg-gradient-to-r from-amber-500 to-transparent" />
-          <span className="text-sm font-medium tracking-wider uppercase text-stone-500">Approach</span>
-        </div>
-        
-        <h1 className="mb-6 text-4xl font-semibold tracking-tight sm:text-5xl text-stone-100">
-          How I Work
-        </h1>
-
-        <p className="text-lg leading-relaxed text-stone-400">
-          My approach to frontend architecture and development. Written for 
-          technical collaborators who want to understand how I think about 
-          building software.
-        </p>
-      </header>
-
-      <article className="prose-content">
-        <section>
-          <h2>Frontend Architecture</h2>
-          
-          <p>
-            I think of frontend architecture as the set of decisions that are 
-            expensive to change later. Framework choice, state management 
-            patterns, build tooling, component boundaries—these shape 
-            everything that follows.
-          </p>
-
-          <p>
-            My approach: start with the simplest thing that could work, 
-            then add complexity only when there's clear evidence you need it. 
-            Most applications don't need GraphQL. Most forms don't need a 
-            form library. Most state doesn't need to be global.
-          </p>
-
-          <h3>Folder Structure</h3>
-          <p>
-            I organize by feature, not by type. Instead of having a 
-            <code>components</code> folder with 200 files, I group related 
-            code together:
-          </p>
-
-          <pre><code>{`src/
+const folderStructure = `src/
 ├── features/
 │   ├── auth/
 │   │   ├── components/
@@ -58,20 +14,63 @@ export function HowIWork() {
 ├── shared/
 │   ├── components/
 │   └── utils/
-└── pages/`}</code></pre>
+└── pages/`
+
+export function HowIWork() {
+  const scope = useRef<HTMLDivElement>(null)
+  useReveals(scope)
+
+  return (
+    <div className="container container--narrow" ref={scope}>
+      <header className="page-head" data-reveal>
+        <span className="stencil">FIELD MANUAL // OPERATING DOCTRINE</span>
+        <h1>How I Work</h1>
+        <p>
+          My approach to frontend architecture and development. Written for
+          technical collaborators who want to understand how I think about
+          building software.
+        </p>
+      </header>
+
+      <article className="cut panel prose" data-reveal>
+        <section>
+          <h2>Frontend Architecture</h2>
 
           <p>
-            The goal is to make it obvious where code lives and to make 
-            feature boundaries visible. When a feature is deleted, you 
+            I think of frontend architecture as the set of decisions that are
+            expensive to change later. Framework choice, state management
+            patterns, build tooling, component boundaries—these shape
+            everything that follows.
+          </p>
+
+          <p>
+            My approach: start with the simplest thing that could work,
+            then add complexity only when there's clear evidence you need it.
+            Most applications don't need GraphQL. Most forms don't need a
+            form library. Most state doesn't need to be global.
+          </p>
+
+          <h3>Folder Structure</h3>
+          <p>
+            I organize by feature, not by type. Instead of having a{' '}
+            <code>components</code> folder with 200 files, I group related
+            code together:
+          </p>
+
+          <pre><code>{folderStructure}</code></pre>
+
+          <p>
+            The goal is to make it obvious where code lives and to make
+            feature boundaries visible. When a feature is deleted, you
             delete one folder.
           </p>
         </section>
 
         <section>
           <h2>State Management Philosophy</h2>
-          
+
           <p>
-            State management is the most over-complicated part of frontend 
+            State management is the most over-complicated part of frontend
             development. Here's how I think about it:
           </p>
 
@@ -87,20 +86,20 @@ export function HowIWork() {
 
           <h3>Server State is Different</h3>
           <p>
-            Data from the server (API responses) has different concerns than 
-            client state: caching, revalidation, loading states, error 
-            handling. I use React Query or SWR for server state, not Redux 
+            Data from the server (API responses) has different concerns than
+            client state: caching, revalidation, loading states, error
+            handling. I use React Query or SWR for server state, not Redux
             or Zustand.
           </p>
         </section>
 
         <section>
-          <h2>Performance & Accessibility</h2>
-          
+          <h2>Performance &amp; Accessibility</h2>
+
           <h3>Performance</h3>
           <p>
-            Performance optimization starts with measurement. I use Core 
-            Web Vitals as a baseline, but the real test is: does the app 
+            Performance optimization starts with measurement. I use Core
+            Web Vitals as a baseline, but the real test is: does the app
             feel fast to users?
           </p>
 
@@ -115,7 +114,7 @@ export function HowIWork() {
 
           <h3>Accessibility</h3>
           <p>
-            Accessibility isn't a feature, it's a quality bar. I build 
+            Accessibility isn't a feature, it's a quality bar. I build
             accessible by default:
           </p>
           <ul>
@@ -129,9 +128,9 @@ export function HowIWork() {
 
         <section>
           <h2>When I Keep Things Simple</h2>
-          
+
           <p>
-            Senior engineering often means knowing what not to do. Some 
+            Senior engineering often means knowing what not to do. Some
             situations where I deliberately choose simpler solutions:
           </p>
 
@@ -145,51 +144,51 @@ export function HowIWork() {
 
           <h3>The Rewrite Question</h3>
           <p>
-            When someone proposes a rewrite, I ask: what specific problems 
-            will this solve that targeted improvements won't? Rewrites are 
-            expensive and risky. Usually, incremental improvement is both 
+            When someone proposes a rewrite, I ask: what specific problems
+            will this solve that targeted improvements won't? Rewrites are
+            expensive and risky. Usually, incremental improvement is both
             safer and faster to deliver value.
           </p>
 
           <h3>Framework Churn</h3>
           <p>
-            I'm skeptical of the latest framework or paradigm. The JavaScript 
-            ecosystem moves fast, but most projects are better served by 
-            stable, well-understood tools than by chasing the cutting edge. 
-            Innovation should happen in your product, not your build 
+            I'm skeptical of the latest framework or paradigm. The JavaScript
+            ecosystem moves fast, but most projects are better served by
+            stable, well-understood tools than by chasing the cutting edge.
+            Innovation should happen in your product, not your build
             system.
           </p>
         </section>
 
         <section>
           <h2>Working With Teams</h2>
-          
+
           <p>
-            Good architecture comes from good collaboration. Some practices 
+            Good architecture comes from good collaboration. Some practices
             I've found valuable:
           </p>
 
           <ul>
             <li>
-              <strong>Document decisions, not just implementations</strong> — 
+              <strong>Document decisions, not just implementations</strong> —{' '}
               ADRs capture why we chose something, which is more valuable than what we chose
             </li>
             <li>
-              <strong>Make implicit knowledge explicit</strong> — 
-              If there's a "trick" to using a part of the codebase, that's a 
+              <strong>Make implicit knowledge explicit</strong> —{' '}
+              If there's a "trick" to using a part of the codebase, that's a
               sign it needs refactoring or documentation
             </li>
             <li>
-              <strong>Prefer boring code</strong> — 
+              <strong>Prefer boring code</strong> —{' '}
               Clever code is fun to write but expensive to maintain
             </li>
             <li>
-              <strong>Small PRs, early feedback</strong> — 
+              <strong>Small PRs, early feedback</strong> —{' '}
               Large changes are hard to review well
             </li>
           </ul>
         </section>
       </article>
-    </Container>
+    </div>
   )
 }

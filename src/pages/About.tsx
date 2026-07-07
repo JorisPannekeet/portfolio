@@ -1,52 +1,38 @@
-import { Container } from '@/components/layout'
-
-const techStack = [
-  { category: 'Core', items: ['React', 'TypeScript', 'JavaScript', 'HTML', 'CSS'] },
-  { category: 'Styling', items: ['Tailwind', 'Styled Components', 'CSS Modules'] },
-  { category: 'State', items: ['Redux', 'Zustand', 'React Query'] },
-  { category: 'Tools', items: ['Git', 'NPM', 'Jest', 'Node.js'] },
-]
-
-const passions = [
-  { emoji: '👶', label: 'Being a father' },
-  { emoji: '🐕', label: 'Yoshi (my dog)' },
-  { emoji: '🏍️', label: 'Motorcycles & cars' },
-  { emoji: '🎮', label: 'Games & movies' },
-  { emoji: '💪', label: 'Working out' },
-]
+import { useRef } from 'react'
+import { useReveals } from '@/lib/motion'
+import { content } from '@/data/content'
+import { Sparkle } from '@/components/Sparkle'
 
 export function About() {
+  const scope = useRef<HTMLDivElement>(null)
+  useReveals(scope)
+
   return (
-    <Container>
-      <div className="grid lg:grid-cols-[1fr,320px] gap-16 lg:gap-24">
-        <article className="prose-content">
-          <header className="mb-16">
-            <div className="flex gap-4 items-center mb-6">
-              <div className="w-12 h-px bg-gradient-to-r from-amber-500 to-transparent" />
-              <span className="text-sm font-medium tracking-wider uppercase text-stone-500">About</span>
-            </div>
-            
-            <h1 className="mb-6 text-4xl font-semibold tracking-tight sm:text-5xl text-stone-100">
-              Building the web
-              <br />
-              <span className="text-stone-500">for over a decade</span>
-            </h1>
+    <div className="container" ref={scope}>
+      <header className="page-head" data-reveal>
+        <span className="stencil">PILOT DOSSIER // FULL RECORD</span>
+        <h1>
+          Building the web
+          <br />
+          <span style={{ color: 'var(--mauve-deep)' }}>for over a decade</span>
+        </h1>
+        <p>
+          I'm a fullstack developer with around 11 years of experience. My expertise
+          lies in developing efficient and scalable applications using React and
+          TypeScript. I also have a strong background in design, HTML, CSS, WEB3,
+          and game development.
+        </p>
+      </header>
 
-            <p className="max-w-2xl text-lg leading-relaxed text-stone-400">
-              I'm a frontend developer with around 11 years of experience. My expertise 
-              lies in developing efficient and scalable applications using React and 
-              TypeScript. I also have a strong background in design, HTML, CSS, WEB3, 
-              and game development.
-            </p>
-          </header>
-
+      <div className="about-grid" style={{ paddingBottom: 40 }}>
+        <article className="cut panel prose" data-reveal>
           <section>
             <h2>My Journey</h2>
-            
+
             <p>
-              Throughout my career, I've worked with a diverse range of clients and projects, 
-              ranging from small-scale startups to large enterprise-level corporations. My work 
-              has always been focused on creating dynamic and engaging user experiences, while 
+              Throughout my career, I've worked with a diverse range of clients and projects,
+              ranging from small-scale startups to large enterprise-level corporations. My work
+              has always been focused on creating dynamic and engaging user experiences, while
               ensuring high performance and accessibility standards.
             </p>
 
@@ -65,117 +51,85 @@ export function About() {
 
           <section>
             <h2>What Drives Me</h2>
-            
+
             <p>
-              My passion for technology and innovation has driven me to constantly learn and 
-              evolve, staying up-to-date with the latest trends and best practices in the industry. 
+              My passion for technology and innovation has driven me to constantly learn and
+              evolve, staying up-to-date with the latest trends and best practices in the industry.
               As a result, I am able to offer cutting-edge solutions that are tailored to unique needs.
             </p>
 
             <p>
-              I believe the best code is often the code you don't write. I focus on solving real 
-              problems for real users, choosing pragmatic solutions over exciting new technology 
+              I believe the best code is often the code you don't write. I focus on solving real
+              problems for real users, choosing pragmatic solutions over exciting new technology
               for its own sake.
             </p>
           </section>
 
           <section>
             <h2>Beyond Code</h2>
-            
+
             <p>
-              When I'm not coding, you'll probably find spending time with my family, walking my dog Yoshi, riding motorcycle, 
-              playing games or watching movies. I believe balance is essential—the best 
-              ideas often come when you step away from the screen.
+              When I'm not coding, you'll probably find spending time with my family, walking my
+              dog Yoshi, riding motorcycle, playing games or watching movies. I believe balance is
+              essential—the best ideas often come when you step away from the screen.
             </p>
           </section>
 
           <section>
             <h2>Let's Connect</h2>
-            
+
             <p>
-              I'm always interested in discussing new opportunities, especially those involving 
-              complex frontend challenges, team leadership, or building developer tools. The best 
+              I'm always interested in discussing new opportunities, especially those involving
+              complex frontend challenges, team leadership, or building developer tools. The best
               way to reach me is via LinkedIn or my email.
             </p>
-            <a 
-              href="mailto:jorispannekeet@gmail.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex gap-2 items-center text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
-            >
-              jorispannekeet@gmail.com
-            </a>
+            <a href={`mailto:${content.links.email}`}>{content.links.email}</a>
           </section>
         </article>
 
-        <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
-          <div className="p-6 rounded-2xl border border-stone-800 bg-stone-900/30">
-            <h3 className="mb-4 text-sm font-medium tracking-wider uppercase text-stone-500">
-              Tech Stack
-            </h3>
-            <div className="space-y-4">
-              {techStack.map((group) => (
-                <div key={group.category}>
-                  <span className="block mb-2 text-xs text-stone-600">{group.category}</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {group.items.map((item) => (
-                      <span 
-                        key={item}
-                        className="px-2 py-1 text-xs rounded-md border bg-stone-800/50 text-stone-400 border-stone-800"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+        <aside className="about-aside" data-reveal-stagger>
+          <div className="cut aside-panel">
+            <h3><span className="stencil">SYS-01</span> Tech Stack</h3>
+            {content.about.techStack.map((group) => (
+              <div className="stack-group" key={group.category}>
+                <span>{group.category}</span>
+                <div>
+                  {group.items.map((item) => <span className="chip" key={item}>{item}</span>)}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
 
-          <div className="p-6 rounded-2xl border border-stone-800 bg-stone-900/30">
-            <h3 className="mb-4 text-sm font-medium tracking-wider uppercase text-stone-500">
-              Beyond Work
-            </h3>
-            <div className="space-y-3">
-              {passions.map((passion) => (
-                <div key={passion.label} className="flex gap-3 items-center">
-                  <span className="text-lg">{passion.emoji}</span>
-                  <span className="text-sm text-stone-400">{passion.label}</span>
-                </div>
+          <div className="cut aside-panel">
+            <h3><span className="stencil">SYS-02</span> Beyond Work</h3>
+            <ul className="passions">
+              {content.about.passions.map((passion) => (
+                <li key={passion.label}>
+                  <span aria-hidden="true">{passion.emoji}</span>
+                  {passion.label}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          <div className="p-6 bg-gradient-to-br rounded-2xl border from-amber-500/10 to-amber-600/5 border-amber-500/20">
-            <h3 className="mb-3 text-sm font-medium text-amber-400">
-              Open for opportunities
-            </h3>
-            <p className="mb-4 text-sm text-stone-400">
-              Looking for complex frontend challenges, team leadership roles or just a fun product to work on.
+          <div className="cut aside-panel aside-panel--alert">
+            <Sparkle className="sparkle plate-corner-sparkle" />
+            <h3>Open for opportunities</h3>
+            <p>
+              Looking for complex frontend challenges, team leadership roles or just a fun
+              product to work on.
             </p>
-            <a 
-              href="https://www.linkedin.com/in/joris-pannekeet-75ba4130/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex gap-2 items-center mb-3 text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
-            >
-              Connect on LinkedIn
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-            <p className="mb-4 text-sm text-stone-400">Or send me an email:</p>
-            <a 
-              href="mailto:jorispannekeet@gmail.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex gap-2 items-center text-sm font-medium text-amber-400 transition-colors hover:text-amber-300"
-            >
-              jorispannekeet@gmail.com
-            </a>
+            <p style={{ margin: '0 0 10px' }}>
+              <a href={content.links.linkedin} target="_blank" rel="noopener noreferrer">
+                Connect on LinkedIn ↗
+              </a>
+            </p>
+            <p style={{ margin: 0 }}>
+              <a href={`mailto:${content.links.email}`}>{content.links.email}</a>
+            </p>
           </div>
         </aside>
       </div>
-    </Container>
+    </div>
   )
 }
