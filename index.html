@@ -2,26 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      // Apply theme before paint to avoid a flash of the wrong palette.
-      (function () {
-        try {
-          var stored = localStorage.getItem('theme')
-          var theme = stored === 'light' || stored === 'dark'
-            ? stored
-            : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-          if (theme === 'light') document.documentElement.classList.add('light')
-        } catch (e) {}
-      })()
-    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Senior Frontend Developer with 11 years of experience in React, TypeScript, and building scalable web applications." />
-    <title>Joris Pannekeet | Senior Frontend Developer</title>
+    <meta name="description" content="Senior Fullstack Engineer with 11 years of experience in React, TypeScript, Node.js, and building scalable web applications." />
+    <meta name="theme-color" content="#F5EDDC" />
+    <title>Joris Pannekeet | Senior Fullstack Engineer</title>
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
-    <link href="https://fonts.bunny.net/css?family=outfit:300,400,500,600,700|jetbrains-mono:400,500" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=chakra-petch:500,600,700|ibm-plex-mono:400,500,600|inter:400,500,600" rel="stylesheet" />
   </head>
-  <body class="antialiased">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

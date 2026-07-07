@@ -1,6 +1,0 @@
-export { Home } from './Home'
-export { CaseStudies } from './CaseStudies'
-export { CaseStudyDetail } from './CaseStudyDetail'
-export { HowIWork } from './HowIWork'
-export { Components } from './Components'
-export { About } from './About'
