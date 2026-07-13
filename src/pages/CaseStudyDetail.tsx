@@ -103,7 +103,7 @@ export function CaseStudyDetail() {
 
       {hasDiagrams && (
         <Panel code="SEC-08 // SCHEMATICS" title="Architecture Diagrams">
-          {study.diagrams.map((diagram) => (
+          {study.diagrams?.map((diagram) => (
             <div key={diagram.title} style={{ marginBottom: 12 }}>
               <h3 style={{ fontSize: 16 }}>{diagram.title}</h3>
               <p style={{ fontSize: 14, color: 'var(--ink-soft)' }}>{diagram.description}</p>

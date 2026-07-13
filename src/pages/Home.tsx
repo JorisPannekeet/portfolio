@@ -4,10 +4,13 @@ import { gsap, reducedMotion, useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
 import { Panel } from '@/components/Panel'
 import { Sparkle } from '@/components/Sparkle'
-import { getExperienceItems } from '/lib/data'
+import { getExperienceItems } from '../../lib/data'
 import { caseStudies } from '@/data/caseStudies'
 
 const MAX_YEARS = 8
+
+const formatMonth = (date?: string | null) =>
+  date ? new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : undefined
 
 export function Home() {
   const scope = useRef<HTMLDivElement>(null)
@@ -87,17 +90,7 @@ export function Home() {
           {experienceItems.map((exp) => (
             <article className="cut service__row" key={exp.id}>
               <span className="service__period">
-                {new Date(exp.startDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  year: 'numeric',
-                })}{' '}
-                —{' '}
-                {exp.endDate
-                  ? new Date(exp.endDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                  : 'Present'}
+                {formatMonth(exp.startDate)} — {formatMonth(exp.endDate) ?? 'Present'}
               </span>
               <div>
                 <div className="service__role">{exp.title}</div>

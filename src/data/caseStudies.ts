@@ -1,8 +1,8 @@
-import type { CaseStudy } from '@/types'
-import caseStudyData from '../../data/case_studys.json'
+import type { CaseStudyDetail } from '@/types'
+import { caseStudys, type CaseStudy as RawCaseStudy } from '../../lib/data'
 
 // Map flat richtext fields (stored as strings) into the structured shape used in components
-function mapCaseStudy(raw: any): CaseStudy {
+function mapCaseStudy(raw: RawCaseStudy): CaseStudyDetail {
   const splitField = (value?: string | null) =>
     value ? value.split('||').map((part) => part.trim()).filter(Boolean) : []
 
@@ -54,24 +54,24 @@ function mapCaseStudy(raw: any): CaseStudy {
   return {
     slug: raw.slug,
     title: raw.title,
-    subtitle: raw.subtitle,
-    company: raw.company,
-    year: raw.year,
+    subtitle: raw.subtitle ?? '',
+    company: raw.company ?? '',
+    year: raw.year ?? 0,
     tags,
-    summary: raw.summary,
-    context: raw.context,
-    problem: raw.problem,
+    summary: raw.summary ?? '',
+    context: raw.context ?? '',
+    problem: raw.problem ?? '',
     constraints: mapConstraints(raw.constraints),
     architecturalDecisions: mapDecisions(raw.architecturalDecisions),
     tradeoffs: mapTradeoffs(raw.tradeoffs),
-    result: raw.result,
+    result: raw.result ?? '',
     codeSnippets: mapCodeSnippets(raw.codeSnippets),
     diagrams: mapDiagrams(raw.diagrams),
   }
 }
 
-export const caseStudies: CaseStudy[] = (caseStudyData as any[]).map(mapCaseStudy)
+export const caseStudies: CaseStudyDetail[] = caseStudys.map(mapCaseStudy)
 
-export function getCaseStudyBySlug(slug: string): CaseStudy | undefined {
+export function getCaseStudyBySlug(slug: string): CaseStudyDetail | undefined {
   return caseStudies.find((study) => study.slug === slug)
 }
