@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "ExperienceItem": {
+      "source": "file:data/experience_items.json",
+      "fields": {
+        "title": {
+          "type": "text",
+          "required": true,
+          "description": "Role, position, or experience title"
+        },
+        "company": {
+          "type": "text",
+          "required": false,
+          "description": "Company or organization name"
+        },
+        "location": {
+          "type": "text",
+          "required": false,
+          "description": "Location of the experience"
+        },
+        "startDate": {
+          "type": "date",
+          "required": false,
+          "description": "Start date of the experience"
+        },
+        "endDate": {
+          "type": "date",
+          "required": false,
+          "description": "End date of the experience; leave empty if ongoing"
+        },
+        "description": {
+          "type": "richtext",
+          "required": false,
+          "description": "Short description or bullet points of responsibilities and achievements"
+        },
+        "type": {
+          "type": "text",
+          "required": false,
+          "description": "Category like 'Work', 'Education', 'Freelance', etc."
+        },
+        "order": {
+          "type": "number",
+          "required": false,
+          "description": "Order for sorting experiences (lower numbers appear first)"
+        }
+      }
+    }
+  }
+}
