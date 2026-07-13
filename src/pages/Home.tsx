@@ -97,7 +97,7 @@ export function Home() {
         title="Selected Work"
         meta={<Link to="/case-studies" className="backlink" style={{ margin: 0 }}>View all →</Link>}
       >
-        <div style={{ display: 'grid', gap: 18 }} data-reveal-stagger>
+        <div style={{ display: 'grid', gap: 24, marginBottom: 8 }} data-reveal-stagger>
           {caseStudies.slice(0, 2).map((study) => (
             <Link key={study.slug} to={`/case-studies/${study.slug}`} className="cut plate">
               <Sparkle />
