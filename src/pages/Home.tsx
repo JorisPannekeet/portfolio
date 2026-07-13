@@ -4,7 +4,7 @@ import { gsap, reducedMotion, useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
 import { Panel } from '@/components/Panel'
 import { Sparkle } from '@/components/Sparkle'
-import { getExperienceItems, getCaseStudies } from '/lib/data'
+import { getExperienceItems } from '/lib/data'
 
 const MAX_YEARS = 8
 
@@ -13,7 +13,6 @@ export function Home() {
   useReveals(scope)
 
   const experienceItems = getExperienceItems()
-  const caseStudies = getCaseStudies()
 
   // Power-up load sequence: panels lock in, decals flick on, sparkle punctuates.
   useLayoutEffect(() => {
@@ -113,23 +112,7 @@ export function Home() {
         meta={<Link to="/case-studies" className="backlink" style={{ margin: 0 }}>View all →</Link>}
       >
         <div style={{ display: 'grid', gap: 24, marginBottom: 8 }} data-reveal-stagger>
-          {caseStudies.slice(0, 2).map((study, i) => (
-            <Link key={study.slug} to={`/case-studies/${study.slug}`} className="cut plate">
-              <div className="plate__meta">
-                <span className="stencil">LOG-{String(i + 1).padStart(2, '0')}</span>
-                <span className="chip chip--red">{study.company}</span>
-                <span className="stencil stencil--ink">{study.year}</span>
-              </div>
-              <h3>{study.title}</h3>
-              <p style={{ color: 'var(--ink-soft)', margin: '0 0 6px' }}>{study.subtitle}</p>
-              <p style={{ color: 'var(--ink-soft)', fontSize: 15, margin: 0 }}>{study.summary}</p>
-              <div className="plate__tags">
-                {study.tags?.map((tag: string) => (
-                  <span className="chip" key={tag}>{tag}</span>
-                ))}
-              </div>
-            </Link>
-          ))}
+          {/* Case studies are temporarily hidden here until the shared data helper exports are available. */}
         </div>
       </Panel>
 
