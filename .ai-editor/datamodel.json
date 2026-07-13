@@ -44,6 +44,73 @@
           "description": "Order for sorting experiences (lower numbers appear first)"
         }
       }
+    },
+    "CaseStudy": {
+      "source": "file:data/case_studys.json",
+      "fields": {
+        "slug": {
+          "type": "text",
+          "required": true,
+          "description": "URL-friendly identifier for the case study"
+        },
+        "title": {
+          "type": "text",
+          "required": true,
+          "description": "Main title of the case study"
+        },
+        "subtitle": {
+          "type": "text",
+          "description": "Short descriptive subtitle"
+        },
+        "company": {
+          "type": "text",
+          "description": "Client or company"
+        },
+        "year": {
+          "type": "number",
+          "description": "Year of the case study"
+        },
+        "tags": {
+          "type": "text",
+          "description": "Comma-separated tags for filtering"
+        },
+        "summary": {
+          "type": "richtext",
+          "description": "Short summary shown in listings and intros"
+        },
+        "context": {
+          "type": "richtext",
+          "description": "Context section of the case study"
+        },
+        "problem": {
+          "type": "richtext",
+          "description": "Problem section"
+        },
+        "constraints": {
+          "type": "richtext",
+          "description": "Bullet list or text of constraints"
+        },
+        "architecturalDecisions": {
+          "type": "richtext",
+          "description": "Decisions, possibly formatted as bullets or sections"
+        },
+        "tradeoffs": {
+          "type": "richtext",
+          "description": "Tradeoffs made in the project"
+        },
+        "result": {
+          "type": "richtext",
+          "description": "Outcome and impact"
+        },
+        "codeSnippets": {
+          "type": "richtext",
+          "description": "Any code snippet content or references"
+        },
+        "diagrams": {
+          "type": "richtext",
+          "description": "Diagram descriptions or references"
+        }
+      }
     }
   }
 }

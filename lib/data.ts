@@ -2,6 +2,7 @@
 // Schema lives in .ai-editor/datamodel.json; data lives in data/*.json.
 
 import experienceItemsData from '../data/experience_items.json'
+import caseStudysData from '../data/case_studys.json'
 
 export type ExperienceItem = {
   id: string
@@ -17,3 +18,25 @@ export type ExperienceItem = {
 
 export const experienceItems = experienceItemsData as unknown as ExperienceItem[]
 export const getExperienceItems = (): ExperienceItem[] => experienceItems
+
+export type CaseStudy = {
+  id: string
+  slug: string
+  title: string
+  subtitle?: string | null
+  company?: string | null
+  year?: number | null
+  tags?: string | null
+  summary?: string | null
+  context?: string | null
+  problem?: string | null
+  constraints?: string | null
+  architecturalDecisions?: string | null
+  tradeoffs?: string | null
+  result?: string | null
+  codeSnippets?: string | null
+  diagrams?: string | null
+}
+
+export const caseStudys = caseStudysData as unknown as CaseStudy[]
+export const getCaseStudys = (): CaseStudy[] => caseStudys
