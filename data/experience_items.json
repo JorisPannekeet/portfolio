@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "id": "onesix-fullstack-2026",
+    "title": "Fullstack Developer",
+    "company": "Onesix",
+    "location": "Remote",
+    "startDate": "2026-05-01",
+    "endDate": null,
+    "description": "Building and maintaining fullstack solutions for a range of clients.",
+    "type": "Agency",
+    "order": 1
+  },
+  {
+    "id": "bettyblocks-frontend-2018-2026",
+    "title": "Frontend Developer",
+    "company": "Betty Blocks",
+    "location": "Alkmaar, NL",
+    "startDate": "2018-01-01",
+    "endDate": "2026-04-01",
+    "description": "Led frontend development initiatives for the low-code platform.",
+    "type": "SaaS",
+    "order": 2
+  },
+  {
+    "id": "ninedegrees-fullstack-2015-2017",
+    "title": "Fullstack Developer",
+    "company": "Nine Degrees",
+    "location": "Hoorn, NL",
+    "startDate": "2015-01-01",
+    "endDate": "2017-12-31",
+    "description": "Worked across the stack on client projects at a digital agency.",
+    "type": "Agency",
+    "order": 3
+  }
+]
