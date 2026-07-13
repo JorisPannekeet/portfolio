@@ -5,31 +5,6 @@ import { content } from '@/data/content'
 import { getCaseStudyBySlug } from '@/data/caseStudies'
 import { Panel } from '@/components/Panel'
 
-function parseListField<T>(value?: T[] | null): string[] {
-  if (!value) return []
-  return value.map(String).filter(Boolean)
-}
-
-function parseDecisions(value?: { title: string; decision: string; rationale: string }[] | null) {
-  if (!value) return []
-  return value
-}
-
-function parseTradeoffs(value?: { choice: string; tradeoff: string }[] | null) {
-  if (!value) return []
-  return value
-}
-
-function parseCodeSnippets(value?: { title: string; language: string; code: string; explanation?: string }[] | null) {
-  if (!value) return []
-  return value
-}
-
-function parseDiagrams(value?: { title: string; description: string; placeholder: string }[] | null) {
-  if (!value) return []
-  return value
-}
-
 export function CaseStudyDetail() {
   const { slug } = useParams()
   const scope = useRef<HTMLDivElement>(null)
@@ -38,11 +13,11 @@ export function CaseStudyDetail() {
   const study = slug ? getCaseStudyBySlug(slug) : undefined
   if (!study) return <Navigate to="/case-studies" replace />
 
-  const constraints = parseListField(study.constraints)
-  const architecturalDecisions = parseDecisions(study.architecturalDecisions)
-  const tradeoffs = parseTradeoffs(study.tradeoffs)
-  const codeSnippets = parseCodeSnippets(study.codeSnippets)
-  const diagrams = parseDiagrams(study.diagrams)
+  const hasConstraints = study.constraints && study.constraints.length > 0
+  const hasArchitecturalDecisions = study.architecturalDecisions && study.architecturalDecisions.length > 0
+  const hasTradeoffs = study.tradeoffs && study.tradeoffs.length > 0
+  const hasCodeSnippets = study.codeSnippets && study.codeSnippets.length > 0
+  const hasDiagrams = study.diagrams && study.diagrams.length > 0
 
   return (
     <div className="container container--narrow" ref={scope}>
@@ -69,17 +44,17 @@ export function CaseStudyDetail() {
         <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.problem}</p>
       </Panel>
 
-      {constraints.length > 0 && (
+      {hasConstraints && (
         <Panel code="SEC-03 // OPERATIONAL LIMITS" title="Constraints">
           <ul className="constraints">
-            {constraints.map((c) => <li key={c}>{c}</li>)}
+            {study.constraints.map((c) => <li key={c}>{c}</li>)}
           </ul>
         </Panel>
       )}
 
-      {architecturalDecisions.length > 0 && (
+      {hasArchitecturalDecisions && (
         <Panel code="SEC-04 // FRAME DESIGN" title="Architectural Decisions">
-          {architecturalDecisions.map((d) => (
+          {study.architecturalDecisions.map((d) => (
             <article className="cut decision" key={d.title}>
               <h3>{d.title}</h3>
               <p><span className="stencil">Decision:</span>{d.decision}</p>
@@ -89,9 +64,9 @@ export function CaseStudyDetail() {
         </Panel>
       )}
 
-      {tradeoffs.length > 0 && (
+      {hasTradeoffs && (
         <Panel code="SEC-05 // COUNTERWEIGHTS" title="Trade-offs">
-          {tradeoffs.map((t) => (
+          {study.tradeoffs.map((t) => (
             <div className="tradeoff" key={t.choice}>
               <h3>{t.choice}</h3>
               <p>{t.tradeoff}</p>
@@ -106,10 +81,10 @@ export function CaseStudyDetail() {
         </Panel>
       )}
 
-      {codeSnippets.length > 0 && (
+      {hasCodeSnippets && (
         <Panel code="SEC-07 // INTERNALS" title="Code Examples">
           <p className="disclaimer">{content.codeDisclaimer}</p>
-          {codeSnippets.map((snippet) => (
+          {study.codeSnippets.map((snippet) => (
             <div className="codeblock" key={snippet.title}>
               <div className="codeblock__head">
                 <span>{snippet.title}</span>
@@ -126,9 +101,9 @@ export function CaseStudyDetail() {
         </Panel>
       )}
 
-      {diagrams.length > 0 && (
+      {hasDiagrams && (
         <Panel code="SEC-08 // SCHEMATICS" title="Architecture Diagrams">
-          {diagrams.map((diagram) => (
+          {study.diagrams.map((diagram) => (
             <div key={diagram.title} style={{ marginBottom: 12 }}>
               <h3 style={{ fontSize: 16 }}>{diagram.title}</h3>
               <p style={{ fontSize: 14, color: 'var(--ink-soft)' }}>{diagram.description}</p>
