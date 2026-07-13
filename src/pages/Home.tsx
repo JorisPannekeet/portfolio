@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { gsap, reducedMotion, useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { getCaseStudies } from '../../lib/data'
+import { caseStudies } from '@/data/caseStudies'
 import { Panel } from '@/components/Panel'
 import { Sparkle } from '@/components/Sparkle'
 
@@ -11,8 +11,6 @@ const MAX_YEARS = 8
 export function Home() {
   const scope = useRef<HTMLDivElement>(null)
   useReveals(scope)
-
-  const caseStudies = getCaseStudies()
 
   // Power-up load sequence: panels lock in, decals flick on, sparkle punctuates.
   useLayoutEffect(() => {
@@ -110,8 +108,8 @@ export function Home() {
               <h3>{study.title}</h3>
               <p style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.subtitle}</p>
               <div className="plate__tags">
-                {study.tags.split(',').map((tag) => (
-                  <span className="chip" key={tag.trim()}>{tag.trim()}</span>
+                {study.tags.map((tag) => (
+                  <span className="chip" key={tag}>{tag}</span>
                 ))}
               </div>
             </Link>
