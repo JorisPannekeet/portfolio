@@ -554,7 +554,7 @@ a.plate:hover .sparkle { opacity: 1; transform: scale(1); }
 .service {
   display: grid;
   gap: 14px;
-  margin-bottom: 8px;
+  margin-bottom: 20px;
 }
 
 .service__row {
