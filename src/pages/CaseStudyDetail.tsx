@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { getCaseStudy } from '@/lib/data'
+import { getCaseStudy } from '../../lib/data'
 import { Panel } from '@/components/Panel'
 
 function parseListField(value?: string | null): string[] {

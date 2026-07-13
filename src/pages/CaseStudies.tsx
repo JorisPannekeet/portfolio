@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { getCaseStudies } from '@/lib/data'
+import { getCaseStudies } from '../../lib/data'
 import { Sparkle } from '@/components/Sparkle'
 
 export function CaseStudies() {

@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { gsap, reducedMotion, useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { getCaseStudies } from '@/lib/data'
+import { getCaseStudies } from '../../lib/data'
 import { Panel } from '@/components/Panel'
 import { Sparkle } from '@/components/Sparkle'
 
