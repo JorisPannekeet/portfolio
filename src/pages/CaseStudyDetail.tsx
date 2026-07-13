@@ -2,16 +2,87 @@ import { useRef } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { getCaseStudyBySlug } from '@/data/caseStudies'
+import { getCaseStudy } from '@/lib/data'
 import { Panel } from '@/components/Panel'
+
+function parseListField(value?: string | null): string[] {
+  if (!value) return []
+  return value
+    .split(';')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function parseDecisions(value?: string | null) {
+  if (!value) return []
+  return value
+    .split('||')
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const [title, decision, rationale] = block.split('::').map((part) => part.trim())
+      return { title, decision, rationale }
+    })
+}
+
+function parseTradeoffs(value?: string | null) {
+  if (!value) return []
+  return value
+    .split('||')
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const [choice, tradeoff] = block.split('::').map((part) => part.trim())
+      return { choice, tradeoff }
+    })
+}
+
+function parseCodeSnippets(value?: string | null) {
+  if (!value) return []
+  return value
+    .split('||')
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const [title, language, code, explanation] = block.split('::')
+      return {
+        title: title?.trim() ?? '',
+        language: language?.trim() ?? '',
+        code: code?.trim() ?? '',
+        explanation: explanation?.trim() ?? '',
+      }
+    })
+}
+
+function parseDiagrams(value?: string | null) {
+  if (!value) return []
+  return value
+    .split('||')
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const [title, description, placeholder] = block.split('::')
+      return {
+        title: title?.trim() ?? '',
+        description: description?.trim() ?? '',
+        placeholder: placeholder?.trim() ?? '',
+      }
+    })
+}
 
 export function CaseStudyDetail() {
   const { slug } = useParams()
   const scope = useRef<HTMLDivElement>(null)
   useReveals(scope)
 
-  const study = slug ? getCaseStudyBySlug(slug) : undefined
+  const study = slug ? getCaseStudy(slug) : undefined
   if (!study) return <Navigate to="/case-studies" replace />
+
+  const constraints = parseListField(study.constraints)
+  const architecturalDecisions = parseDecisions(study.architecturalDecisions)
+  const tradeoffs = parseTradeoffs(study.tradeoffs)
+  const codeSnippets = parseCodeSnippets(study.codeSnippets)
+  const diagrams = parseDiagrams(study.diagrams)
 
   return (
     <div className="container container--narrow" ref={scope}>
@@ -24,7 +95,9 @@ export function CaseStudyDetail() {
         <h1>{study.title}</h1>
         <p>{study.subtitle}</p>
         <div className="plate__tags">
-          {study.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
+          {study.tags.split(',').map((tag) => (
+            <span className="chip" key={tag.trim()}>{tag.trim()}</span>
+          ))}
         </div>
       </header>
 
@@ -36,39 +109,47 @@ export function CaseStudyDetail() {
         <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.problem}</p>
       </Panel>
 
-      <Panel code="SEC-03 // OPERATIONAL LIMITS" title="Constraints">
-        <ul className="constraints">
-          {study.constraints.map((c) => <li key={c}>{c}</li>)}
-        </ul>
-      </Panel>
+      {constraints.length > 0 && (
+        <Panel code="SEC-03 // OPERATIONAL LIMITS" title="Constraints">
+          <ul className="constraints">
+            {constraints.map((c) => <li key={c}>{c}</li>)}
+          </ul>
+        </Panel>
+      )}
 
-      <Panel code="SEC-04 // FRAME DESIGN" title="Architectural Decisions">
-        {study.architecturalDecisions.map((d) => (
-          <article className="cut decision" key={d.title}>
-            <h3>{d.title}</h3>
-            <p><span className="stencil">Decision:</span>{d.decision}</p>
-            <p><span className="stencil stencil--ink">Rationale:</span>{d.rationale}</p>
-          </article>
-        ))}
-      </Panel>
+      {architecturalDecisions.length > 0 && (
+        <Panel code="SEC-04 // FRAME DESIGN" title="Architectural Decisions">
+          {architecturalDecisions.map((d) => (
+            <article className="cut decision" key={d.title}>
+              <h3>{d.title}</h3>
+              <p><span className="stencil">Decision:</span>{d.decision}</p>
+              <p><span className="stencil stencil--ink">Rationale:</span>{d.rationale}</p>
+            </article>
+          ))}
+        </Panel>
+      )}
 
-      <Panel code="SEC-05 // COUNTERWEIGHTS" title="Trade-offs">
-        {study.tradeoffs.map((t) => (
-          <div className="tradeoff" key={t.choice}>
-            <h3>{t.choice}</h3>
-            <p>{t.tradeoff}</p>
-          </div>
-        ))}
-      </Panel>
+      {tradeoffs.length > 0 && (
+        <Panel code="SEC-05 // COUNTERWEIGHTS" title="Trade-offs">
+          {tradeoffs.map((t) => (
+            <div className="tradeoff" key={t.choice}>
+              <h3>{t.choice}</h3>
+              <p>{t.tradeoff}</p>
+            </div>
+          ))}
+        </Panel>
+      )}
 
-      <Panel code="SEC-06 // MISSION OUTCOME" title="Result">
-        <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.result}</p>
-      </Panel>
+      {study.result && (
+        <Panel code="SEC-06 // MISSION OUTCOME" title="Result">
+          <p className="preline" style={{ color: 'var(--ink-soft)', margin: 0 }}>{study.result}</p>
+        </Panel>
+      )}
 
-      {study.codeSnippets.length > 0 && (
+      {codeSnippets.length > 0 && (
         <Panel code="SEC-07 // INTERNALS" title="Code Examples">
           <p className="disclaimer">{content.codeDisclaimer}</p>
-          {study.codeSnippets.map((snippet) => (
+          {codeSnippets.map((snippet) => (
             <div className="codeblock" key={snippet.title}>
               <div className="codeblock__head">
                 <span>{snippet.title}</span>
@@ -85,9 +166,9 @@ export function CaseStudyDetail() {
         </Panel>
       )}
 
-      {study.diagrams && study.diagrams.length > 0 && (
+      {diagrams.length > 0 && (
         <Panel code="SEC-08 // SCHEMATICS" title="Architecture Diagrams">
-          {study.diagrams.map((diagram) => (
+          {diagrams.map((diagram) => (
             <div key={diagram.title} style={{ marginBottom: 12 }}>
               <h3 style={{ fontSize: 16 }}>{diagram.title}</h3>
               <p style={{ fontSize: 14, color: 'var(--ink-soft)' }}>{diagram.description}</p>

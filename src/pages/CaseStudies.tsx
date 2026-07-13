@@ -2,12 +2,14 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { caseStudies } from '@/data/caseStudies'
+import { getCaseStudies } from '@/lib/data'
 import { Sparkle } from '@/components/Sparkle'
 
 export function CaseStudies() {
   const scope = useRef<HTMLDivElement>(null)
   useReveals(scope)
+
+  const caseStudies = getCaseStudies()
 
   return (
     <div className="container" ref={scope}>
@@ -30,7 +32,9 @@ export function CaseStudies() {
             <p style={{ color: 'var(--ink-soft)', margin: '0 0 6px' }}>{study.subtitle}</p>
             <p style={{ color: 'var(--ink-soft)', fontSize: 15, margin: 0 }}>{study.summary}</p>
             <div className="plate__tags">
-              {study.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
+              {study.tags.split(',').map((tag) => (
+                <span className="chip" key={tag.trim()}>{tag.trim()}</span>
+              ))}
             </div>
           </Link>
         ))}
