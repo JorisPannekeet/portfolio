@@ -2,72 +2,32 @@ import { useRef } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
-import { getCaseStudy } from '../../lib/data'
+import { getCaseStudyBySlug } from '@/data/caseStudies'
 import { Panel } from '@/components/Panel'
 
-function parseListField(value?: string | null): string[] {
+function parseListField<T>(value?: T[] | null): string[] {
   if (!value) return []
-  return value
-    .split(';')
-    .map((item) => item.trim())
-    .filter(Boolean)
+  return value.map(String).filter(Boolean)
 }
 
-function parseDecisions(value?: string | null) {
+function parseDecisions(value?: { title: string; decision: string; rationale: string }[] | null) {
   if (!value) return []
   return value
-    .split('||')
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const [title, decision, rationale] = block.split('::').map((part) => part.trim())
-      return { title, decision, rationale }
-    })
 }
 
-function parseTradeoffs(value?: string | null) {
+function parseTradeoffs(value?: { choice: string; tradeoff: string }[] | null) {
   if (!value) return []
   return value
-    .split('||')
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const [choice, tradeoff] = block.split('::').map((part) => part.trim())
-      return { choice, tradeoff }
-    })
 }
 
-function parseCodeSnippets(value?: string | null) {
+function parseCodeSnippets(value?: { title: string; language: string; code: string; explanation?: string }[] | null) {
   if (!value) return []
   return value
-    .split('||')
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const [title, language, code, explanation] = block.split('::')
-      return {
-        title: title?.trim() ?? '',
-        language: language?.trim() ?? '',
-        code: code?.trim() ?? '',
-        explanation: explanation?.trim() ?? '',
-      }
-    })
 }
 
-function parseDiagrams(value?: string | null) {
+function parseDiagrams(value?: { title: string; description: string; placeholder: string }[] | null) {
   if (!value) return []
   return value
-    .split('||')
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const [title, description, placeholder] = block.split('::')
-      return {
-        title: title?.trim() ?? '',
-        description: description?.trim() ?? '',
-        placeholder: placeholder?.trim() ?? '',
-      }
-    })
 }
 
 export function CaseStudyDetail() {
@@ -75,7 +35,7 @@ export function CaseStudyDetail() {
   const scope = useRef<HTMLDivElement>(null)
   useReveals(scope)
 
-  const study = slug ? getCaseStudy(slug) : undefined
+  const study = slug ? getCaseStudyBySlug(slug) : undefined
   if (!study) return <Navigate to="/case-studies" replace />
 
   const constraints = parseListField(study.constraints)
@@ -95,8 +55,8 @@ export function CaseStudyDetail() {
         <h1>{study.title}</h1>
         <p>{study.subtitle}</p>
         <div className="plate__tags">
-          {study.tags.split(',').map((tag) => (
-            <span className="chip" key={tag.trim()}>{tag.trim()}</span>
+          {study.tags.map((tag) => (
+            <span className="chip" key={tag}>{tag}</span>
           ))}
         </div>
       </header>
