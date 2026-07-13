@@ -5,6 +5,7 @@ import { content } from '@/data/content'
 import { Panel } from '@/components/Panel'
 import { Sparkle } from '@/components/Sparkle'
 import { getExperienceItems } from '/lib/data'
+import { caseStudies } from '@/data/caseStudies'
 
 const MAX_YEARS = 8
 
@@ -33,6 +34,8 @@ export function Home() {
     }, scope)
     return () => ctx.revert()
   }, [])
+
+  const featuredCaseStudies = caseStudies.slice(0, 2)
 
   return (
     <div className="container" ref={scope}>
@@ -112,7 +115,24 @@ export function Home() {
         meta={<Link to="/case-studies" className="backlink" style={{ margin: 0 }}>View all →</Link>}
       >
         <div style={{ display: 'grid', gap: 24, marginBottom: 8 }} data-reveal-stagger>
-          {/* Case studies are temporarily hidden here until the shared data helper exports are available. */}
+          {featuredCaseStudies.map((study, i) => (
+            <Link key={study.slug} to={`/case-studies/${study.slug}`} className="cut plate">
+              <Sparkle />
+              <div className="plate__meta">
+                <span className="stencil">LOG-{String(i + 1).padStart(2, '0')}</span>
+                <span className="chip chip--red">{study.company}</span>
+                <span className="stencil stencil--ink">{study.year}</span>
+              </div>
+              <h3>{study.title}</h3>
+              <p style={{ color: 'var(--ink-soft)', margin: '0 0 6px' }}>{study.subtitle}</p>
+              <p style={{ color: 'var(--ink-soft)', fontSize: 15, margin: 0 }}>{study.summary}</p>
+              <div className="plate__tags">
+                {study.tags.map((tag) => (
+                  <span className="chip" key={tag}>{tag}</span>
+                ))}
+              </div>
+            </Link>
+          ))}
         </div>
       </Panel>
 
