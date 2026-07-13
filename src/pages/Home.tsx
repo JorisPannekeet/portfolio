@@ -36,7 +36,7 @@ export function Home() {
     <div className="container" ref={scope}>
       <section className="hero" aria-label="Introduction">
         <div className="hero__text">
-          <span className="stencil">PROJECT JP-11 // PILOT PROFILE</span>
+          <span className="stencil">PROJECT JP-11 // PROFILE</span>
           <h1 className="hero__title">
             {content.hero.greeting}
             <Sparkle />
