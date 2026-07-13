@@ -25,11 +25,8 @@ export const content = {
     { name: 'Tailwind', years: 4 },
   ],
 
-  experience: [
-    { role: 'Fullstack Developer', company: 'Onesix', period: 'May 2026 — Present', type: 'Agency' },
-    { role: 'Frontend Developer', company: 'Betty Blocks', period: '2018 — April 2026', type: 'SaaS' },
-    { role: 'Fullstack Developer', company: 'Nine Degrees', period: '2015 — 2017', type: 'Agency' },
-  ],
+  // Experience items now come from the structured data source in data/experience_items.json
+  experience: [],
 
   approach: [
     {
