@@ -10,7 +10,7 @@ export const content = {
   },
 
   hero: {
-    greeting: 'My name is Joris',
+    greeting: "Hi, I'm Joris",
     role: 'Senior Fullstack Engineer',
     intro:
       '11 years crafting digital experiences. I specialize in building efficient, scalable applications with React and TypeScript. Experience in UX/UI design, large scale projects, Ai integrations, WEB3, and game development.',
