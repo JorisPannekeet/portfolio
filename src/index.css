@@ -551,7 +551,11 @@ a.plate:hover .sparkle { opacity: 1; transform: scale(1); }
 
 /* --- service record (experience) --------------------------------------------- */
 
-.service { display: grid; gap: 14px; }
+.service {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 8px;
+}
 
 .service__row {
   --cut: 10px;
