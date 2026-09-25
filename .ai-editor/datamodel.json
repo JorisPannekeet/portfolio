@@ -111,6 +111,22 @@
           "description": "Diagram descriptions or references"
         }
       }
+    },
+    "Skill": {
+      "source": "file:data/skills.json",
+      "label": "Vaardigheden",
+      "fields": {
+        "name": {
+          "type": "text",
+          "label": "Vaardigheid",
+          "required": true
+        },
+        "years": {
+          "type": "number",
+          "label": "Jaren ervaring",
+          "required": true
+        }
+      }
     }
   }
 }
