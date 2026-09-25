@@ -4,7 +4,7 @@ import { gsap, reducedMotion, useReveals } from '@/lib/motion'
 import { content } from '@/data/content'
 import { Panel } from '@/components/Panel'
 import { Sparkle } from '@/components/Sparkle'
-import { getExperienceItems } from '../../lib/data'
+import { getExperienceItems, getSkills } from '../../lib/data'
 import { caseStudies } from '@/data/caseStudies'
 
 const MAX_YEARS = 8
@@ -17,6 +17,7 @@ export function Home() {
   useReveals(scope)
 
   const experienceItems = getExperienceItems()
+  const skills = getSkills()
 
   // Power-up load sequence: panels lock in, decals flick on, sparkle punctuates.
   useLayoutEffect(() => {
@@ -61,8 +62,8 @@ export function Home() {
           </div>
 
           <div className="spec" role="list" aria-label="Core skills">
-            {content.skills.map((skill) => (
-              <div className="spec__row" role="listitem" key={skill.name}>
+            {skills.map((skill) => (
+              <div className="spec__row" role="listitem" key={skill.id}>
                 <span>{skill.name}</span>
                 <span className="spec__bar" aria-hidden="true">
                   {Array.from({ length: MAX_YEARS }, (_, i) => (

@@ -1,1 +1,7 @@
-[]
+[
+  { "id": "react", "name": "React", "years": 8 },
+  { "id": "typescript", "name": "TypeScript", "years": 6 },
+  { "id": "nodejs", "name": "Node.js", "years": 7 },
+  { "id": "tailwind", "name": "Tailwind", "years": 4 },
+  { "id": "php", "name": "PHP", "years": 3 }
+]
