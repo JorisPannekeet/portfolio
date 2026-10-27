@@ -692,7 +692,7 @@ main {
 }
 .hatch__latch:nth-of-type(1) { top: 22%; }
 .hatch__latch:nth-of-type(2) { bottom: 22%; }
-[data-hatch='open'] .hatch__latch { transform: rotate(90deg); }
+[data-hatch='open'] .hatch__latch { visibility: hidden; }
 
 .hatch--diagonal .hatch__plate { width: 62%; }
 .hatch--diagonal .hatch__plate--a { clip-path: polygon(0 0, 100% 0, 61.3% 100%, 0 100%); }
@@ -926,6 +926,7 @@ main {
   justify-content: space-between;
   gap: 12px;
   margin-top: 14px;
+  padding-inline: 18px;
 }
 
 .bay { display: grid; gap: 20px; }
