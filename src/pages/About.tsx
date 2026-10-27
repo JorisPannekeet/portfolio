@@ -1,20 +1,19 @@
 import { useRef } from 'react'
-import { useReveals } from '@/lib/motion'
+import { useMechanics } from '@/lib/mech'
 import { content } from '@/data/content'
-import { Sparkle } from '@/components/Sparkle'
+import { Module } from '@/components/Module'
 
 export function About() {
   const scope = useRef<HTMLDivElement>(null)
-  useReveals(scope)
+  useMechanics(scope)
 
   return (
-    <div className="container" ref={scope}>
-      <header className="page-head" data-reveal>
-        <span className="stencil">PILOT DOSSIER // FULL RECORD</span>
+    <div className="container stack stack--tight" ref={scope}>
+      <Module as="header" entry="drop" decal="PILOT DOSSIER // FULL RECORD" vent className="page-head">
         <h1>
           Building the web
           <br />
-          <span style={{ color: 'var(--mauve-deep)' }}>for over a decade</span>
+          <span className="accent">for over a decade</span>
         </h1>
         <p>
           I'm a fullstack developer with around 11 years of experience. My expertise
@@ -22,10 +21,10 @@ export function About() {
           TypeScript. I also have a strong background in design, HTML, CSS, WEB3,
           and game development.
         </p>
-      </header>
+      </Module>
 
-      <div className="about-grid" style={{ paddingBottom: 40 }}>
-        <article className="cut panel prose" data-reveal>
+      <div className="about-grid">
+        <Module as="article" entry="left" decal="DOSSIER // LOG" className="prose">
           <section>
             <h2>My Journey</h2>
 
@@ -85,11 +84,11 @@ export function About() {
             </p>
             <a href={`mailto:${content.links.email}`}>{content.links.email}</a>
           </section>
-        </article>
+        </Module>
 
-        <aside className="about-aside" data-reveal-stagger>
-          <div className="cut aside-panel">
-            <h3><span className="stencil">SYS-01</span> Tech Stack</h3>
+        <aside className="about-aside" data-module="" data-entry="right" data-ratchet="">
+          <div className="subplate on-armor aside-plate">
+            <h3><span className="decal" aria-hidden="true">SYS-01</span> Tech Stack</h3>
             {content.about.techStack.map((group) => (
               <div className="stack-group" key={group.category}>
                 <span>{group.category}</span>
@@ -100,31 +99,28 @@ export function About() {
             ))}
           </div>
 
-          <div className="cut aside-panel">
-            <h3><span className="stencil">SYS-02</span> Beyond Work</h3>
+          <div className="subplate on-armor aside-plate">
+            <h3><span className="decal" aria-hidden="true">SYS-02</span> Beyond Work</h3>
             <ul className="passions">
               {content.about.passions.map((passion) => (
-                <li key={passion.label}>
-                  <span aria-hidden="true">{passion.emoji}</span>
-                  {passion.label}
-                </li>
+                <li key={passion.label}>{passion.label}</li>
               ))}
             </ul>
           </div>
 
-          <div className="cut aside-panel aside-panel--alert">
-            <Sparkle className="sparkle plate-corner-sparkle" />
+          <div className="subplate on-frame aside-plate aside-plate--lit">
+            <span className="aside-plate__led" aria-hidden="true" data-lit="" />
             <h3>Open for opportunities</h3>
             <p>
               Looking for complex frontend challenges, team leadership roles or just a fun
               product to work on.
             </p>
-            <p style={{ margin: '0 0 10px' }}>
+            <p className="aside-plate__link">
               <a href={content.links.linkedin} target="_blank" rel="noopener noreferrer">
                 Connect on LinkedIn ↗
               </a>
             </p>
-            <p style={{ margin: 0 }}>
+            <p className="aside-plate__link">
               <a href={`mailto:${content.links.email}`}>{content.links.email}</a>
             </p>
           </div>

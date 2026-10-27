@@ -1,5 +1,6 @@
 import { useRef } from 'react'
-import { useReveals } from '@/lib/motion'
+import { useMechanics } from '@/lib/mech'
+import { Module } from '@/components/Module'
 
 const folderStructure = `src/
 ├── features/
@@ -18,24 +19,21 @@ const folderStructure = `src/
 
 export function HowIWork() {
   const scope = useRef<HTMLDivElement>(null)
-  useReveals(scope)
+  useMechanics(scope)
 
   return (
-    <div className="container container--narrow" ref={scope}>
-      <header className="page-head" data-reveal>
-        <span className="stencil">FIELD MANUAL // OPERATING DOCTRINE</span>
+    <div className="container container--narrow stack stack--tight" ref={scope}>
+      <Module as="header" entry="drop" decal="FIELD MANUAL // OPERATING DOCTRINE" vent className="page-head">
         <h1>How I Work</h1>
         <p>
           My approach to frontend architecture and development. Written for
           technical collaborators who want to understand how I think about
           building software.
         </p>
-      </header>
+      </Module>
 
-      <article className="cut panel prose" data-reveal>
-        <section>
-          <h2>Frontend Architecture</h2>
-
+      <article className="manual stack stack--tight">
+        <Module title="Frontend Architecture" entry="left" decal="SEC-01 // FRAME LAYOUT" className="prose">
           <p>
             I think of frontend architecture as the set of decisions that are
             expensive to change later. Framework choice, state management
@@ -64,11 +62,9 @@ export function HowIWork() {
             feature boundaries visible. When a feature is deleted, you
             delete one folder.
           </p>
-        </section>
+        </Module>
 
-        <section>
-          <h2>State Management Philosophy</h2>
-
+        <Module title="State Management Philosophy" entry="right" decal="SEC-02 // STATE CONTROL" className="prose">
           <p>
             State management is the most over-complicated part of frontend
             development. Here's how I think about it:
@@ -91,11 +87,9 @@ export function HowIWork() {
             handling. I use React Query or SWR for server state, not Redux
             or Zustand.
           </p>
-        </section>
+        </Module>
 
-        <section>
-          <h2>Performance &amp; Accessibility</h2>
-
+        <Module title="Performance & Accessibility" entry="left" decal="SEC-03 // OUTPUT TUNING" className="prose">
           <h3>Performance</h3>
           <p>
             Performance optimization starts with measurement. I use Core
@@ -124,11 +118,9 @@ export function HowIWork() {
             <li>Color contrast that meets WCAG AA</li>
             <li>Labels for all form inputs (visible or via aria-label)</li>
           </ul>
-        </section>
+        </Module>
 
-        <section>
-          <h2>When I Keep Things Simple</h2>
-
+        <Module title="When I Keep Things Simple" entry="right" decal="SEC-04 // RESTRAINT" className="prose">
           <p>
             Senior engineering often means knowing what not to do. Some
             situations where I deliberately choose simpler solutions:
@@ -158,11 +150,9 @@ export function HowIWork() {
             Innovation should happen in your product, not your build
             system.
           </p>
-        </section>
+        </Module>
 
-        <section>
-          <h2>Working With Teams</h2>
-
+        <Module title="Working With Teams" entry="left" decal="SEC-05 // SQUAD OPS" className="prose">
           <p>
             Good architecture comes from good collaboration. Some practices
             I've found valuable:
@@ -187,7 +177,7 @@ export function HowIWork() {
               Large changes are hard to review well
             </li>
           </ul>
-        </section>
+        </Module>
       </article>
     </div>
   )

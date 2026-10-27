@@ -57,11 +57,11 @@ export const content = {
       { category: 'Tools', items: ['Git', 'NPM', 'Jest', 'Node.js'] },
     ],
     passions: [
-      { emoji: '👶', label: 'Being a father' },
-      { emoji: '🐕', label: 'Yoshi (my dog)' },
-      { emoji: '🏍️', label: 'Motorcycles & cars' },
-      { emoji: '🎮', label: 'Games & movies' },
-      { emoji: '💪', label: 'Working out' },
+      { label: 'Being a father' },
+      { label: 'Yoshi (my dog)' },
+      { label: 'Motorcycles & cars' },
+      { label: 'Games & movies' },
+      { label: 'Working out' },
     ],
   },
 } as const
