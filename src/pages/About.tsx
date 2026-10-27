@@ -115,22 +115,9 @@ export function About() {
             </ul>
           </div>
 
-          <div className="subplate on-frame aside-plate aside-plate--lit">
-            <span className="aside-plate__led" aria-hidden="true" data-lit="" />
-            <h3>Open for opportunities</h3>
-            <p>
-              Looking for complex frontend challenges, team leadership roles or just a fun
-              product to work on.
-            </p>
-            <p className="aside-plate__link">
-              <a href={content.links.linkedin} target="_blank" rel="noopener noreferrer">
-                Connect on LinkedIn ↗
-              </a>
-            </p>
-            <p className="aside-plate__link">
-              <a href={`mailto:${content.links.email}`}>{content.links.email}</a>
-            </p>
-          </div>
+          <a className="btn btn--primary press about-connect" href={content.links.linkedin} target="_blank" rel="noopener noreferrer">
+            Connect ↗
+          </a>
         </aside>
       </div>
     </div>

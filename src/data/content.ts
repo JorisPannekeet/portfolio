@@ -6,6 +6,7 @@ export const content = {
   links: {
     github: 'https://github.com/JorisPannekeet',
     linkedin: 'https://www.linkedin.com/in/joris-pannekeet-75ba4130/',
+    x: 'https://x.com/pindakaaspeer',
     email: 'jorispannekeet@gmail.com',
   },
 

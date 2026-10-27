@@ -42,6 +42,7 @@ function Footer() {
         <ul className="site-foot__links">
           <li><a className="btn btn--frame press" href={content.links.github} target="_blank" rel="noopener noreferrer">GitHub</a></li>
           <li><a className="btn btn--frame press" href={content.links.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a className="btn btn--frame press" href={content.links.x} target="_blank" rel="noopener noreferrer">X</a></li>
           <li><a className="btn btn--frame press" href={`mailto:${content.links.email}`}>Email</a></li>
         </ul>
       </div>
