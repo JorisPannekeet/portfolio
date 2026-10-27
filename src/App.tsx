@@ -11,7 +11,7 @@ const About = lazy(() => import('./pages/About').then(m => ({ default: m.About }
 function PageLoader() {
   return (
     <div className="container" style={{ paddingBlock: 80 }}>
-      <span className="stencil">SYSTEM BOOT // LOADING…</span>
+      <span className="decal">SYSTEM BOOT // LOADING…</span>
     </div>
   )
 }

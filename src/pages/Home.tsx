@@ -1,145 +1,119 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { gsap, reducedMotion, useReveals } from '@/lib/motion'
+import { useMechanics } from '@/lib/mech'
 import { content } from '@/data/content'
-import { Panel } from '@/components/Panel'
-import { Sparkle } from '@/components/Sparkle'
+import { Module } from '@/components/Module'
+import { CaseStudyModule } from '@/components/CaseStudyModule'
 import { getExperienceItems } from '../../lib/data'
 import { caseStudies } from '@/data/caseStudies'
 
-const MAX_YEARS = 8
+const CELLS = 8
 
 const formatMonth = (date?: string | null) =>
-  date ? new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : undefined
+  date ? new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : undefined
 
 export function Home() {
   const scope = useRef<HTMLDivElement>(null)
-  useReveals(scope)
+  useMechanics(scope)
 
   const experienceItems = getExperienceItems()
-
-  // Power-up load sequence: panels lock in, decals flick on, sparkle punctuates.
-  useLayoutEffect(() => {
-    if (reducedMotion()) return
-    const ctx = gsap.context(() => {
-      gsap
-        .timeline({ defaults: { ease: 'power3.out' } })
-        .from('.hero__text', { x: -60, autoAlpha: 0, duration: 0.7 })
-        .from('.pilot', { x: 60, autoAlpha: 0, duration: 0.7 }, 0.1)
-        .from('.hero .stencil', { autoAlpha: 0, duration: 0.25, stagger: 0.06 }, 0.5)
-        .from('.spec__row', { x: -24, autoAlpha: 0, stagger: 0.08, duration: 0.4 }, 0.55)
-        .fromTo(
-          '.hero__title .sparkle',
-          { scale: 0, autoAlpha: 0 },
-          { scale: 1, autoAlpha: 1, duration: 0.45, ease: 'back.out(2.5)' },
-          0.9,
-        )
-    }, scope)
-    return () => ctx.revert()
-  }, [])
-
   const featuredCaseStudies = caseStudies.slice(0, 2)
 
   return (
-    <div className="container" ref={scope}>
+    <div className="container stack" ref={scope}>
       <section className="hero" aria-label="Introduction">
-        <div className="hero__text">
-          <span className="stencil">PROJECT JP-11 // PROFILE</span>
+        <Module as="div" entry="left" decal="JP-11 // PROFILE" vent className="hero__chest">
           <h1 className="hero__title">
             {content.hero.greeting}
-            <Sparkle />
             <span className="hero__role">{content.hero.role}</span>
           </h1>
           <p className="hero__intro">{content.hero.intro}</p>
 
           <div className="hero__actions">
-            <Link to="/case-studies" className="mech-btn mech-btn--primary">
-              {content.hero.ctaPrimary}
-              <Sparkle />
-            </Link>
-            <Link to="/about" className="mech-btn">{content.hero.ctaSecondary}</Link>
+            <Link to="/case-studies" className="btn btn--primary press">{content.hero.ctaPrimary}</Link>
+            <Link to="/about" className="btn press">{content.hero.ctaSecondary}</Link>
           </div>
 
-          <div className="spec" role="list" aria-label="Core skills">
+          <span className="lit-seam hero__seam" aria-hidden="true" data-lit="" />
+
+          <div className="cells" role="list" aria-label="Core skills">
             {content.skills.map((skill) => (
-              <div className="spec__row" role="listitem" key={skill.name}>
-                <span>{skill.name}</span>
-                <span className="spec__bar" aria-hidden="true">
-                  {Array.from({ length: MAX_YEARS }, (_, i) => (
-                    <i key={i} className={`spec__seg${i < skill.years ? ' spec__seg--on' : ''}`} />
-                  ))}
+              <div className="cells__row" role="listitem" key={skill.name}>
+                <span className="cells__name">{skill.name}</span>
+                <span className="cells__bank" aria-hidden="true">
+                  {Array.from({ length: CELLS }, (_, i) =>
+                    i < skill.years
+                      ? <i key={i} className="cell cell--on" data-lit="" />
+                      : <i key={i} className="cell" />,
+                  )}
                 </span>
-                <span className="spec__yrs">{skill.years}Y</span>
+                <span className="cells__yrs">{skill.years}Y</span>
               </div>
             ))}
           </div>
-        </div>
+          <span className="hazard hero__hazard" aria-hidden="true" />
+        </Module>
 
-        <figure className="cut pilot">
-          <Sparkle />
-          <img src="/me.jpeg" alt="Joris Pannekeet" width={360} height={480} />
-          <figcaption className="pilot__id">
-            <span className="stencil">PILOT ID // J.PANNEKEET</span>
-            <span className="stencil stencil--ink">VER 11.0</span>
-          </figcaption>
-        </figure>
+        <Module as="figure" entry="right" tone="frame" hatch="diagonal" className="hero__cockpit">
+          <span className="hero__frame">
+            <img src="/me.jpeg" alt="Joris Pannekeet" width={1000} height={1200} />
+            <span className="hero__rim" aria-hidden="true" />
+          </span>
+          <span className="hero__id" aria-hidden="true">
+            <span className="decal">PILOT ID // J.PANNEKEET</span>
+            <span className="decal">VER 11.0</span>
+          </span>
+        </Module>
       </section>
 
-      <Panel code="SEC-01 // SERVICE RECORD" title="Experience">
-        <div className="service" data-reveal-stagger>
-          {experienceItems.map((exp) => (
-            <article className="cut service__row" key={exp.id}>
-              <span className="service__period">
-                {formatMonth(exp.startDate)} — {formatMonth(exp.endDate) ?? 'Present'}
+      <section className="bay" aria-labelledby="experience-title">
+        <Module as="header" entry="left" decal="MOD-02 // SERVICE RECORD" className="bay__head">
+          <h2 id="experience-title">Experience</h2>
+        </Module>
+        <ol className="spine">
+          {experienceItems.map((exp, i) => (
+            <Module as="li" key={exp.id} entry={i % 2 ? 'right' : 'left'} decal={`REC-${String(i + 1).padStart(2, '0')}`} className="job">
+              <span className="job__period">
+                {formatMonth(exp.startDate)} - {formatMonth(exp.endDate) ?? 'Present'}
               </span>
-              <div>
-                <div className="service__role">{exp.title}</div>
-                <div className="service__company">{exp.company}</div>
+              <div className="job__main">
+                <div>
+                  <h3 className="job__role">{exp.title}</h3>
+                  <div className="job__company">{exp.company}</div>
+                </div>
+                <span className="chip">{exp.type}</span>
               </div>
-              <span className="chip">{exp.type}</span>
-            </article>
+              <span className="job__clamp" aria-hidden="true" data-lit="" />
+              <span className="job__feed" aria-hidden="true" data-lit="flow" />
+            </Module>
           ))}
-        </div>
-      </Panel>
+        </ol>
+      </section>
 
-      <Panel
-        code="SEC-02 // SORTIE LOG"
-        title="Selected Work"
-        meta={<Link to="/case-studies" className="backlink" style={{ margin: 0 }}>View all →</Link>}
-      >
-        <div style={{ display: 'grid', gap: 24, marginBottom: 8 }} data-reveal-stagger>
+      <section className="bay" aria-labelledby="work-title">
+        <Module as="header" entry="right" decal="MOD-03 // SORTIE LOG" className="bay__head">
+          <h2 id="work-title">Selected Work</h2>
+          <Link to="/case-studies" className="btn press">View all →</Link>
+        </Module>
+        <div className="bay__stack">
           {featuredCaseStudies.map((study, i) => (
-            <Link key={study.slug} to={`/case-studies/${study.slug}`} className="cut plate">
-              <Sparkle />
-              <div className="plate__meta">
-                <span className="stencil">LOG-{String(i + 1).padStart(2, '0')}</span>
-                <span className="chip chip--red">{study.company}</span>
-                <span className="stencil stencil--ink">{study.year}</span>
-              </div>
-              <h3>{study.title}</h3>
-              <p style={{ color: 'var(--ink-soft)', margin: '0 0 6px' }}>{study.subtitle}</p>
-              <p style={{ color: 'var(--ink-soft)', fontSize: 15, margin: 0 }}>{study.summary}</p>
-              <div className="plate__tags">
-                {study.tags.map((tag) => (
-                  <span className="chip" key={tag}>{tag}</span>
-                ))}
-              </div>
-            </Link>
+            <CaseStudyModule key={study.slug} study={study} index={i} />
           ))}
         </div>
-      </Panel>
+      </section>
 
-      <Panel code="SEC-03 // DOCTRINE" title="My Approach">
-        <div className="doctrine" data-reveal-stagger>
-          {content.approach.map((item) => (
-            <div className="doctrine__item" key={item.title}>
-              <span className="doctrine__vent" aria-hidden="true"><i /><i /><i /></span>
+      <Module title="My Approach" entry="drop" decal="MOD-04 // DOCTRINE" vent className="approach">
+        <div className="slats" data-ratchet="">
+          {content.approach.map((item, i) => (
+            <div className="slat subplate on-armor" key={item.title}>
+              <span className="slat__led" aria-hidden="true" data-lit="" />
+              <span className="decal slat__code" aria-hidden="true">SLAT {String(i + 1).padStart(2, '0')}</span>
               <h3>{item.title}</h3>
               <p>{item.text}</p>
             </div>
           ))}
         </div>
-      </Panel>
+      </Module>
     </div>
   )
 }

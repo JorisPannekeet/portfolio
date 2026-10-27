@@ -1,8 +1,8 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { gsap, ScrollSmoother, ScrollTrigger, reducedMotion } from '@/lib/motion'
+import { gsap, ScrollTrigger, reducedMotion } from '@/lib/mech'
 import { content } from '@/data/content'
-import { Backdrop } from './Backdrop'
+import { BlastDoors } from './BlastDoors'
 
 const navItems = [
   { to: '/case-studies', label: 'Work' },
@@ -15,13 +15,15 @@ function Header() {
     <header className="site-head">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="container site-head__bar">
-        <Link to="/" className="site-head__brand">
+        <Link to="/" className="site-head__brand press">
           <span className="site-head__unit" aria-hidden="true">JP</span>
           <span className="site-head__name">Joris Pannekeet</span>
         </Link>
+        <span className="vent site-head__vent" aria-hidden="true" />
+        <span className="decal site-head__decal" aria-hidden="true">UNIT JP-11</span>
         <nav className="site-nav" aria-label="Main">
           {navItems.map(({ to, label }) => (
-            <NavLink key={to} to={to}>{label}</NavLink>
+            <NavLink key={to} to={to} className="press">{label}</NavLink>
           ))}
         </nav>
       </div>
@@ -33,71 +35,57 @@ function Footer() {
   return (
     <footer className="site-foot">
       <div className="container site-foot__bar">
-        <span className="stencil stencil--ink">
+        <span className="vent site-foot__vent" aria-hidden="true" />
+        <span className="decal">
           UNIT JP-11 // © {new Date().getFullYear()} JORIS PANNEKEET
         </span>
         <ul className="site-foot__links">
-          <li><a href={content.links.github} target="_blank" rel="noopener noreferrer">GitHub</a></li>
-          <li><a href={content.links.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-          <li><a href={`mailto:${content.links.email}`}>Email</a></li>
+          <li><a className="btn btn--frame press" href={content.links.github} target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a className="btn btn--frame press" href={content.links.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a className="btn btn--frame press" href={`mailto:${content.links.email}`}>Email</a></li>
         </ul>
       </div>
     </footer>
   )
 }
 
+function Struts() {
+  return (
+    <div className="struts" aria-hidden="true">
+      <span className="strut strut--l"><i className="strut__conduit" /></span>
+      <span className="strut strut--r"><i className="strut__conduit" /></span>
+    </div>
+  )
+}
+
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
-  const smoother = useRef<ScrollSmoother | null>(null)
 
-  // Site-wide smooth scroll + gears reacting to scroll.
   useLayoutEffect(() => {
     if (reducedMotion()) return
     const ctx = gsap.context(() => {
-      smoother.current = ScrollSmoother.create({
-        wrapper: '#smooth-wrapper',
-        content: '#smooth-content',
-        smooth: 1,
-      })
+      gsap.fromTo(
+        '.strut__conduit',
+        { scaleY: 0 },
+        { scaleY: 1, ease: 'steps(40)', scrollTrigger: { start: 0, end: 'max', scrub: true } },
+      )
     })
-    // Gear rotation is tied to absolute scroll pixels, not page-height
-    // progress — lazy-loaded routes change document height after mount,
-    // which made a ScrollTrigger-scrubbed range unreliable. The smoother's
-    // eased scrollTop gives the rotation its inertia for free.
-    const spins = gsap.utils.toArray<SVGElement>('.gear').map((gear, i) => ({
-      set: gsap.quickSetter(gear, 'rotation', 'deg') as (v: number) => void,
-      speed: i % 2 ? -0.05 : 0.05,
-    }))
-    const spin = () => {
-      const y = smoother.current?.scrollTop() ?? window.scrollY
-      spins.forEach(({ set, speed }) => set(y * speed))
-    }
-    gsap.ticker.add(spin)
-    return () => {
-      gsap.ticker.remove(spin)
-      smoother.current?.kill()
-      smoother.current = null
-      ctx.revert()
-    }
+    document.fonts.ready.then(() => ScrollTrigger.refresh())
+    return () => ctx.revert()
   }, [])
 
-  // Route change: jump back to top before paint.
   useLayoutEffect(() => {
-    if (smoother.current) smoother.current.scrollTop(0)
-    else window.scrollTo(0, 0)
+    window.scrollTo(0, 0)
     ScrollTrigger.refresh()
   }, [pathname])
 
   return (
     <>
-      <Backdrop />
+      <BlastDoors />
+      <Struts />
       <Header />
-      <div id="smooth-wrapper">
-        <div id="smooth-content">
-          <main id="main-content">{children}</main>
-          <Footer />
-        </div>
-      </div>
+      <main id="main-content">{children}</main>
+      <Footer />
     </>
   )
 }
