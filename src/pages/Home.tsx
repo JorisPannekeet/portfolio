@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMechanics } from '@/lib/mech'
 import { content } from '@/data/content'
@@ -16,13 +16,24 @@ export function Home() {
   const scope = useRef<HTMLDivElement>(null)
   useMechanics(scope)
 
+  const [active, setActive] = useState(0)
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  const onTabKey = (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+    const count = content.skillTabs.length
+    const next = (active + (e.key === 'ArrowRight' ? 1 : count - 1)) % count
+    setActive(next)
+    tabRefs.current[next]?.focus()
+  }
+
   const experienceItems = getExperienceItems()
   const featuredCaseStudies = caseStudies.slice(0, 2)
 
   return (
     <div className="container stack" ref={scope}>
       <section className="hero" aria-label="Introduction">
-        <Module as="div" entry="left" decal="JP-11 // PROFILE" vent className="hero__chest">
+        <Module as="div" entry="left" decal="JP-12 // PROFILE" vent className="hero__chest">
           <h1 className="hero__title">
             {content.hero.greeting}
             <span className="hero__role">{content.hero.role}</span>
@@ -36,9 +47,28 @@ export function Home() {
 
           <span className="lit-seam hero__seam" aria-hidden="true" data-lit="" />
 
-          <div className="cells" role="list" aria-label="Core skills">
-            {content.skills.map((skill) => (
-              <div className="cells__row" role="listitem" key={skill.name}>
+          <div className="tabs" role="tablist" aria-label="Skill eras" onKeyDown={onTabKey}>
+            {content.skillTabs.map((tab, i) => (
+              <button
+                key={tab.label}
+                ref={(el) => { tabRefs.current[i] = el }}
+                type="button"
+                role="tab"
+                id={`skills-tab-${i}`}
+                aria-selected={i === active}
+                aria-controls={`skills-panel-${i}`}
+                tabIndex={i === active ? 0 : -1}
+                className={i === active ? 'chip chip--core tab' : 'chip tab'}
+                onClick={() => setActive(i)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="cells" role="tabpanel" id={`skills-panel-${active}`} aria-labelledby={`skills-tab-${active}`}>
+            {content.skillTabs[active]?.skills.map((skill) => (
+              <div className="cells__row" key={skill.name}>
                 <span className="cells__name">{skill.name}</span>
                 <span className="cells__bank" aria-hidden="true">
                   {Array.from({ length: CELLS }, (_, i) =>
@@ -60,8 +90,8 @@ export function Home() {
             <span className="hero__rim" aria-hidden="true" />
           </span>
           <span className="hero__id" aria-hidden="true">
-            <span className="decal">PILOT ID // J.PANNEKEET</span>
-            <span className="decal">VER 11.0</span>
+            <span className="decal">ENGINEER ID // J.PANNEKEET</span>
+            <span className="decal">VER 12.0</span>
           </span>
         </Module>
       </section>
@@ -102,7 +132,44 @@ export function Home() {
         </div>
       </section>
 
-      <Module title="My Approach" entry="drop" decal="MOD-04 // DOCTRINE" vent className="approach">
+      <section className="bay" aria-labelledby="projects-title">
+        <Module as="header" entry="left" decal="MOD-04 // SIDE PROJECTS" className="bay__head">
+          <h2 id="projects-title">Side Projects</h2>
+        </Module>
+        <div className="bay__stack">
+          {content.projects.map((project, i) => (
+            <Module
+              as="article"
+              key={project.url}
+              entry={i % 2 ? 'right' : 'left'}
+              tone="frame"
+              hatch="split"
+              stencil={project.title}
+              className="case project press"
+            >
+              <div>
+                <div className="case__meta">
+                  <span className="decal">PRJ-{String(i + 1).padStart(2, '0')}</span>
+                </div>
+                <h3 className="case__title">
+                  <a href={project.url} target="_blank" rel="noreferrer" className="case__link">
+                    {project.title} ↗
+                  </a>
+                </h3>
+                <p className="case__summary">{project.pitch}</p>
+                <div className="tags">
+                  {project.tags.map((tag) => (
+                    <span className="chip" key={tag}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+              <img className="project__shot" src={project.image} alt="" width={1400} height={738} loading="lazy" />
+            </Module>
+          ))}
+        </div>
+      </section>
+
+      <Module title="My Approach" entry="drop" decal="MOD-05 // DOCTRINE" vent className="approach">
         <div className="slats" data-ratchet="">
           {content.approach.map((item, i) => (
             <div className="slat subplate on-armor" key={item.title}>

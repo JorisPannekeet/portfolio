@@ -867,10 +867,13 @@ main {
 
 .hero__seam { margin: auto -1px 24px; }
 
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab { cursor: pointer; background: none; }
+.tab.chip--core { background: var(--core-deep); }
 .cells { display: grid; gap: 10px; }
 .cells__row {
   display: grid;
-  grid-template-columns: 7.2rem minmax(0, 300px) auto;
+  grid-template-columns: 9rem minmax(0, 300px) auto;
   align-items: center;
   gap: 16px;
 }
@@ -1039,6 +1042,21 @@ main {
 .case__subtitle { font-weight: 500; margin-bottom: 8px; }
 .case__summary { max-width: 74ch; color: var(--fg-soft); font-size: 16px; }
 
+.project .module__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(20px, 3vw, 36px);
+}
+.project__shot {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--edge-line);
+}
+@media (max-width: 767px) {
+  .project .module__body { grid-template-columns: 1fr; }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .case:hover::before { background: var(--core); }
 }
@@ -1081,7 +1099,7 @@ main {
 
 @media (max-width: 767px) {
   .hero__intro { font-size: 17px; }
-  .cells__row { grid-template-columns: 6rem minmax(0, 1fr) auto; gap: 10px; }
+  .cells__row { grid-template-columns: 7.5rem minmax(0, 1fr) auto; gap: 10px; }
   .hero__cockpit { justify-self: stretch; max-width: none; }
   .spine { padding-left: 36px; }
   .spine::before, .spine::after { left: 12px; }

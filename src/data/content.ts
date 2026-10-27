@@ -13,16 +13,30 @@ export const content = {
     greeting: "Hi, I'm Joris",
     role: 'Senior Fullstack Engineer',
     intro:
-      '11 years crafting digital experiences. I specialize in building efficient, scalable applications with React and TypeScript. Experience in UX/UI design, large scale projects, Ai integrations, WEB3, and game development.',
+      '12 years crafting digital experiences. I specialize in building efficient, scalable applications. Experience in UX/UI design, large scale projects, Ai integrations, WEB3, mobile and game development.',
     ctaPrimary: 'View my work',
     ctaSecondary: 'About me',
   },
 
-  skills: [
-    { name: 'React', years: 8 },
-    { name: 'TypeScript', years: 6 },
-    { name: 'Node.js', years: 7 },
-    { name: 'Tailwind', years: 4 },
+  skillTabs: [
+    {
+      label: 'Post Ai',
+      skills: [
+        { name: 'Agent Skills', years: 1 },
+        { name: 'MCPs', years: 2 },
+        { name: 'Agent Dev', years: 3 },
+        { name: 'Automation', years: 3 },
+      ],
+    },
+    {
+      label: 'Pre Ai',
+      skills: [
+        { name: 'React', years: 8 },
+        { name: 'TypeScript', years: 6 },
+        { name: 'Node.js', years: 7 },
+        { name: 'Tailwind', years: 4 },
+      ],
+    },
   ],
 
   // Experience items now come from the structured data source in data/experience_items.json
@@ -40,6 +54,30 @@ export const content = {
     {
       title: 'Team Leadership',
       text: 'I lead and maintain large codebases, build NPM packages and micro-services. Good architecture comes from good collaboration.',
+    },
+  ],
+
+  projects: [
+    {
+      title: 'AI-First CMS',
+      pitch: 'A CMS where clients manage the content and data of their websites by asking an AI. This portfolio runs on it.',
+      tags: ['AI Agents', 'CMS', 'Fullstack'],
+      url: 'https://app.redflake.nl',
+      image: '/projects/cms.jpg',
+    },
+    {
+      title: 'Redflake',
+      pitch: 'An MCP service that gives AI agents read-only access to your bank accounts. Ask Claude or ChatGPT where your money goes.',
+      tags: ['MCP', 'Agents', 'Open Banking', 'Automations'],
+      url: 'https://redflake.nl',
+      image: '/projects/redflake.jpg',
+    },
+    {
+      title: 'OTH Architects',
+      pitch: 'A scroll-animated website for an architecture firm, built around large imagery and motion.',
+      tags: ['Scroll Animation', 'Motion', 'Frontend'],
+      url: 'https://oth-gold.vercel.app',
+      image: '/projects/oth.jpg',
     },
   ],
 

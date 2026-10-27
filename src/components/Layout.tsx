@@ -20,7 +20,7 @@ function Header() {
           <span className="site-head__name">Joris Pannekeet</span>
         </Link>
         <span className="vent site-head__vent" aria-hidden="true" />
-        <span className="decal site-head__decal" aria-hidden="true">UNIT JP-11</span>
+        <span className="decal site-head__decal" aria-hidden="true">UNIT JP-12</span>
         <nav className="site-nav" aria-label="Main">
           {navItems.map(({ to, label }) => (
             <NavLink key={to} to={to} className="press">{label}</NavLink>
@@ -37,7 +37,7 @@ function Footer() {
       <div className="container site-foot__bar">
         <span className="vent site-foot__vent" aria-hidden="true" />
         <span className="decal">
-          UNIT JP-11 // © {new Date().getFullYear()} JORIS PANNEKEET
+          UNIT JP-12 // © {new Date().getFullYear()} JORIS PANNEKEET
         </span>
         <ul className="site-foot__links">
           <li><a className="btn btn--frame press" href={content.links.github} target="_blank" rel="noopener noreferrer">GitHub</a></li>

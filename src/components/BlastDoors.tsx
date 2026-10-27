@@ -77,7 +77,7 @@ export function BlastDoors() {
         <span className="door__line door__line--1" />
         <span className="door__line door__line--2" />
         <span className="door__line door__line--v" />
-        <span className="door__stencil">JP-11</span>
+        <span className="door__stencil">JP-12</span>
         <span className="decal door__decal door__decal--a">BAY 01 // LAUNCH DECK</span>
         <span className="decal door__decal door__decal--b">PRESSURE SEAL ENGAGED</span>
         <span className="vent door__vent" />
@@ -92,7 +92,7 @@ export function BlastDoors() {
         <span className="door__line door__line--2" />
         <span className="hazard door__hazard" />
         <span className="decal door__decal door__decal--c">CAUTION // MOVING PLATES</span>
-        <span className="decal door__decal door__decal--d">UNIT JP-11 // SYSTEM BOOT</span>
+        <span className="decal door__decal door__decal--d">UNIT JP-12 // SYSTEM BOOT</span>
         <i className="bolt door__bolt" style={{ left: '6%', top: 58 }} />
         <i className="bolt door__bolt" style={{ left: '30%', top: 58 }} />
         <i className="bolt door__bolt" style={{ right: '30%', top: 58 }} />
