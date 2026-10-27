@@ -2,6 +2,7 @@ import { useLayoutEffect, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { gsap, ScrollTrigger, reducedMotion } from '@/lib/mech'
 import { content } from '@/data/content'
+import { BlastDoors } from './BlastDoors'
 
 const navItems = [
   { to: '/case-studies', label: 'Work' },
@@ -80,6 +81,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <BlastDoors />
       <Struts />
       <Header />
       <main id="main-content">{children}</main>

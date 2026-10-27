@@ -460,3 +460,366 @@ main {
   .press, .site-nav a::after { transition: none; }
   .press:hover, .press:active { translate: none; }
 }
+
+.module,
+.module__bevel,
+.subplate {
+  --chamfer: polygon(var(--c1) 0, calc(100% - var(--c2)) 0, 100% var(--c2), 100% calc(100% - var(--c3)), calc(100% - var(--c3)) 100%, var(--c4) 100%, 0 calc(100% - var(--c4)), 0 var(--c1));
+}
+
+.module {
+  --k1: 28px;
+  --k2: 0px;
+  --k3: 10px;
+  --k4: 0px;
+  --cs: 1;
+  --c1: calc(var(--k1) * var(--cs));
+  --c2: calc(var(--k2) * var(--cs));
+  --c3: calc(var(--k3) * var(--cs));
+  --c4: calc(var(--k4) * var(--cs));
+  --edge: 20px;
+  position: relative;
+  isolation: isolate;
+  display: block;
+  margin: 0;
+}
+.module[data-entry='right'] { --k1: 0px; --k2: 28px; --k3: 0px; --k4: 10px; }
+.module[data-entry='drop'] { --k1: 18px; --k2: 18px; --k3: 0px; --k4: 0px; }
+.module[data-entry='rise'] { --k1: 0px; --k2: 10px; --k3: 0px; --k4: 28px; }
+
+.module::before,
+.module::after,
+.module__bevel,
+.module__bevel::before,
+.module__bevel::after,
+.module__bloom,
+.hatch__bloom,
+.hatch {
+  position: absolute;
+  pointer-events: none;
+  clip-path: var(--chamfer);
+}
+.module::before,
+.module::after { content: ''; z-index: -1; }
+.module::before { inset: 0; background: var(--edge-line); }
+.module::after { inset: 1px; background: var(--armor-face); }
+
+.module--frame::after {
+  background:
+    linear-gradient(90deg, rgb(255 43 61 / 0.3), transparent 16px, transparent calc(100% - 16px), rgb(255 43 61 / 0.3)),
+    linear-gradient(var(--core), var(--core)) 50% 0 / calc(100% - 2 * var(--c1) - 40px) 1px no-repeat,
+    var(--frame-face);
+}
+
+.module__bevel {
+  --c1: max(0px, calc(var(--k1) * var(--cs) - 4px));
+  --c2: max(0px, calc(var(--k2) * var(--cs) - 4px));
+  --c3: max(0px, calc(var(--k3) * var(--cs) - 4px));
+  --c4: max(0px, calc(var(--k4) * var(--cs) - 4px));
+  inset: 9px;
+  z-index: 0;
+  background: var(--armor-2);
+}
+.module__bevel::before,
+.module__bevel::after { content: ''; }
+.module__bevel::before { inset: 1px; background: rgb(255 255 255 / 0.7); }
+.module__bevel::after {
+  inset: 2px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.55), transparent 22%),
+    var(--armor-face);
+}
+
+.module__bloom {
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  background:
+    radial-gradient(60% 70% at 100% 100%, rgb(255 43 61 / 0.16), transparent 70%),
+    radial-gradient(40% 50% at 0 0, rgb(255 43 61 / 0.1), transparent 70%);
+}
+
+.module__body {
+  position: relative;
+  z-index: 1;
+  padding: clamp(42px, 4.6vw, 58px) clamp(22px, 4.4vw, 56px) clamp(30px, 4vw, 46px);
+}
+
+.module__title { margin-bottom: 0.7em; }
+
+.bolts .bolt {
+  position: absolute;
+  z-index: 2;
+}
+.bolts .bolt:nth-child(1) { top: calc(17px + var(--c1) * 0.5); left: calc(17px + var(--c1) * 0.5); }
+.bolts .bolt:nth-child(2) { top: calc(17px + var(--c2) * 0.5); right: calc(17px + var(--c2) * 0.5); }
+.bolts .bolt:nth-child(3) { bottom: calc(17px + var(--c3) * 0.5); right: calc(17px + var(--c3) * 0.5); }
+.bolts .bolt:nth-child(4) { bottom: calc(17px + var(--c4) * 0.5); left: calc(17px + var(--c4) * 0.5); }
+
+.module__decal {
+  position: absolute;
+  z-index: 2;
+  top: 19px;
+  right: calc(36px + var(--c2) * 0.5);
+}
+
+.module__vent {
+  position: absolute;
+  z-index: 2;
+  bottom: 18px;
+  right: calc(38px + var(--c3) * 0.5);
+}
+
+.subplate {
+  --c1: 14px;
+  --c2: 0px;
+  --c3: 6px;
+  --c4: 0px;
+  position: relative;
+  isolation: isolate;
+  padding: 22px 24px;
+}
+.subplate::before,
+.subplate::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--chamfer);
+}
+.subplate::before { inset: 0; background: var(--edge-line); }
+.subplate::after {
+  inset: 1px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.6), transparent 30%),
+    var(--armor-face);
+}
+.subplate.on-frame::after { background: var(--frame-face); }
+
+.hatch {
+  inset: 0;
+  z-index: 3;
+}
+
+.hatch__bloom {
+  inset: 0;
+  z-index: 0;
+  opacity: 0.3;
+  background:
+    radial-gradient(34% 100% at 50% 50%, rgb(255 90 102 / 0.9), rgb(255 43 61 / 0.4) 45%, transparent 80%),
+    linear-gradient(90deg, rgb(255 43 61 / 0.55), transparent 18%, transparent 82%, rgb(255 43 61 / 0.55));
+}
+
+.hatch__plate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: var(--armor-3);
+}
+.hatch__plate::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background:
+    linear-gradient(transparent calc(100% - 46px), var(--armor-3) calc(100% - 46px) calc(100% - 45px), #fff calc(100% - 45px) calc(100% - 44px), transparent calc(100% - 44px)),
+    var(--armor-face);
+}
+.hatch__plate--a { left: 0; }
+.hatch__plate--b { right: 0; }
+.hatch__plate--b::before {
+  background:
+    linear-gradient(transparent 44px, var(--armor-3) 44px 45px, #fff 45px 46px, transparent 46px),
+    var(--armor-face);
+}
+
+[data-hatch='open'] .hatch__plate--a { transform: translateX(calc(-100% + var(--edge))); }
+[data-hatch='open'] .hatch__plate--b { transform: translateX(calc(100% - var(--edge))); }
+
+.hatch__stencil {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.hatch__stencil > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(28px, 6vw, 90px);
+  color: #575E6A;
+  font: 700 clamp(1.35rem, 3vw, 2.3rem)/1.08 var(--font-display);
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.hatch__plate--b .hatch__stencil > span { left: -100%; }
+
+.hatch__decal { position: absolute; z-index: 1; top: 18px; left: 34px; }
+.hatch__vent { position: absolute; z-index: 1; bottom: 14px; left: 34px; }
+.hatch__hazard { position: absolute; z-index: 1; top: 18px; right: 30px; }
+.hatch__bolt { position: absolute; z-index: 1; left: calc(100% - 16px); }
+.hatch__plate--b .hatch__bolt { left: 10px; }
+.hatch__bolt:nth-of-type(1) { top: 12px; }
+.hatch__bolt:nth-of-type(2) { bottom: 12px; }
+
+.hatch__lip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--core);
+  box-shadow: 0 0 8px 1px var(--core-glow), 0 0 22px 3px rgb(255 43 61 / 0.25);
+  opacity: 0.35;
+}
+.hatch__plate--a .hatch__lip { right: 0; }
+.hatch__plate--b .hatch__lip { left: 0; }
+[data-hatch='open'] .hatch__lip { opacity: 1; }
+
+.hatch__latch {
+  position: absolute;
+  left: -7px;
+  width: 14px;
+  height: 26px;
+  background:
+    linear-gradient(var(--core), var(--core)) 50% 50% / 2px 12px no-repeat,
+    var(--hangar-2);
+  outline: 1px solid #07080A;
+}
+.hatch__latch:nth-of-type(1) { top: 22%; }
+.hatch__latch:nth-of-type(2) { bottom: 22%; }
+[data-hatch='open'] .hatch__latch { transform: rotate(90deg); }
+
+.hatch--diagonal .hatch__plate { width: 62%; }
+.hatch--diagonal .hatch__plate--a { clip-path: polygon(0 0, 100% 0, 61.3% 100%, 0 100%); }
+.hatch--diagonal .hatch__plate--b { clip-path: polygon(38.7% 0, 100% 0, 100% 100%, 0 100%); }
+.hatch--diagonal .hatch__lip {
+  inset: 0;
+  width: auto;
+  box-shadow: none;
+}
+.hatch--diagonal .hatch__plate--a .hatch__lip { clip-path: polygon(calc(100% - 3px) 0, 100% 0, 61.3% 100%, calc(61.3% - 3px) 100%); }
+.hatch--diagonal .hatch__plate--b .hatch__lip { clip-path: polygon(38.7% 0, calc(38.7% + 3px) 0, 3px 100%, 0 100%); }
+.hatch--diagonal .hatch__latch { left: calc(50% - 7px); }
+.hatch--diagonal .hatch__latch:nth-of-type(1) { top: 50%; }
+.hatch--diagonal .hatch__latch:nth-of-type(2) { display: none; }
+.hatch--diagonal .hatch__bolt { left: auto; right: 24px; }
+.hatch--diagonal .hatch__plate--b .hatch__bolt { left: auto; right: 24px; }
+.hatch--diagonal .hatch__decal { top: 24px; left: 30px; }
+
+.doors {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+}
+
+.doors__flood {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(90% 26% at 50% 50%, rgb(255 110 120 / 0.95), rgb(255 43 61 / 0.6) 32%, rgb(200 16 46 / 0.2) 62%, transparent 85%);
+}
+
+.door {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(50% + 13px);
+  background: var(--armor-3);
+}
+.door--top { top: 0; }
+.door--bottom { bottom: 0; }
+
+.door__face {
+  position: absolute;
+  inset: 0 0 2px;
+  background:
+    linear-gradient(90deg, rgb(20 22 26 / 0.1), transparent 14%, transparent 86%, rgb(20 22 26 / 0.12)),
+    linear-gradient(180deg, var(--armor-0), var(--armor-1) 50%, #D4D8DE);
+}
+.door--bottom .door__face {
+  inset: 2px 0 0;
+  background:
+    linear-gradient(90deg, rgb(20 22 26 / 0.1), transparent 14%, transparent 86%, rgb(20 22 26 / 0.12)),
+    linear-gradient(180deg, #EEF0F3, var(--armor-1) 40%, #CDD2D9);
+}
+
+.door__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(var(--armor-3) 0 1px, #fff 1px);
+}
+.door--top .door__line--1 { top: 26%; }
+.door--top .door__line--2 { bottom: 80px; }
+.door--bottom .door__line--1 { top: 82px; }
+.door--bottom .door__line--2 { bottom: 30%; }
+.door__line--v {
+  top: 26%;
+  bottom: 80px;
+  left: 64%;
+  right: auto;
+  width: 2px;
+  height: auto;
+  background: linear-gradient(90deg, var(--armor-3) 0 1px, #fff 1px);
+}
+
+.door__stencil {
+  position: absolute;
+  left: 6%;
+  bottom: 96px;
+  color: #CBD0D7;
+  font: 700 clamp(84px, 15vw, 210px)/0.8 var(--font-display);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 rgb(20 22 26 / 0.18);
+}
+
+.door__decal { position: absolute; color: var(--ink-soft); }
+.door__decal--a { top: calc(26% + 14px); left: 6%; }
+.door__decal--b { bottom: 98px; right: 6%; }
+.door__decal--c { top: 100px; left: calc(6% + 72px); }
+.door__decal--d { bottom: calc(30% + 14px); right: 6%; }
+.door__vent { position: absolute; top: calc(26% + 18px); right: 6%; width: 74px; height: 20px; }
+.door__hazard { position: absolute; top: 102px; left: 6%; }
+.door__bolt { position: absolute; }
+
+.doors__seam {
+  position: absolute;
+  left: 0;
+  top: calc(50% - 13px);
+  z-index: 2;
+  width: 100%;
+  height: 26px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--core);
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 4px var(--core));
+  opacity: 0.25;
+}
+
+.doors__latch {
+  position: absolute;
+  top: calc(50% - 22px);
+  z-index: 3;
+  width: min(15vw, 190px);
+  height: 44px;
+  background:
+    linear-gradient(var(--core), var(--core)) 50% 50% / 60% 2px no-repeat,
+    repeating-linear-gradient(90deg, #262B34 0 10px, var(--hangar-2) 10px 20px);
+  outline: 1px solid #07080A;
+}
+.doors__latch--l { left: 0; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%); }
+.doors__latch--r { right: 0; clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%); }
+
+@media (max-width: 767px) {
+  .module { --cs: 0.6; --edge: 12px; }
+  .door__decal--b, .door__decal--d, .door__line--v { display: none; }
+}
