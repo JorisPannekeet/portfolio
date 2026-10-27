@@ -2,21 +2,6 @@ import { useRef } from 'react'
 import { useMechanics } from '@/lib/mech'
 import { Module } from '@/components/Module'
 
-const folderStructure = `src/
-├── features/
-│   ├── auth/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── api.ts
-│   │   └── types.ts
-│   └── dashboard/
-│       ├── components/
-│       └── ...
-├── shared/
-│   ├── components/
-│   └── utils/
-└── pages/`
-
 export function HowIWork() {
   const scope = useRef<HTMLDivElement>(null)
   useMechanics(scope)
@@ -26,67 +11,68 @@ export function HowIWork() {
       <Module as="header" entry="drop" decal="FIELD MANUAL // OPERATING DOCTRINE" vent className="page-head">
         <h1>How I Work</h1>
         <p>
-          My approach to frontend architecture and development. Written for
-          technical collaborators who want to understand how I think about
-          building software.
+          How I build software as a fullstack engineer in the agentic era.
+          Written for technical collaborators who want to understand how I
+          think, and how I get reliable output from AI agents.
         </p>
       </Module>
 
       <article className="manual stack stack--tight">
-        <Module title="Frontend Architecture" entry="left" decal="SEC-01 // FRAME LAYOUT" className="prose">
+        <Module title="Working With Agents" entry="left" decal="SEC-01 // AGENT CONTROL" className="prose">
           <p>
-            I think of frontend architecture as the set of decisions that are
-            expensive to change later. Framework choice, state management
-            patterns, build tooling, component boundaries—these shape
-            everything that follows.
+            Agents write most of the code now. My job is making sure that
+            code is right. Twelve years of development is what lets me
+            instruct agents well: I know what to ask for, what to watch out
+            for and what they should never do.
           </p>
 
+          <h3>The Right Tool for the Task</h3>
           <p>
-            My approach: start with the simplest thing that could work,
-            then add complexity only when there's clear evidence you need it.
-            Most applications don't need GraphQL. Most forms don't need a
-            form library. Most state doesn't need to be global.
+            I know a wide range of skills and MCP servers and when each one
+            fits the task at hand. Giving an agent the right tools and
+            context matters more than the prompt itself.
           </p>
 
-          <h3>Folder Structure</h3>
+          <h3>The Right Model for the Job</h3>
           <p>
-            I organize by feature, not by type. Instead of having a{' '}
-            <code>components</code> folder with 200 files, I group related
-            code together:
+            Models have different strengths, so I split the work. For
+            example, I let Fable write a detailed plan and let Opus execute
+            it. Planning and execution are different jobs.
           </p>
 
-          <pre><code>{folderStructure}</code></pre>
-
+          <h3>Trust by Design</h3>
           <p>
-            The goal is to make it obvious where code lives and to make
-            feature boundaries visible. When a feature is deleted, you
-            delete one folder.
+            The most important part is the environment, not the agent. I set
+            up an agentic environment where the output can be trusted:
+          </p>
+          <ul>
+            <li><strong>Self-review</strong> — agents check their own work before handing it off</li>
+            <li><strong>Self-validation</strong> — every change is proven with tests, builds and real runs</li>
+            <li><strong>Self-improvement</strong> — lessons from mistakes feed back into the setup, so they don't repeat</li>
+          </ul>
+
+          <h3>Independent Review</h3>
+          <p>
+            The model that wrote the code doesn't review it. I use a
+            different model, such as Codex, for pull request reviews, so
+            blind spots don't get approved by the same mind that created
+            them.
           </p>
         </Module>
 
-        <Module title="State Management Philosophy" entry="right" decal="SEC-02 // STATE CONTROL" className="prose">
+        <Module title="Architecture" entry="right" decal="SEC-02 // FRAME LAYOUT" className="prose">
           <p>
-            State management is the most over-complicated part of frontend
-            development. Here's how I think about it:
+            I think of architecture as the set of decisions that are
+            expensive to change later. I start with the simplest thing that
+            could work and add complexity only when there's clear evidence
+            it's needed.
           </p>
 
-          <h3>The State Hierarchy</h3>
-          <p>Start with the simplest option that meets your needs:</p>
           <ul>
-            <li><strong>URL state</strong> — If it should survive a refresh, put it in the URL</li>
-            <li><strong>Local component state</strong> — For UI state that's only relevant to one component</li>
-            <li><strong>Lifted state</strong> — When siblings need to share state, lift to the parent</li>
-            <li><strong>Context</strong> — For state that genuinely needs to be global: auth, theme, feature flags</li>
-            <li><strong>External store</strong> — Only when context updates cause performance problems</li>
+            <li><strong>Organize by feature, not by type</strong> — when a feature is deleted, you delete one folder</li>
+            <li><strong>Keep state as local as possible</strong> — URL, then component, then lifted, then context, and an external store only when needed</li>
+            <li><strong>Server state is different</strong> — caching and revalidation belong in a tool like React Query, not in a global store</li>
           </ul>
-
-          <h3>Server State is Different</h3>
-          <p>
-            Data from the server (API responses) has different concerns than
-            client state: caching, revalidation, loading states, error
-            handling. I use React Query or SWR for server state, not Redux
-            or Zustand.
-          </p>
         </Module>
 
         <Module title="Performance & Accessibility" entry="left" decal="SEC-03 // OUTPUT TUNING" className="prose">
@@ -142,13 +128,12 @@ export function HowIWork() {
             safer and faster to deliver value.
           </p>
 
-          <h3>Framework Churn</h3>
+          <h3>Proven Over Hyped</h3>
           <p>
-            I'm skeptical of the latest framework or paradigm. The JavaScript
-            ecosystem moves fast, but most projects are better served by
-            stable, well-understood tools than by chasing the cutting edge.
-            Innovation should happen in your product, not your build
-            system.
+            I'm skeptical of hype, not of change. Most projects are better
+            served by stable, well-understood tools than by chasing the
+            latest framework. I adopted agents because they proved
+            themselves on real work, not because they were new.
           </p>
         </Module>
 
@@ -167,6 +152,11 @@ export function HowIWork() {
               <strong>Make implicit knowledge explicit</strong> —{' '}
               If there's a "trick" to using a part of the codebase, that's a
               sign it needs refactoring or documentation
+            </li>
+            <li>
+              <strong>Write it down for humans and agents</strong> —{' '}
+              Good documentation is now context for agents too, and it
+              directly improves their output
             </li>
             <li>
               <strong>Prefer boring code</strong> —{' '}

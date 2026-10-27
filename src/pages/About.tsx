@@ -9,14 +9,14 @@ export function About() {
 
   return (
     <div className="container stack stack--tight" ref={scope}>
-      <Module as="header" entry="drop" decal="PILOT DOSSIER // FULL RECORD" vent className="page-head">
+      <Module as="header" entry="drop" decal="ENGINEER DOSSIER // FULL RECORD" vent className="page-head">
         <h1>
           Building the web
           <br />
           <span className="accent">for over a decade</span>
         </h1>
         <p>
-          I'm a fullstack developer with around 11 years of experience. My expertise
+          I'm a fullstack developer with around 12 years of experience. My expertise
           lies in developing efficient and scalable applications using React and
           TypeScript. I also have a strong background in design, HTML, CSS, WEB3,
           and game development.
@@ -36,7 +36,14 @@ export function About() {
             </p>
 
             <p>
-              Currently, I'm a fullstack developer at Onesix. Before that, I spent over 7 years
+              Currently, I'm a fullstack developer at Onesix, where I merged around 370 pull
+              requests in my first six months. Next to Belgian fiscal compliance, AI features and
+              inventory management, I automated billing and collections across four providers and
+              overhauled the Kiosk experience with a no-code theme editor and allergen filters.
+            </p>
+
+            <p>
+              Before that, I spent over 7 years
               at Betty Blocks where I led and maintained a huge frontend codebase, built and
               deployed NPM packages and micro-services. I increased team performance by 20% by
               observing and acting on the team's needs.
@@ -108,22 +115,9 @@ export function About() {
             </ul>
           </div>
 
-          <div className="subplate on-frame aside-plate aside-plate--lit">
-            <span className="aside-plate__led" aria-hidden="true" data-lit="" />
-            <h3>Open for opportunities</h3>
-            <p>
-              Looking for complex frontend challenges, team leadership roles or just a fun
-              product to work on.
-            </p>
-            <p className="aside-plate__link">
-              <a href={content.links.linkedin} target="_blank" rel="noopener noreferrer">
-                Connect on LinkedIn ↗
-              </a>
-            </p>
-            <p className="aside-plate__link">
-              <a href={`mailto:${content.links.email}`}>{content.links.email}</a>
-            </p>
-          </div>
+          <a className="btn btn--primary press about-connect" href={content.links.linkedin} target="_blank" rel="noopener noreferrer">
+            Connect ↗
+          </a>
         </aside>
       </div>
     </div>
