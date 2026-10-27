@@ -1,14 +1,7 @@
 import { useLayoutEffect, type RefObject } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ScrollSmoother } from 'gsap/ScrollSmoother'
+import { gsap, reducedMotion } from './mech'
 
-gsap.registerPlugin(ScrollTrigger, ScrollSmoother)
-
-export { gsap, ScrollTrigger, ScrollSmoother }
-
-export const reducedMotion = () =>
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+export { gsap, reducedMotion }
 
 /**
  * Scroll-triggered armor-panel reveals: any [data-reveal] element in scope
