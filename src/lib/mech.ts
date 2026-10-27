@@ -83,29 +83,30 @@ export const hatch: Recipe = (el) => {
   const bloom = own(el, '.hatch__bloom')
   const lips = own(el, '.hatch__lip')
   const latches = own(el, '.hatch__latch')
+  const stencils = own(el, '.hatch__stencil')
   const interior = own(el, '.module__body > *')
   gsap.set(el, { attr: { 'data-hatch': 'closed' } })
   gsap.set(bloom, { opacity: 0 })
   gsap.set(lips, { opacity: 0.35 })
-  const tl = gsap.timeline()
-    .to(latches, { rotation: 90, duration: 0.12, ease: 'steps(3)' })
+  return gsap.timeline()
+    .to(latches, { rotation: 90, duration: 0.1, ease: 'steps(3)' })
     .to(lips, { keyframes: { opacity: [1, 0.4, 1], easeEach: 'steps(1)' }, duration: 0.12 }, '<')
     .to(a, { x: -6, duration: 0.06, ease: 'none' })
     .to(b, { x: 6, duration: 0.06, ease: 'none' }, '<')
     .to(bloom, { opacity: 1, duration: 0.06, ease: 'steps(2)' }, '<')
-    .to(a, { x: () => -open(a), duration: 0.32, ease: 'power4.in' }, '+=0.14')
-    .to(b, { x: () => open(b), duration: 0.32, ease: 'power4.in' }, '<')
+    .to(a, { x: () => -open(a), duration: 0.3, ease: 'power4.in' }, '+=0.1')
+    .to(b, { x: () => open(b), duration: 0.3, ease: 'power4.in' }, '<')
     .set(a, { x: () => -open(a) + 7 })
     .set(b, { x: () => open(b) - 7 }, '<')
+    .set(stencils, { opacity: 0 }, '<')
     .to(a, { x: () => -open(a), duration: 0.06, ease: 'steps(2)' })
     .to(b, { x: () => open(b), duration: 0.06, ease: 'steps(2)' }, '<')
     .to(bloom, { opacity: 0.3, duration: 0.24, ease: 'steps(3)' })
     .add(bootText(interior), '<')
     .set(el, { attr: { 'data-hatch': 'open' } })
     .set([a, b, ...latches], { clearProps: 'transform' })
-    .set([...bloom, ...lips], { clearProps: 'opacity' })
+    .set([...bloom, ...lips, ...stencils], { clearProps: 'opacity' })
     .set(interior, { clearProps: 'clipPath' })
-  return tl
 }
 
 const lights: Record<'flicker' | 'flow', (els: HTMLElement[]) => gsap.core.Timeline> = {
@@ -122,6 +123,12 @@ const lights: Record<'flicker' | 'flow', (els: HTMLElement[]) => gsap.core.Timel
       .set(els, { clearProps: 'transform' })
   },
 }
+
+const dockLine = (el: HTMLElement) => () =>
+  Math.min(
+    el.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.82,
+    ScrollTrigger.maxScroll(window) - 1,
+  )
 
 function assemble(el: HTMLElement) {
   const entry = (el.dataset.entry as Entry | undefined) ?? 'rise'
@@ -146,7 +153,7 @@ export function useMechanics(scope: RefObject<HTMLElement | null>) {
         el.addEventListener('focusin', finish, { once: true })
         ScrollTrigger.create({
           trigger: el,
-          start: 'clamp(top 82%)',
+          start: dockLine(el),
           once: true,
           onEnter: () => { bootGate.then(() => { if (live) tl.play() }) },
         })
