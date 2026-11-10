@@ -11,6 +11,7 @@ import { botInput } from '../src/game/sim/bot.hot.ts'
 const [out, seedArg = '1', tickArg = '3600', widthArg = '195', heightArg = '422', upscaleArg = '3'] = process.argv.slice(2)
 if (!out) {
   console.error('usage: node scripts/frame-preview.mjs <out.png> [seed=1] [tick=3600] [width=195] [height=422] [upscale=3]')
+  console.error('env: SCALE=<css px per game px> PLAYER=<x,y> FAKE=1 (beacons, lairs, bosses) EVENTS=beacon,zone,heal FX_AGE=<ticks>')
   process.exit(1)
 }
 const width = Number(widthArg)
@@ -78,18 +79,21 @@ const softwareContext = {
   },
   stroke() {
     const [r, g, b] = rgb(this.strokeStyle)
+    const seen = new Set()
     for (const e of this.path) {
-      const steps = Math.max(8, Math.ceil(Math.max(e.rx, e.ry) * (e.a1 - e.a0) * 1.5))
-      let lastX = NaN
-      let lastY = NaN
-      for (let i = 0; i <= steps; i++) {
-        const angle = e.a0 + ((e.a1 - e.a0) * i) / steps
-        const px = Math.round(e.x + Math.cos(angle) * e.rx)
-        const py = Math.round(e.y + Math.sin(angle) * e.ry)
-        if (px === lastX && py === lastY) continue
-        lastX = px
-        lastY = py
-        blend(px, py, r, g, b, this.globalAlpha)
+      for (let w = 0; w < Math.max(1, Math.round(this.lineWidth)); w++) {
+        const grow = w - (Math.max(1, Math.round(this.lineWidth)) - 1) / 2
+        const rx = e.rx + grow
+        const ry = e.ry + grow
+        const steps = Math.max(8, Math.ceil(Math.max(rx, ry) * Math.abs(e.a1 - e.a0) * 1.5))
+        for (let i = 0; i <= steps; i++) {
+          const angle = e.a0 + ((e.a1 - e.a0) * i) / steps
+          const px = Math.round(e.x + Math.cos(angle) * rx)
+          const py = Math.round(e.y + Math.sin(angle) * ry)
+          if (seen.has(py * 100000 + px)) continue
+          seen.add(py * 100000 + px)
+          blend(px, py, r, g, b, this.globalAlpha)
+        }
       }
     }
   },
@@ -110,8 +114,8 @@ const softwareContext = {
 const view = createView(softwareContext, atlas, atlas)
 view.width = width
 view.height = height
-view.scale = 2
-view.clearRight = 20
+view.scale = Number(process.env.SCALE ?? 2)
+view.clearRight = Math.ceil(40 / view.scale)
 
 const s = createState()
 resetState(s, Number(seedArg))
@@ -119,6 +123,77 @@ let guard = 0
 while (s.tick < targetTick && s.phase < 2 && guard++ < targetTick * 4) {
   step(s, botInput(s))
   if (targetTick - s.tick < FRAMES_DRAWN_BEFORE_CAPTURE) drawFrame(view, s, 1)
+}
+if (process.env.PLAYER) {
+  const [x, y] = process.env.PLAYER.split(',').map(Number)
+  s.px = s.ppx = x
+  s.py = s.ppy = y
+  if (process.env.MOVING) s.ppx = x - 1
+  s.zone = (x >= 0 ? 1 : 0) + (y >= 0 ? 2 : 0)
+  for (let i = 0; i < s.enemyCount; i++) {
+    s.ex[i] += x
+    s.ey[i] += y
+    s.epx[i] += x
+    s.epy[i] += y
+  }
+  for (let i = 0; i < s.gemCount; i++) {
+    s.gx[i] += x
+    s.gy[i] += y
+  }
+  s.shotCount = 0
+}
+if (process.env.FAKE) {
+  const beacons = [
+    [-58, -78, 0.35, 0], [62, -70, 0.8, 0], [-60, 74, 1, 1], [64, 70, 0, 0],
+    [300, -420, 0, 0], [-520, 340, 0, 0], [600, 500, 0, 0],
+  ]
+  const lairs = [[0, 150, 0], [-560, -260, 0], [0, -150, 1]]
+  if (process.env.FAKE === 'far') {
+    beacons.splice(0, 4)
+    lairs.splice(0, 1)
+  }
+  s.poiCount = 0
+  for (const [dx, dy, progress, done] of beacons) {
+    const i = s.poiCount++
+    s.poiKind[i] = 0
+    s.poiX[i] = s.px + dx
+    s.poiY[i] = s.py + dy
+    s.poiProgress[i] = progress
+    s.poiDone[i] = done
+  }
+  for (const [dx, dy, done] of lairs) {
+    const i = s.poiCount++
+    s.poiKind[i] = 1
+    s.poiX[i] = s.px + dx
+    s.poiY[i] = s.py + dy
+    s.poiProgress[i] = 0
+    s.poiDone[i] = done
+  }
+  const bosses = [[6, -62, 30], [7, 62, 28], [8, -60, -26], [9, 58, -30], [9, 420, 320]]
+  for (const [type, dx, dy] of process.env.FAKE === 'far' ? bosses.slice(4) : bosses) {
+    const i = s.enemyCount++
+    s.eType[i] = type
+    s.ex[i] = s.epx[i] = s.px + dx
+    s.ey[i] = s.epy[i] = s.py + dy
+    s.eFlash[i] = 0
+  }
+  s.bossHp = 1700
+  s.bossMaxHp = 2500
+}
+if (process.env.EVENTS) {
+  const kinds = { beacon: [14, 62, -70, 2, 1], heal: [14, -58, -78, -1, 0], zone: [15, 0, 0, s.zone, 0] }
+  for (const name of process.env.EVENTS.split(',')) {
+    const [type, dx, dy, a, b] = kinds[name]
+    const slot = s.evHead % s.evType.length
+    s.evType[slot] = type
+    s.evX[slot] = s.px + dx
+    s.evY[slot] = s.py + dy
+    s.evA[slot] = a
+    s.evB[slot] = b
+    s.evHead++
+  }
+  drawFrame(view, s, 1)
+  s.tick += Number(process.env.FX_AGE ?? 10)
 }
 drawFrame(view, s, 1)
 

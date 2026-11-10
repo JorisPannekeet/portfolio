@@ -11,6 +11,8 @@ export const FX_DEBRIS = 5
 export const FX_NUMBER = 6
 export const FX_GLINT = 7
 export const FX_LEVEL_RING = 8
+export const FX_BEACON_ICON = 9
+export const FX_BEACON_RING = 10
 
 export const DIGIT_BUFFER = 12
 
@@ -30,6 +32,13 @@ export interface View {
   flashUntil: number
   flashStart: number
   flashColor: string
+  sweepStart: number
+  sweepUntil: number
+  sweepColor: string
+  hudTop: number
+  hudBottom: number
+  mapLeft: number
+  mapBottom: number
   originX: number
   originY: number
   numbersThisFrame: number
@@ -70,6 +79,13 @@ export function createView(ctx: CanvasRenderingContext2D, atlas: Atlas, image: C
     flashUntil: 0,
     flashStart: 0,
     flashColor: '#F4F5F7',
+    sweepStart: 0,
+    sweepUntil: 0,
+    sweepColor: '#F4F5F7',
+    hudTop: 0,
+    hudBottom: 1,
+    mapLeft: 0,
+    mapBottom: 0,
     originX: 0,
     originY: 0,
     numbersThisFrame: 0,

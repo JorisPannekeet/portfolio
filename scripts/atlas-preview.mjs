@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
+import { pathToFileURL } from 'node:url'
 import { buildAtlas } from '../src/game/render/atlas.ts'
 import { SPRITE_DEFS } from '../src/game/render/sheet.ts'
 
@@ -9,7 +10,12 @@ if (!out) {
   process.exit(1)
 }
 const scale = Math.max(1, Number(scaleArg) | 0)
-const atlas = buildAtlas(SPRITE_DEFS)
+const only = process.env.ONLY ? process.env.ONLY.split(',') : null
+const compareDefs = process.env.COMPARE
+  ? [{ name: 'compare', kind: 1, frames: Object.values(await import(pathToFileURL(process.env.COMPARE).href)) }]
+  : []
+const defs = [...compareDefs, ...SPRITE_DEFS]
+const atlas = buildAtlas(defs)
 const background = [0x15, 0x18, 0x1d, 255]
 
 function contactSheet() {
@@ -20,7 +26,8 @@ function contactSheet() {
   let y = gap
   let rowHeight = 0
   let usedWidth = 0
-  SPRITE_DEFS.forEach((def, sprite) => {
+  defs.forEach((def, sprite) => {
+    if (only && !only.includes(def.name) && def.name !== 'compare') return
     const variants = atlas.variants[sprite]
     const shown = def.kind === 1 ? [0, 2] : def.kind === 4 ? [0, 1] : [0]
     def.frames.forEach((_, frame) => {
@@ -116,4 +123,4 @@ writeFileSync(out, Buffer.concat([
   chunk('IDAT', deflateSync(raw)),
   chunk('IEND', Buffer.alloc(0)),
 ]))
-console.log(`${out}: ${W}x${H} (atlas ${atlas.width}x${atlas.height}, ${atlas.rw.length} frames, ${SPRITE_DEFS.length} sprites)`)
+console.log(`${out}: ${W}x${H} (atlas ${atlas.width}x${atlas.height}, ${atlas.rw.length} frames, ${defs.length} sprites)`)
