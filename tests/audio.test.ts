@@ -2,12 +2,16 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   BEACON_REWARD_HEAL,
+  BULLET_KIND_COUNT,
   ENEMY_BOSS_FIRST,
+  ENEMY_TANK,
+  EVENT_CAP,
   ENEMY_COUNT,
   EV_BEACON,
   EV_BLAST,
   EV_BOSS,
   EV_DEAD,
+  EV_ENEMY_FIRE,
   EV_EVOLVE,
   EV_HEAL,
   EV_HIT,
@@ -33,7 +37,7 @@ import {
 import { createState } from '../src/game/sim/state.ts'
 import type { State } from '../src/game/sim/state.ts'
 import { updateAudio } from '../src/game/audio/engine.hot.ts'
-import { createRuntime, HUM_LEVEL } from '../src/game/audio/runtime.ts'
+import { CHARGE_LEVEL, createRuntime, HUM_LEVEL } from '../src/game/audio/runtime.ts'
 import type { AudioRuntime } from '../src/game/audio/runtime.ts'
 import {
   BAR_SECONDS,
@@ -224,7 +228,7 @@ test('intensity masks silence the right voices and instruments', () => {
 })
 
 test('every sounding event type has sane sfx definitions', () => {
-  const sounding = [EV_HIT, EV_KILL, EV_SHOOT, EV_SLASH, EV_BLAST, EV_PULSE, EV_PICKUP, EV_HURT, EV_LEVEL, EV_EVOLVE, EV_BOSS, EV_HEAL, EV_BEACON, EV_ZONE]
+  const sounding = [EV_HIT, EV_KILL, EV_SHOOT, EV_SLASH, EV_BLAST, EV_PULSE, EV_PICKUP, EV_HURT, EV_LEVEL, EV_EVOLVE, EV_BOSS, EV_HEAL, EV_BEACON, EV_ZONE, EV_ENEMY_FIRE]
   for (const type of sounding) assert.ok(SFX_TABLE[type]!.length > 0, `event ${type} is silent`)
   assert.equal(SFX_TABLE[EV_DEAD]!.length, 0)
   assert.equal(SFX_TABLE[EV_WON]!.length, 0)
@@ -471,4 +475,100 @@ test('beacon hum rises with capture progress and stops when progress stalls', ()
   s.poiProgress[0] = 1
   frame(ctx, rt, s)
   assert.equal(rt.humOn, 0)
+})
+
+const signature = (def: (typeof SFX_TABLE)[number][number]) => `${def.wave}:${def.duty}:${def.startHz}:${def.endHz}`
+
+test('each hostile bullet kind has its own volley sound, unlike any player weapon', () => {
+  const variants = new Set<number>()
+  const sounds = new Set<string>()
+  const weapons = new Set(SFX_TABLE[EV_SHOOT]!.map(signature))
+  const hurt = SFX_TABLE[EV_HURT]![0]!.priority
+  const level = SFX_TABLE[EV_LEVEL]![0]!.priority
+  for (let kind = 0; kind < BULLET_KIND_COUNT; kind++) {
+    const variant = sfxVariant(EV_ENEMY_FIRE, ENEMY_BOSS_FIRST, kind)
+    variants.add(variant)
+    const def = SFX_TABLE[EV_ENEMY_FIRE]![variant]!
+    assert.ok(!weapons.has(signature(def)), `bullet kind ${kind} sounds like a player weapon`)
+    sounds.add(signature(def))
+    assert.ok(def.priority < hurt && def.priority < level, `bullet kind ${kind} could mask hurt or level-up`)
+    assert.ok(def.gapMs >= 60, `bullet kind ${kind} is not rate limited`)
+  }
+  assert.equal(variants.size, BULLET_KIND_COUNT)
+  assert.equal(sounds.size, BULLET_KIND_COUNT)
+  assert.equal(sfxVariant(EV_ENEMY_FIRE, ENEMY_TANK, 99), sfxVariant(EV_ENEMY_FIRE, ENEMY_TANK, 0))
+})
+
+function pushEvent(s: State, type: number, a: number, b: number): void {
+  const slot = s.evHead % EVENT_CAP
+  s.evType[slot] = type
+  s.evX[slot] = 0
+  s.evY[slot] = 0
+  s.evA[slot] = a
+  s.evB[slot] = b
+  s.evHead++
+}
+
+test('volley sounds hold their rate limit per bullet kind under a burst', () => {
+  const ctx = fakeContext()
+  const rt = createRuntime(ctx)
+  const s = createState()
+  updateAudio(rt, s)
+  const played = () => ctx.links.filter(link => link.to === rt.sfxBus).length
+  const before = played()
+  for (let n = 0; n < 40; n++) for (let kind = 0; kind < BULLET_KIND_COUNT; kind++) pushEvent(s, EV_ENEMY_FIRE, ENEMY_BOSS_FIRST, kind)
+  frame(ctx, rt, s)
+  assert.equal(played() - before, BULLET_KIND_COUNT)
+  const kind = 0
+  const gap = SFX_TABLE[EV_ENEMY_FIRE]![sfxVariant(EV_ENEMY_FIRE, ENEMY_BOSS_FIRST, kind)]!.gapMs
+  const start = played()
+  const seconds = 3
+  for (let i = 0; i < 60 * seconds; i++) {
+    pushEvent(s, EV_ENEMY_FIRE, ENEMY_BOSS_FIRST, kind)
+    pushEvent(s, EV_ENEMY_FIRE, ENEMY_BOSS_FIRST, kind)
+    frame(ctx, rt, s)
+  }
+  const plays = played() - start
+  assert.ok(plays <= Math.ceil((seconds * 1000) / gap) + 1, `${plays} orb chirps in ${seconds}s`)
+  assert.ok(plays >= Math.floor((seconds * 1000) / (gap + 1000 / 60)) - 1)
+  pushEvent(s, EV_HURT, 10, 0)
+  const hurtBefore = played()
+  frame(ctx, rt, s)
+  assert.equal(played() - hurtBefore, 1)
+})
+
+test('boss charge tone rises while a boss winds up and stops when it fires', () => {
+  const ctx = fakeContext()
+  const rt = createRuntime(ctx)
+  const s = createState()
+  s.enemyCount = 2
+  s.eType[0] = ENEMY_TANK
+  s.eType[1] = ENEMY_BOSS_FIRST + 1
+  updateAudio(rt, s)
+  s.eAim[0] = 30
+  frame(ctx, rt, s)
+  assert.equal(rt.chargeOn, 0)
+  s.eAim[1] = 40
+  frame(ctx, rt, s)
+  assert.equal(rt.chargeOn, 0, 'no scan without a living boss')
+  s.bossMaxHp = 2500
+  const pitches: number[] = []
+  for (let aim = 40; aim > 0; aim--) {
+    s.eAim[1] = aim
+    frame(ctx, rt, s)
+    pitches.push(lastTarget(rt.chargeOsc.frequency))
+  }
+  assert.equal(rt.chargeOn, 1)
+  assert.equal(lastTarget(rt.chargeGain.gain), CHARGE_LEVEL)
+  for (let i = 1; i < pitches.length; i++) assert.ok(pitches[i]! > pitches[i - 1]!)
+  s.eAim[1] = 0
+  frame(ctx, rt, s)
+  assert.equal(rt.chargeOn, 0)
+  assert.equal(lastTarget(rt.chargeGain.gain), 0)
+  s.eAim[1] = 20
+  frame(ctx, rt, s)
+  assert.equal(rt.chargeOn, 1)
+  s.bossMaxHp = 0
+  frame(ctx, rt, s)
+  assert.equal(rt.chargeOn, 0)
 })

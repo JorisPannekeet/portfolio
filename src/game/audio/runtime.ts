@@ -1,5 +1,5 @@
 import { MAX_POIS, PHASE_PLAYING } from '../sim/content.ts'
-import { SFX_VARIANT_STRIDE, SFX_VOICES } from './sfx.ts'
+import { SFX_TABLE, SFX_VARIANT_STRIDE, SFX_VOICES } from './sfx.ts'
 import { MIN_THEME_BARS, STEP_SECONDS } from './song.ts'
 import { BASS_WAVETABLE, DUTY_STEPS, lfsrSequence, stepWaveCoefficients, WAVE_HARMONICS } from './waves.ts'
 
@@ -14,6 +14,10 @@ export const HUM_LEVEL = 0.045
 export const HUM_LOW_HZ = 110
 export const HUM_OCTAVES = 2
 export const HUM_HOLD_FRAMES = 6
+export const CHARGE_LEVEL = 0.03
+export const CHARGE_LOW_HZ = 196
+export const CHARGE_OCTAVES = 1.5
+export const CHARGE_SPAN_TICKS = 60
 
 export interface AudioRuntime {
   readonly ctx: AudioContext
@@ -30,6 +34,8 @@ export interface AudioRuntime {
   readonly humOsc: OscillatorNode
   readonly humTone: BiquadFilterNode
   readonly humGain: GainNode
+  readonly chargeOsc: OscillatorNode
+  readonly chargeGain: GainNode
   readonly delaySend: GainNode
   readonly sfxBus: GainNode
   readonly pulseWaves: readonly PeriodicWave[]
@@ -54,6 +60,7 @@ export interface AudioRuntime {
 
   humOn: number
   humFrames: number
+  chargeOn: number
   readonly poiLast: Float32Array
 
   cursor: number
@@ -136,6 +143,13 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
   humOsc.frequency.value = HUM_LOW_HZ
   humOsc.connect(humTone)
   humOsc.start()
+  const chargeGain = gain(ctx, 0, sfxBus)
+  const chargeTone = filter(ctx, 'lowpass', CHARGE_LOW_HZ * 8, chargeGain)
+  const chargeOsc = ctx.createOscillator()
+  chargeOsc.type = 'square'
+  chargeOsc.frequency.value = CHARGE_LOW_HZ
+  chargeOsc.connect(chargeTone)
+  chargeOsc.start()
 
   const sfxEnv: (GainNode | null)[] = []
   for (let i = 0; i < SFX_VOICES; i++) sfxEnv.push(null)
@@ -155,6 +169,8 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
     humOsc,
     humTone,
     humGain,
+    chargeOsc,
+    chargeGain,
     delaySend,
     sfxBus,
     pulseWaves: DUTY_STEPS.map(steps => periodicWave(ctx, steps)),
@@ -177,13 +193,14 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
     tensionEnd: 0,
     humOn: 0,
     humFrames: HUM_HOLD_FRAMES,
+    chargeOn: 0,
     poiLast: new Float32Array(MAX_POIS),
     cursor: 0,
     lastTick: 0,
     lastPhase: PHASE_PLAYING,
     pickupStreak: 0,
     lastPickupTime: -1000,
-    lastPlayed: new Float64Array(SFX_VARIANT_STRIDE * SFX_VARIANT_STRIDE).fill(-1000),
+    lastPlayed: new Float64Array(SFX_TABLE.length * SFX_VARIANT_STRIDE).fill(-1000),
     sfxEnd: new Float64Array(SFX_VOICES),
     sfxPriority: new Uint8Array(SFX_VOICES),
     sfxEnv,

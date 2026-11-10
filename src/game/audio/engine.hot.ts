@@ -1,6 +1,6 @@
-import { EV_PICKUP, EVENT_CAP, PHASE_DEAD, PHASE_LEVEL_UP, PHASE_PLAYING, PHASE_WON, POI_BEACON } from '../sim/content.ts'
+import { ENEMY_BOSS_FIRST, EV_PICKUP, EVENT_CAP, PHASE_DEAD, PHASE_LEVEL_UP, PHASE_PLAYING, PHASE_WON, POI_BEACON } from '../sim/content.ts'
 import type { State } from '../sim/state.ts'
-import { HUM_HOLD_FRAMES, HUM_LEVEL, HUM_LOW_HZ, HUM_OCTAVES } from './runtime.ts'
+import { CHARGE_LEVEL, CHARGE_LOW_HZ, CHARGE_OCTAVES, CHARGE_SPAN_TICKS, HUM_HOLD_FRAMES, HUM_LEVEL, HUM_LOW_HZ, HUM_OCTAVES } from './runtime.ts'
 import type { AudioRuntime } from './runtime.ts'
 import { PICKUP_RATIOS, PICKUP_STREAK_SECONDS, SFX_TABLE, SFX_VARIANT_STRIDE, SFX_VOICES, sfxVariant } from './sfx.ts'
 import { DEFEAT_JINGLE, intensityForTick, levelAllows, MIN_THEME_BARS, STEP_SECONDS, THEME_TABLES, themeForZone, VICTORY_JINGLE } from './song.ts'
@@ -183,6 +183,29 @@ function updateHum(rt: AudioRuntime, s: State): void {
   rt.humGain.gain.setTargetAtTime(on === 1 ? HUM_LEVEL : 0, now, on === 1 ? HUM_GLIDE_SECONDS : HUM_RELEASE_SECONDS)
 }
 
+function soonestBossVolley(s: State): number {
+  if (s.bossMaxHp <= 0) return 0
+  let soonest = 0
+  for (let i = 0; i < s.enemyCount; i++) {
+    const aim = s.eAim[i]!
+    if (aim > 0 && s.eType[i]! >= ENEMY_BOSS_FIRST && (soonest === 0 || aim < soonest)) soonest = aim
+  }
+  return soonest
+}
+
+function updateCharge(rt: AudioRuntime, s: State): void {
+  const aim = s.phase === PHASE_PLAYING ? soonestBossVolley(s) : 0
+  const now = rt.ctx.currentTime
+  if (aim > 0) {
+    const left = aim < CHARGE_SPAN_TICKS ? aim / CHARGE_SPAN_TICKS : 1
+    rt.chargeOsc.frequency.setTargetAtTime(CHARGE_LOW_HZ * 2 ** ((1 - left) * CHARGE_OCTAVES), now, HUM_GLIDE_SECONDS)
+  }
+  const on = aim > 0 ? 1 : 0
+  if (on === rt.chargeOn) return
+  rt.chargeOn = on
+  rt.chargeGain.gain.setTargetAtTime(on === 1 ? CHARGE_LEVEL : 0, now, on === 1 ? HUM_GLIDE_SECONDS : HUM_RELEASE_SECONDS)
+}
+
 export function updateAudio(rt: AudioRuntime, s: State): void {
   if (rt.synced === 0) {
     rt.synced = 1
@@ -200,5 +223,6 @@ export function updateAudio(rt: AudioRuntime, s: State): void {
   if (boss !== rt.tensionOn) setTension(rt, boss === 1, rt.ctx.currentTime)
   consumeEvents(rt, s)
   updateHum(rt, s)
+  updateCharge(rt, s)
   pumpMusic(rt)
 }

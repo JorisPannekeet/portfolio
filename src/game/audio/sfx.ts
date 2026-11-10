@@ -1,4 +1,16 @@
-import { BEACON_REWARD_HEAL, ENEMY_BOSS_FIRST, EV_BEACON, EV_KILL, EV_PICKUP, EV_SHOOT, GEM_LARGE, GEM_REPAIR, WEAPON_COUNT } from '../sim/content.ts'
+import {
+  BEACON_REWARD_HEAL,
+  BULLET_KIND_COUNT,
+  ENEMY_BOSS_FIRST,
+  EV_BEACON,
+  EV_ENEMY_FIRE,
+  EV_KILL,
+  EV_PICKUP,
+  EV_SHOOT,
+  GEM_LARGE,
+  GEM_REPAIR,
+  WEAPON_COUNT,
+} from '../sim/content.ts'
 
 export const SFX_PULSE = 0
 export const SFX_WAVE = 1
@@ -56,6 +68,12 @@ const SHOOT_BY_WEAPON: readonly SfxDef[] = [
   sfx({ wave: SFX_WAVE, startHz: 160, endHz: 70, sustain: 0.04, decay: 0.16, level: 0.16, priority: 3, gapMs: 150 }),
 ]
 
+const ENEMY_FIRE_BY_BULLET: readonly SfxDef[] = [
+  sfx({ duty: 0, startHz: 880, endHz: 1320, sustain: 0.02, decay: 0.04, level: 0.07, arpRatio: 1.5, arpAt: 0.025, priority: 2, gapMs: 130 }),
+  sfx({ wave: SFX_SAW, startHz: 130, endHz: 38, attack: 0.001, sustain: 0.03, decay: 0.14, level: 0.17, priority: 4, gapMs: 170 }),
+  sfx({ wave: SFX_SAW, startHz: 3200, endHz: 1100, attack: 0.001, sustain: 0.004, decay: 0.03, level: 0.05, priority: 2, gapMs: 90 }),
+]
+
 export const SFX_TABLE: readonly (readonly SfxDef[])[] = [
   [sfx({ wave: SFX_NOISE_SHORT, startHz: 2000, endHz: 1200, sustain: 0.005, decay: 0.03, level: 0.09, priority: 1, gapMs: 40 })],
   [
@@ -83,6 +101,7 @@ export const SFX_TABLE: readonly (readonly SfxDef[])[] = [
     sfx({ wave: SFX_WAVE, startHz: 440, endHz: 660, attack: 0.01, sustain: 0.1, decay: 0.3, level: 0.13, arpRatio: 1.25, arpAt: 0.1, priority: 6, gapMs: 200 }),
   ],
   [sfx({ wave: SFX_WAVE, startHz: 70, endHz: 180, attack: 0.02, sustain: 0.06, decay: 0.22, level: 0.16, priority: 4, gapMs: 400 })],
+  ENEMY_FIRE_BY_BULLET,
 ]
 
 export const SFX_VARIANT_STRIDE = 16
@@ -95,6 +114,7 @@ export function sfxVariant(type: number, a: number, b: number): number {
   }
   if (type === EV_KILL) return a >= ENEMY_BOSS_FIRST ? 1 : 0
   if (type === EV_BEACON) return a === BEACON_REWARD_HEAL ? 1 : 0
+  if (type === EV_ENEMY_FIRE) return b >= 0 && b < BULLET_KIND_COUNT ? b | 0 : 0
   if (type === EV_PICKUP) return a <= GEM_LARGE ? 0 : a === GEM_REPAIR ? 1 : 2
   return 0
 }
