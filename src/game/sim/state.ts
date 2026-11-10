@@ -12,12 +12,22 @@ import {
   PASSIVE_COUNT,
   PHASE_PLAYING,
   PLAYER_MAX_HP,
+  PROP_GRID_CELL,
+  PROP_GRID_CELLS,
+  PROP_QUERY_PAD,
+  PROP_RADIUS,
+  START_X,
+  START_Y,
   WEAPON_COUNT,
   WEAPON_RIFLE,
   XP_BASE,
 } from './content.ts'
 import { seedRng } from './prng.hot.ts'
+import { placeProps } from './props.hot.ts'
 import { placePois, zoneAt } from './world.hot.ts'
+
+const PROP_CELL_SPAN = Math.floor((2 * (Math.max(...PROP_RADIUS) + PROP_QUERY_PAD)) / PROP_GRID_CELL) + 2
+const PROP_CELL_ITEMS = MAX_PROPS * PROP_CELL_SPAN * PROP_CELL_SPAN
 
 export interface State {
   seed: number
@@ -85,11 +95,14 @@ export interface State {
   poiX: Float32Array
   poiY: Float32Array
   poiProgress: Float32Array
+  poiGuard: Uint8Array
 
   propCount: number
   propKind: Uint8Array
   propX: Float32Array
   propY: Float32Array
+  propCellStart: Int32Array
+  propCellItems: Int32Array
   bossKills: number
 
   evHead: number
@@ -215,10 +228,13 @@ export function createState(): State {
     poiX: new Float32Array(MAX_POIS),
     poiY: new Float32Array(MAX_POIS),
     poiProgress: new Float32Array(MAX_POIS),
+    poiGuard: new Uint8Array(MAX_POIS),
     propCount: 0,
     propKind: new Uint8Array(MAX_PROPS),
     propX: new Float32Array(MAX_PROPS),
     propY: new Float32Array(MAX_PROPS),
+    propCellStart: new Int32Array(PROP_GRID_CELLS + 1),
+    propCellItems: new Int32Array(PROP_CELL_ITEMS),
     bossKills: 0,
     evHead: 0,
     evType: new Uint8Array(EVENT_CAP),
@@ -289,10 +305,10 @@ export function resetState(s: State, seed: number): void {
   s.seed = seed >>> 0
   s.tick = 0
   s.phase = PHASE_PLAYING
-  s.px = 0
-  s.py = 0
-  s.ppx = 0
-  s.ppy = 0
+  s.px = START_X
+  s.py = START_Y
+  s.ppx = START_X
+  s.ppy = START_Y
   s.faceX = 1
   s.aimX = 1
   s.aimY = 0
@@ -336,4 +352,5 @@ export function resetState(s: State, seed: number): void {
   s.gridOy = 0
   seedRng(s)
   placePois(s)
+  placeProps(s)
 }

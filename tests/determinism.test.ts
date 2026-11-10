@@ -32,17 +32,25 @@ test('different seeds diverge', () => {
   assert.notEqual(a[0], b[0])
 })
 
-test('the hash covers zone, point-of-interest and boss-kill state', () => {
+test('the hash covers zone, point-of-interest, prop and boss-kill state', () => {
   const s = createState()
   resetState(s, 3)
   const base = hashState(s)
+  const last = s.propCount - 1
   const mutations: [string, () => void, () => void][] = [
-    ['zone', () => (s.zone = 0), () => (s.zone = 3)],
+    ['zone', () => (s.zone = 3), () => (s.zone = 0)],
     ['bossKills', () => (s.bossKills = 1), () => (s.bossKills = 0)],
     ['poiX', () => (s.poiX[s.poiCount - 1] = s.poiX[s.poiCount - 1]! + 1), () => (s.poiX[s.poiCount - 1] = s.poiX[s.poiCount - 1]! - 1)],
     ['poiDone', () => (s.poiDone[0] = 1), () => (s.poiDone[0] = 0)],
     ['poiProgress', () => (s.poiProgress[1] = 0.5), () => (s.poiProgress[1] = 0)],
     ['poiCharge', () => (s.poiCharge[2] = 7), () => (s.poiCharge[2] = 0)],
+    ['poiGuard', () => (s.poiGuard[3] = 1), () => (s.poiGuard[3] = 0)],
+    ['propCount', () => s.propCount--, () => s.propCount++],
+    ['propKind', () => (s.propKind[last] = s.propKind[last]! + 1), () => (s.propKind[last] = s.propKind[last]! - 1)],
+    ['propX', () => (s.propX[last] = s.propX[last]! + 1), () => (s.propX[last] = s.propX[last]! - 1)],
+    ['propY', () => (s.propY[last] = s.propY[last]! + 1), () => (s.propY[last] = s.propY[last]! - 1)],
+    ['propCellStart', () => s.propCellStart[5]!++, () => s.propCellStart[5]!--],
+    ['propCellItems', () => s.propCellItems[0]!++, () => s.propCellItems[0]!--],
   ]
   for (const [name, change, undo] of mutations) {
     change()

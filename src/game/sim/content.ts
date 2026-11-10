@@ -1,6 +1,6 @@
 export const TICK_HZ = 60
 export const RUN_TICKS = 8 * 60 * TICK_HZ
-export const GAME_VERSION = 2
+export const GAME_VERSION = 3
 
 export const MAX_ENEMIES = 512
 export const MAX_SHOTS = 256
@@ -313,6 +313,28 @@ export const LAIR_MIN_ORIGIN_DIST = 450
 export const LAIR_MIN_BEACON_DIST = 200
 export const POI_PLACE_ATTEMPTS = 64
 
+export const PROP_MIN_GAP = 56
+export const PROP_BORDER_MARGIN = PROP_MIN_GAP / 2
+export const PROP_EDGE_MARGIN = PROP_MIN_GAP
+export const PROP_START_CLEARANCE = 150
+export const PROP_BEACON_GAP = 70
+export const PROP_LAIR_CLEARANCE = 150
+export const PROP_PLACE_ATTEMPTS = 96
+export const PROP_SCAN_STEP = 8
+export const PROP_GRID_CELL = 64
+export const PROP_GRID_DIM = (2 * WORLD_HALF) / PROP_GRID_CELL
+export const PROP_GRID_CELLS = PROP_GRID_DIM * PROP_GRID_DIM
+export const PROP_QUERY_PAD = ENEMY_MAX_RADIUS
+export const PROP_SLIDE_NUDGE = 0.5
+export const GEM_PROP_CLEARANCE = 3
+
+export const GUARD_SQUAD_SIZE: readonly number[] = [5, 8, 12, 16, 20, 25, 30, 36]
+export const GUARD_RING_MIN = 130
+export const GUARD_RING_SPREAD = 40
+export const GUARD_ELITE_MIN_SQUAD = 12
+export const GUARD_ELITE_EVERY = 6
+export const GUARD_ELITE_WAVE_LOOKAHEAD = 2
+
 export const GRID_CELL = 32
 export const GRID_DIM = 30
 export const GRID_CELLS = GRID_DIM * GRID_DIM
@@ -338,3 +360,11 @@ export const BOT_LAIR_MARGIN = 40
 export const BOT_LAIR_AVOID_WEIGHT = 0.5
 export const BOT_EDGE_BAND = 160
 export const BOT_EDGE_WEIGHT = 0.03
+export const BOT_BEACON_LEVEL: readonly number[] = [1, 4, 7, 10, 13, 16, 19, 22]
+export const BOT_BREAK_HP_FRACTION = 0.35
+export const BOT_BEACON_HOLD = 30
+export const BOT_BEACON_AVOID_MARGIN = 24
+export const BOT_BEACON_AVOID_WEIGHT = 0.5
+export const BOT_PROP_CLEARANCE = 14
+export const BOT_PROP_WEIGHT = 0.2
+export const BOT_DETOUR_CLEARANCE = 20

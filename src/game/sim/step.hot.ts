@@ -25,6 +25,7 @@ import { gridBuild } from './grid.hot.ts'
 import { applyChoice, openLevelUp, processLevels } from './levelup.hot.ts'
 import { updateGems } from './pickups.hot.ts'
 import { runBossClock, updatePois } from './pois.hot.ts'
+import { pushPlayerOutOfProps } from './props.hot.ts'
 import { updateShots } from './shots.hot.ts'
 import { playerRegenPerTick, playerSpeed } from './stats.hot.ts'
 import type { State } from './state.ts'
@@ -65,6 +66,7 @@ function movePlayer(s: State, input: number): void {
   const speed = playerSpeed(s)
   s.px = clampToWorld(s.px + ux * speed)
   s.py = clampToWorld(s.py + uy * speed)
+  pushPlayerOutOfProps(s)
   s.aimX = ux
   s.aimY = uy
   s.aimTurn = turn
