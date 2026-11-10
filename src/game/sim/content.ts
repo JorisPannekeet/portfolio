@@ -286,8 +286,10 @@ export const BEACON_CAPTURE_TICKS = 4 * TICK_HZ
 export const LAIR_RADIUS = 110
 export const BEACON_REWARD_HEAL = -1
 
-export const START_X = -160
-export const START_Y = -160
+export const START_X = 0
+export const START_Y = 0
+export const HUB_RADIUS = 72
+export const INTRO_TICKS = 96
 
 export const MAX_PROPS = 96
 export const PROP_SLOTS_PER_ZONE = 4
