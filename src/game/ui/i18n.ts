@@ -31,7 +31,7 @@ const en = {
   toastBeacon: 'BEACON CAPTURED',
   toastBeaconRepair: 'Armor restored',
   toastEntering: 'ENTERING',
-  zoneName: ['Hangar Deck', 'Scrapyard', 'Cryo Works', 'Foundry'],
+  zoneName: ['Hangar Deck', 'Dust Basin', 'Frost Shelf', 'Magma Works'],
   weaponName: [
     'Beam Rifle',
     'Plasma Blade',

@@ -6,6 +6,7 @@ import {
   MAX_ENEMIES,
   MAX_GEMS,
   MAX_POIS,
+  MAX_PROPS,
   MAX_SHOTS,
   NEAR_CAP,
   PASSIVE_COUNT,
@@ -84,6 +85,11 @@ export interface State {
   poiX: Float32Array
   poiY: Float32Array
   poiProgress: Float32Array
+
+  propCount: number
+  propKind: Uint8Array
+  propX: Float32Array
+  propY: Float32Array
   bossKills: number
 
   evHead: number
@@ -209,6 +215,10 @@ export function createState(): State {
     poiX: new Float32Array(MAX_POIS),
     poiY: new Float32Array(MAX_POIS),
     poiProgress: new Float32Array(MAX_POIS),
+    propCount: 0,
+    propKind: new Uint8Array(MAX_PROPS),
+    propX: new Float32Array(MAX_PROPS),
+    propY: new Float32Array(MAX_PROPS),
     bossKills: 0,
     evHead: 0,
     evType: new Uint8Array(EVENT_CAP),
@@ -304,6 +314,7 @@ export function resetState(s: State, seed: number): void {
   s.auraRadius = 0
   s.zone = zoneAt(s.px, s.py)
   s.poiCount = 0
+  s.propCount = 0
   s.bossKills = 0
   s.evHead = 0
   s.aimTurn = 0
