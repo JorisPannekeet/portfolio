@@ -131,7 +131,7 @@ export function Play() {
     const loop = loopRef.current
     if (!loop) return
     setLoopActive(loop, shell === 'playing')
-    loop.audio.setPaused(shell === 'paused' || shell === 'title')
+    loop.audio.setPaused(shell === 'paused')
   }, [shell])
 
   useEffect(() => {
