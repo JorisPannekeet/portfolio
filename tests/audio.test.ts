@@ -398,6 +398,7 @@ test('music changes theme with the zone only on bar lines and at most every two 
   walk.push([20, ZONE_FOUNDRY], [24, ZONE_CRYO], [25, ZONE_FOUNDRY], [25.4, ZONE_CRYO])
   const seen: number[] = [rt.theme]
   const noteStarts = ctx.starts.length
+  s.zone = ZONE_HANGAR
   updateAudio(rt, s)
   while (ctx.currentTime < 36) {
     let zone = ZONE_HANGAR
