@@ -1,0 +1,18 @@
+export const iconOrbitDrones = [
+  '.00000000000000.',
+  '0gggggggggggggg0',
+  '0g2222WWW22222g0',
+  '0g222WsRsW2222g0',
+  '0g2222WWW22222g0',
+  '0g225222222522g0',
+  '0g252220022252g0',
+  '0g25220RR02252g0',
+  '0g25220RR02252g0',
+  '0g252220022252g0',
+  '0g225222222522g0',
+  '0g2WWW2222WWW2g0',
+  '0gWsRsW22WsRsWg0',
+  '0g2WWW2222WWW2g0',
+  '0gggggggggggggg0',
+  '.00000000000000.',
+]
