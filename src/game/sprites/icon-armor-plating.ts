@@ -1,0 +1,18 @@
+export const iconArmorPlating = [
+  '.00000000000000.',
+  '0TTTTTTTTTTTTTT0',
+  '0T2WWWWWWWWWW2T0',
+  '0TWWwwwwwwwwWsT0',
+  '0TWw5wwwwww5wsT0',
+  '0TWwwwwwwwwwWsT0',
+  '0TWwwwwwwwwwWsT0',
+  '0TWwwwwwwwwwWsT0',
+  '0T2WwwwwwwwWs2T0',
+  '0T2WwwwwwwwWs2T0',
+  '0T22WwwwwwWs22T0',
+  '0T22Ww5ww5Ws22T0',
+  '0T222WwwwWs222T0',
+  '0T2222WWss2222T0',
+  '0TTTTTTTTTTTTTT0',
+  '.00000000000000.',
+]

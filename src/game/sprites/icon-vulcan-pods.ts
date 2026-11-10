@@ -1,0 +1,18 @@
+export const iconVulcanPods = [
+  '.00000000000000.',
+  '0gggggggggggggg0',
+  '0g222222222222g0',
+  '0g2WWWW2222222g0',
+  '0g2Wss555522A2g0',
+  '0g2Wss55552222g0',
+  '0g2WWWW222A22Ag0',
+  '0g222222222222g0',
+  '0g2WWWW2222222g0',
+  '0g2Wss555522A2g0',
+  '0g2Wss55552222g0',
+  '0g2WWWW222A22Ag0',
+  '0g222222222222g0',
+  '0g222222222222g0',
+  '0gggggggggggggg0',
+  '.00000000000000.',
+]

@@ -1,0 +1,93 @@
+import type { Atlas } from './atlas.ts'
+import { fontGlyphs } from '../sprites/font.ts'
+
+export const FX_CAP = 384
+export const FX_NONE = 0
+export const FX_SLASH = 1
+export const FX_BLAST = 2
+export const FX_PULSE = 3
+export const FX_SPARK = 4
+export const FX_DEBRIS = 5
+export const FX_NUMBER = 6
+export const FX_GLINT = 7
+export const FX_LEVEL_RING = 8
+
+export const DIGIT_BUFFER = 12
+
+export interface View {
+  ctx: CanvasRenderingContext2D
+  atlas: Atlas
+  image: CanvasImageSource
+  width: number
+  height: number
+  scale: number
+  clearRight: number
+  reducedMotion: boolean
+  rng: number
+  eventCursor: number
+  lastTick: number
+  shakeUntil: number
+  flashUntil: number
+  flashStart: number
+  flashColor: string
+  originX: number
+  originY: number
+  numbersThisFrame: number
+  sparksThisFrame: number
+  debrisThisFrame: number
+  activeNumbers: number
+  fxNext: number
+  fxKind: Uint8Array
+  fxFrame: Uint8Array
+  fxX: Float32Array
+  fxY: Float32Array
+  fxVx: Float32Array
+  fxVy: Float32Array
+  fxA: Float32Array
+  fxB: Float32Array
+  fxBirth: Float64Array
+  fxLife: Float32Array
+  glyphIndex: Int8Array
+  digits: Uint8Array
+}
+
+export function createView(ctx: CanvasRenderingContext2D, atlas: Atlas, image: CanvasImageSource): View {
+  const glyphIndex = new Int8Array(128).fill(-1)
+  for (let i = 0; i < fontGlyphs.length; i++) glyphIndex[fontGlyphs.charCodeAt(i)] = i
+  return {
+    ctx,
+    atlas,
+    image,
+    width: 1,
+    height: 1,
+    scale: 1,
+    clearRight: 40,
+    reducedMotion: false,
+    rng: 0x9e3779b9,
+    eventCursor: 0,
+    lastTick: 0,
+    shakeUntil: 0,
+    flashUntil: 0,
+    flashStart: 0,
+    flashColor: '#F4F5F7',
+    originX: 0,
+    originY: 0,
+    numbersThisFrame: 0,
+    sparksThisFrame: 0,
+    debrisThisFrame: 0,
+    activeNumbers: 0,
+    fxNext: 0,
+    fxKind: new Uint8Array(FX_CAP),
+    fxFrame: new Uint8Array(FX_CAP),
+    fxX: new Float32Array(FX_CAP),
+    fxY: new Float32Array(FX_CAP),
+    fxVx: new Float32Array(FX_CAP),
+    fxVy: new Float32Array(FX_CAP),
+    fxA: new Float32Array(FX_CAP),
+    fxB: new Float32Array(FX_CAP),
+    fxBirth: new Float64Array(FX_CAP),
+    fxLife: new Float32Array(FX_CAP),
+    glyphIndex,
+    digits: new Uint8Array(DIGIT_BUFFER),
+  }
+}
