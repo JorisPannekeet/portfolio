@@ -1,8 +1,20 @@
-import { ENEMY_BOSS_FIRST, EV_PICKUP, EVENT_CAP, PHASE_DEAD, PHASE_LEVEL_UP, PHASE_PLAYING, PHASE_WON, POI_BEACON } from '../sim/content.ts'
+import { ENEMY_BOSS_FIRST, EV_PICKUP, EVENT_CAP, INTRO_TICKS, PHASE_DEAD, PHASE_LEVEL_UP, PHASE_PLAYING, PHASE_WON, POI_BEACON } from '../sim/content.ts'
 import type { State } from '../sim/state.ts'
-import { CHARGE_LEVEL, CHARGE_LOW_HZ, CHARGE_OCTAVES, CHARGE_SPAN_TICKS, HUM_HOLD_FRAMES, HUM_LEVEL, HUM_LOW_HZ, HUM_OCTAVES } from './runtime.ts'
+import {
+  CHARGE_LEVEL,
+  CHARGE_LOW_HZ,
+  CHARGE_OCTAVES,
+  CHARGE_SPAN_TICKS,
+  HUM_HOLD_FRAMES,
+  HUM_LEVEL,
+  HUM_LOW_HZ,
+  HUM_OCTAVES,
+  LIFT_HUM_LEVEL,
+  LIFT_HUM_LOW_HZ,
+  LIFT_HUM_OCTAVES,
+} from './runtime.ts'
 import type { AudioRuntime } from './runtime.ts'
-import { PICKUP_RATIOS, PICKUP_STREAK_SECONDS, SFX_TABLE, SFX_VARIANT_STRIDE, SFX_VOICES, sfxVariant } from './sfx.ts'
+import { LIFT_CLANK, LIFT_HISS, LIFT_SFX, LIFT_THUD, PICKUP_RATIOS, PICKUP_STREAK_SECONDS, SFX_TABLE, SFX_VARIANT_STRIDE, SFX_VOICES, sfxVariant } from './sfx.ts'
 import { DEFEAT_JINGLE, intensityForTick, levelAllows, MIN_THEME_BARS, STEP_SECONDS, THEME_TABLES, themeForZone, VICTORY_JINGLE } from './song.ts'
 import { NOTE_EMPTY, NOTE_OFF, STEPS_PER_BAR, VOICE_COUNT } from './tracker.ts'
 import {
@@ -26,6 +38,9 @@ const START_DELAY_SECONDS = 0.05
 const SFX_LEAD_SECONDS = 0.005
 const HUM_GLIDE_SECONDS = 0.03
 const HUM_RELEASE_SECONDS = 0.08
+const LIFT_UNLOCK_TICK = 1
+const LIFT_CUE_WINDOW_TICKS = 12
+const LIFT_HISS_DELAY_SECONDS = 0.05
 
 function playRow(rt: AudioRuntime, row: number, time: number): void {
   const table = THEME_TABLES[rt.theme]!
@@ -74,7 +89,7 @@ function isTerminal(phase: number): boolean {
 function beginRun(rt: AudioRuntime, s: State, cursor: number): void {
   const now = rt.ctx.currentTime
   rt.cursor = cursor
-  rt.lastTick = s.tick
+  rt.lastTick = s.tick < INTRO_TICKS ? 0 : s.tick
   rt.lastPhase = s.phase
   rt.pickupStreak = 0
   rt.lastPlayed.fill(-1000)
@@ -91,11 +106,29 @@ function beginRun(rt: AudioRuntime, s: State, cursor: number): void {
   silenceTension(rt, now)
   for (let i = 0; i < rt.poiLast.length; i++) rt.poiLast[i] = s.poiProgress[i]!
   rt.humFrames = HUM_HOLD_FRAMES
-  if (isTerminal(s.phase)) {
+  rt.introHold = 0
+  if (isTerminal(s.phase) || s.tick < INTRO_TICKS) {
     rt.musicOn = 0
     stopMusic(rt, now)
+    if (!isTerminal(s.phase)) rt.introHold = 1
     return
   }
+  rt.musicOn = 1
+  startMusic(rt, now)
+}
+
+function releaseIntroHold(rt: AudioRuntime, s: State): void {
+  const now = rt.ctx.currentTime
+  rt.introHold = 0
+  if (isTerminal(s.phase)) return
+  rt.theme = themeForZone(s.zone)
+  rt.pendingTheme = rt.theme
+  rt.level = intensityForTick(s.tick)
+  rt.pendingLevel = rt.level
+  rt.bar = 0
+  rt.themeSince = -MIN_THEME_BARS
+  rt.row = 0
+  rt.nextStepTime = now + START_DELAY_SECONDS
   rt.musicOn = 1
   startMusic(rt, now)
 }
@@ -183,6 +216,35 @@ function updateHum(rt: AudioRuntime, s: State): void {
   rt.humGain.gain.setTargetAtTime(on === 1 ? HUM_LEVEL : 0, now, on === 1 ? HUM_GLIDE_SECONDS : HUM_RELEASE_SECONDS)
 }
 
+function playLiftCue(rt: AudioRuntime, cue: number, time: number): void {
+  const def = LIFT_SFX[cue]!
+  const voice = claimSfxVoice(rt, def.priority, time)
+  if (voice >= 0) playSfx(rt, voice, def, 1, time + SFX_LEAD_SECONDS)
+}
+
+function crossed(from: number, to: number, mark: number): boolean {
+  return from < mark && to >= mark && to < mark + LIFT_CUE_WINDOW_TICKS
+}
+
+function updateLift(rt: AudioRuntime, s: State, from: number): void {
+  const now = rt.ctx.currentTime
+  const tick = s.tick
+  if (crossed(from, tick, LIFT_UNLOCK_TICK)) playLiftCue(rt, LIFT_CLANK, now)
+  if (crossed(from, tick, INTRO_TICKS)) {
+    playLiftCue(rt, LIFT_THUD, now)
+    playLiftCue(rt, LIFT_HISS, now + LIFT_HISS_DELAY_SECONDS)
+  }
+  const on = s.phase === PHASE_PLAYING && tick > 0 && tick < INTRO_TICKS ? 1 : 0
+  if (on === 1) {
+    const hz = LIFT_HUM_LOW_HZ * 2 ** ((tick / INTRO_TICKS) * LIFT_HUM_OCTAVES)
+    rt.liftOsc.frequency.setTargetAtTime(hz, now, HUM_GLIDE_SECONDS)
+    rt.liftTone.frequency.setTargetAtTime(hz * 4, now, HUM_GLIDE_SECONDS)
+  }
+  if (on === rt.liftOn) return
+  rt.liftOn = on
+  rt.liftGain.gain.setTargetAtTime(on === 1 ? LIFT_HUM_LEVEL : 0, now, on === 1 ? HUM_GLIDE_SECONDS : HUM_RELEASE_SECONDS)
+}
+
 function soonestBossVolley(s: State): number {
   if (s.bossMaxHp <= 0) return 0
   let soonest = 0
@@ -213,8 +275,10 @@ export function updateAudio(rt: AudioRuntime, s: State): void {
   } else if (s.evHead < rt.cursor || s.tick < rt.lastTick || (isTerminal(rt.lastPhase) && !isTerminal(s.phase))) {
     beginRun(rt, s, 0)
   }
+  const from = rt.lastTick
   rt.lastTick = s.tick
   if (s.phase !== rt.lastPhase) changePhase(rt, s.phase)
+  if (rt.introHold === 1 && s.tick >= INTRO_TICKS) releaseIntroHold(rt, s)
   if (rt.musicOn === 1) {
     rt.pendingTheme = themeForZone(s.zone)
     rt.pendingLevel = intensityForTick(s.tick)
@@ -224,5 +288,6 @@ export function updateAudio(rt: AudioRuntime, s: State): void {
   consumeEvents(rt, s)
   updateHum(rt, s)
   updateCharge(rt, s)
+  updateLift(rt, s, from)
   pumpMusic(rt)
 }

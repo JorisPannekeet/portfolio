@@ -104,6 +104,16 @@ export const SFX_TABLE: readonly (readonly SfxDef[])[] = [
   ENEMY_FIRE_BY_BULLET,
 ]
 
+export const LIFT_CLANK = 0
+export const LIFT_THUD = 1
+export const LIFT_HISS = 2
+
+export const LIFT_SFX: readonly SfxDef[] = [
+  sfx({ wave: SFX_NOISE_SHORT, startHz: 1900, endHz: 520, attack: 0.001, sustain: 0.012, decay: 0.16, level: 0.24, priority: 6, gapMs: 0 }),
+  sfx({ wave: SFX_WAVE, startHz: 120, endHz: 36, attack: 0.001, sustain: 0.05, decay: 0.38, level: 0.34, priority: 8, gapMs: 0 }),
+  sfx({ wave: SFX_NOISE_LONG, startHz: 7000, endHz: 3200, attack: 0.01, sustain: 0.1, decay: 0.32, level: 0.11, priority: 5, gapMs: 0 }),
+]
+
 export const SFX_VARIANT_STRIDE = 16
 export const SFX_VOICES = 6
 

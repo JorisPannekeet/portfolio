@@ -18,6 +18,9 @@ export const CHARGE_LEVEL = 0.03
 export const CHARGE_LOW_HZ = 196
 export const CHARGE_OCTAVES = 1.5
 export const CHARGE_SPAN_TICKS = 60
+export const LIFT_HUM_LEVEL = 0.07
+export const LIFT_HUM_LOW_HZ = 46
+export const LIFT_HUM_OCTAVES = 1.2
 
 export interface AudioRuntime {
   readonly ctx: AudioContext
@@ -36,6 +39,9 @@ export interface AudioRuntime {
   readonly humGain: GainNode
   readonly chargeOsc: OscillatorNode
   readonly chargeGain: GainNode
+  readonly liftOsc: OscillatorNode
+  readonly liftTone: BiquadFilterNode
+  readonly liftGain: GainNode
   readonly delaySend: GainNode
   readonly sfxBus: GainNode
   readonly pulseWaves: readonly PeriodicWave[]
@@ -61,6 +67,8 @@ export interface AudioRuntime {
   humOn: number
   humFrames: number
   chargeOn: number
+  liftOn: number
+  introHold: number
   readonly poiLast: Float32Array
 
   cursor: number
@@ -150,6 +158,14 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
   chargeOsc.frequency.value = CHARGE_LOW_HZ
   chargeOsc.connect(chargeTone)
   chargeOsc.start()
+  const liftGain = gain(ctx, 0, sfxBus)
+  const liftTone = filter(ctx, 'lowpass', LIFT_HUM_LOW_HZ * 4, liftGain)
+  liftTone.Q.value = 6
+  const liftOsc = ctx.createOscillator()
+  liftOsc.type = 'sawtooth'
+  liftOsc.frequency.value = LIFT_HUM_LOW_HZ
+  liftOsc.connect(liftTone)
+  liftOsc.start()
 
   const sfxEnv: (GainNode | null)[] = []
   for (let i = 0; i < SFX_VOICES; i++) sfxEnv.push(null)
@@ -171,6 +187,9 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
     humGain,
     chargeOsc,
     chargeGain,
+    liftOsc,
+    liftTone,
+    liftGain,
     delaySend,
     sfxBus,
     pulseWaves: DUTY_STEPS.map(steps => periodicWave(ctx, steps)),
@@ -194,6 +213,8 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
     humOn: 0,
     humFrames: HUM_HOLD_FRAMES,
     chargeOn: 0,
+    liftOn: 0,
+    introHold: 0,
     poiLast: new Float32Array(MAX_POIS),
     cursor: 0,
     lastTick: 0,

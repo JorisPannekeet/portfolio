@@ -25,6 +25,7 @@ import {
   EV_WON,
   EV_ZONE,
   GEM_KIND_COUNT,
+  INTRO_TICKS,
   POI_BEACON,
   TICK_HZ,
   WEAPON_COUNT,
@@ -37,7 +38,7 @@ import {
 import { createState } from '../src/game/sim/state.ts'
 import type { State } from '../src/game/sim/state.ts'
 import { updateAudio } from '../src/game/audio/engine.hot.ts'
-import { CHARGE_LEVEL, createRuntime, HUM_LEVEL } from '../src/game/audio/runtime.ts'
+import { CHARGE_LEVEL, createRuntime, HUM_LEVEL, LIFT_HUM_LEVEL } from '../src/game/audio/runtime.ts'
 import type { AudioRuntime } from '../src/game/audio/runtime.ts'
 import {
   BAR_SECONDS,
@@ -62,7 +63,7 @@ import {
   VOICE_RANGE_LOW,
   ZONE_THEMES,
 } from '../src/game/audio/song.ts'
-import { SFX_TABLE, SFX_VARIANT_STRIDE, sfxVariant } from '../src/game/audio/sfx.ts'
+import { LIFT_CLANK, LIFT_HISS, LIFT_SFX, LIFT_THUD, SFX_TABLE, SFX_VARIANT_STRIDE, sfxVariant } from '../src/game/audio/sfx.ts'
 import {
   NOTE_EMPTY,
   NOTE_OFF,
@@ -403,6 +404,7 @@ test('music changes theme with the zone only on bar lines and at most every two 
   const seen: number[] = [rt.theme]
   const noteStarts = ctx.starts.length
   s.zone = ZONE_HANGAR
+  s.tick = INTRO_TICKS
   updateAudio(rt, s)
   while (ctx.currentTime < 36) {
     let zone = ZONE_HANGAR
@@ -513,6 +515,7 @@ test('volley sounds hold their rate limit per bullet kind under a burst', () => 
   const ctx = fakeContext()
   const rt = createRuntime(ctx)
   const s = createState()
+  s.tick = INTRO_TICKS
   updateAudio(rt, s)
   const played = () => ctx.links.filter(link => link.to === rt.sfxBus).length
   const before = played()
@@ -571,4 +574,106 @@ test('boss charge tone rises while a boss winds up and stops when it fires', () 
   s.bossMaxHp = 0
   frame(ctx, rt, s)
   assert.equal(rt.chargeOn, 0)
+})
+
+function musicNotes(ctx: FakeContext, rt: AudioRuntime): number {
+  const buses: object[] = [rt.chipBus, rt.noiseBus, rt.drumBus, ...rt.synthBus]
+  return ctx.links.filter(link => buses.includes(link.to)).length
+}
+
+function liftCuesPlaying(rt: AudioRuntime, now: number): number[] {
+  const cues: number[] = []
+  for (let slot = 0; slot < rt.sfxEnd.length; slot++) {
+    if (rt.sfxEnd[slot]! <= now) continue
+    const cue = LIFT_SFX.findIndex(def => def.priority === rt.sfxPriority[slot])
+    if (cue >= 0) cues.push(cue)
+  }
+  return cues.sort()
+}
+
+test('lift sound definitions are sane and distinct by priority', () => {
+  const priorities = new Set(LIFT_SFX.map(def => def.priority))
+  assert.equal(priorities.size, LIFT_SFX.length)
+  for (const def of LIFT_SFX) {
+    assert.ok(def.startHz >= 20 && def.endHz >= 20 && def.startHz <= 12000 && def.endHz <= 12000)
+    assert.ok(def.level > 0 && def.level <= 0.4 && def.decay > 0)
+    assert.ok(def.attack + def.sustain + def.decay <= 1)
+  }
+  assert.ok(LIFT_SFX[LIFT_THUD]!.startHz < 200, 'the lock thud is low')
+  assert.ok(LIFT_SFX[LIFT_THUD]!.priority > SFX_TABLE[EV_SHOOT]![0]!.priority)
+})
+
+test('a fresh run plays the unlock clank, a rising hum during the climb, one lock thud and hiss, then the theme', () => {
+  const ctx = fakeContext()
+  const rt = createRuntime(ctx)
+  const s = createState()
+  const wiring = musicNotes(ctx, rt)
+  updateAudio(rt, s)
+  const sfxLinks = () => ctx.links.filter(link => link.to === rt.sfxBus).length
+  let before = sfxLinks()
+  frame(ctx, rt, s)
+  assert.equal(s.tick, 1)
+  assert.equal(sfxLinks() - before, 1, 'one clank on the first tick')
+  assert.deepEqual(liftCuesPlaying(rt, ctx.currentTime), [LIFT_CLANK])
+  assert.equal(rt.liftOn, 1)
+  const pitches: number[] = [lastTarget(rt.liftOsc.frequency)]
+  before = sfxLinks()
+  while (s.tick < INTRO_TICKS - 1) {
+    frame(ctx, rt, s)
+    assert.equal(rt.liftOn, 1, `hum off at tick ${s.tick}`)
+    assert.equal(musicNotes(ctx, rt), wiring, `music before arrival at tick ${s.tick}`)
+    pitches.push(lastTarget(rt.liftOsc.frequency))
+  }
+  assert.equal(sfxLinks() - before, 0, 'nothing else plays during the climb')
+  assert.equal(lastTarget(rt.liftGain.gain), LIFT_HUM_LEVEL)
+  for (let i = 1; i < pitches.length; i++) assert.ok(pitches[i]! > pitches[i - 1]!, 'hum pitch rises')
+  const musicCalls = paramCalls(rt.musicBus.gain).length
+  before = sfxLinks()
+  frame(ctx, rt, s)
+  assert.equal(s.tick, INTRO_TICKS)
+  const arrival = ctx.currentTime
+  assert.equal(sfxLinks() - before, 2, 'thud and hiss on arrival')
+  assert.deepEqual(liftCuesPlaying(rt, arrival), [LIFT_THUD, LIFT_HISS].sort())
+  assert.equal(rt.liftOn, 0)
+  assert.equal(lastTarget(rt.liftGain.gain), 0)
+  const rise = paramCalls(rt.musicBus.gain).slice(musicCalls).filter(call => call.method === 'target' && call.value > 0)
+  assert.equal(rise.length, 1)
+  assert.ok(rise[0]!.time >= arrival)
+  before = sfxLinks()
+  for (let i = 0; i < 120; i++) frame(ctx, rt, s)
+  assert.equal(sfxLinks() - before, 0, 'the lock sound plays once')
+  assert.ok(musicNotes(ctx, rt) > wiring, 'theme plays after arrival')
+  assert.equal(rt.musicOn, 1)
+})
+
+test('the title screen at tick 0 stays silent', () => {
+  const ctx = fakeContext()
+  const rt = createRuntime(ctx)
+  const s = createState()
+  const starts = ctx.starts.length
+  const links = ctx.links.length
+  for (let i = 0; i < 600; i++) {
+    ctx.currentTime += 1 / 60
+    updateAudio(rt, s)
+  }
+  assert.equal(s.tick, 0)
+  assert.equal(ctx.starts.length, starts, 'no source started')
+  assert.equal(ctx.links.length, links, 'no node connected')
+  assert.equal(rt.liftOn, 0)
+  assert.ok(paramCalls(rt.musicBus.gain).every(call => call.value === 0))
+  assert.ok(paramCalls(rt.liftGain.gain).every(call => call.value === 0))
+})
+
+test('a run joined mid-intro skips the missed clank and still locks on arrival', () => {
+  const ctx = fakeContext()
+  const rt = createRuntime(ctx)
+  const s = createState()
+  s.tick = 40
+  updateAudio(rt, s)
+  const sfxLinks = () => ctx.links.filter(link => link.to === rt.sfxBus).length
+  const before = sfxLinks()
+  while (s.tick < INTRO_TICKS - 1) frame(ctx, rt, s)
+  assert.equal(sfxLinks() - before, 0)
+  frame(ctx, rt, s)
+  assert.equal(sfxLinks() - before, 2)
 })
