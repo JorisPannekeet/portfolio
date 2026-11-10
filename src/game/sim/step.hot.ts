@@ -5,6 +5,7 @@ import {
   EV_ZONE,
   INPUT_CHOICE,
   INPUT_DIRECTIONS,
+  INTRO_TICKS,
   MAX_DRONES,
   PHASE_DEAD,
   PHASE_LEVEL_UP,
@@ -20,11 +21,14 @@ import {
   removeDeadEnemies,
   runSpawns,
 } from './enemies.hot.ts'
+import { updateBullets } from './bullets.hot.ts'
 import { emit } from './events.hot.ts'
+import { runEnemyFire } from './fire.hot.ts'
 import { gridBuild } from './grid.hot.ts'
 import { applyChoice, openLevelUp, processLevels } from './levelup.hot.ts'
 import { updateGems } from './pickups.hot.ts'
 import { runBossClock, updatePois } from './pois.hot.ts'
+import { pushPlayerOutOfProps } from './props.hot.ts'
 import { updateShots } from './shots.hot.ts'
 import { playerRegenPerTick, playerSpeed } from './stats.hot.ts'
 import type { State } from './state.ts'
@@ -51,6 +55,11 @@ function snapshotPrevious(s: State): void {
     s.spx[i] = s.sx[i]!
     s.spy[i] = s.sy[i]!
   }
+  const b = s.bulletCount
+  for (let i = 0; i < b; i++) {
+    s.bpx[i] = s.bx[i]!
+    s.bpy[i] = s.by[i]!
+  }
   for (let i = 0; i < MAX_DRONES; i++) {
     s.dronePx[i] = s.droneX[i]!
     s.dronePy[i] = s.droneY[i]!
@@ -65,6 +74,7 @@ function movePlayer(s: State, input: number): void {
   const speed = playerSpeed(s)
   s.px = clampToWorld(s.px + ux * speed)
   s.py = clampToWorld(s.py + uy * speed)
+  pushPlayerOutOfProps(s)
   s.aimX = ux
   s.aimY = uy
   s.aimTurn = turn
@@ -98,6 +108,7 @@ function stepPlaying(s: State, input: number): void {
   s.killEvents = 0
   s.pickupEvents = 0
   snapshotPrevious(s)
+  if (s.tick < INTRO_TICKS) return
   movePlayer(s, input)
   updateZone(s)
   tickPlayer(s)
@@ -107,10 +118,12 @@ function stepPlaying(s: State, input: number): void {
   gridBuild(s)
   computeSeparation(s)
   moveEnemies(s)
+  runEnemyFire(s)
   gridBuild(s)
   runWeapons(s)
   updateShots(s)
   contactDamage(s)
+  updateBullets(s)
   removeDeadEnemies(s)
   mirrorBoss(s)
   if (s.hp <= 0) {

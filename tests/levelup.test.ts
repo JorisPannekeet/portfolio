@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import { surface } from './harness.ts'
 import assert from 'node:assert/strict'
 import {
   CHOICE_COUNT,
@@ -21,13 +22,13 @@ import {
 } from '../src/game/sim/content.ts'
 import { botInput } from '../src/game/sim/bot.hot.ts'
 import { hashState } from '../src/game/sim/hash.ts'
-import { createState, resetState, type State } from '../src/game/sim/state.ts'
+import { createState, type State } from '../src/game/sim/state.ts'
 import { xpForLevel } from '../src/game/sim/stats.hot.ts'
 import { step } from '../src/game/sim/step.hot.ts'
 
 function freshState(seed: number): State {
   const s = createState()
-  resetState(s, seed)
+  surface(s, seed)
   return s
 }
 

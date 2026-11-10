@@ -6,18 +6,67 @@ import {
   BEACON_REWARD_HEAL,
   BOSS_TICKS,
   ENEMY_BOSS_FIRST,
+  ENEMY_TANK,
   EV_BEACON,
   EV_BOSS,
+  ENEMY_HP,
   EV_HEAL,
+  GUARD_ELITE_EVERY,
+  GUARD_ELITE_MIN_SQUAD,
+  GUARD_ELITE_WAVE_LOOKAHEAD,
+  GUARD_RING_MIN,
+  GUARD_RING_SPREAD,
+  GUARD_SQUAD_SIZE,
+  GUARD_TANK_EVERY,
   LAIR_RADIUS,
+  POI_BEACON,
   POI_LAIR,
   REPAIR_HEAL,
   SPAWN_RADIUS,
+  WAVES,
 } from './content.ts'
-import { spawnEnemy } from './enemies.hot.ts'
+import { deployHostile, spawnEnemy, waveSegment } from './enemies.hot.ts'
 import { emit } from './events.hot.ts'
 import { rollBeaconPassive, takePassive } from './levelup.hot.ts'
+import { rngInt } from './prng.hot.ts'
 import type { State } from './state.ts'
+import { TRIG_SIZE, cosTurn, sinTurn } from './trig.ts'
+
+export function beaconsCaptured(s: State): number {
+  let n = 0
+  for (let i = 0; i < s.poiCount; i++) if (s.poiKind[i] === POI_BEACON && s.poiDone[i] !== 0) n++
+  return n
+}
+
+export function guardSquadSize(captured: number): number {
+  const last = GUARD_SQUAD_SIZE.length - 1
+  return GUARD_SQUAD_SIZE[captured < last ? captured : last]!
+}
+
+function toughestOf(pool: readonly number[]): number {
+  let best = pool[0]!
+  for (let k = 1; k < pool.length; k++) if (ENEMY_HP[pool[k]!]! > ENEMY_HP[best]!) best = pool[k]!
+  return best
+}
+
+function deployGuards(s: State, beacon: number): void {
+  s.poiGuard[beacon] = 1
+  const size = guardSquadSize(beaconsCaptured(s))
+  const segment = waveSegment(s)
+  const ahead = segment + GUARD_ELITE_WAVE_LOOKAHEAD
+  const pool = WAVES[segment]!.pool
+  const elite = toughestOf(WAVES[ahead < WAVES.length ? ahead : WAVES.length - 1]!.pool)
+  const elites = size >= GUARD_ELITE_MIN_SQUAD ? Math.floor(size / GUARD_ELITE_EVERY) : 0
+  const bx = s.poiX[beacon]!
+  const by = s.poiY[beacon]!
+  const phase = rngInt(s, TRIG_SIZE)
+  for (let k = 0; k < size; k++) {
+    const type = k < elites ? elite : k % GUARD_TANK_EVERY === GUARD_TANK_EVERY - 1 ? ENEMY_TANK : pool[rngInt(s, pool.length)]!
+    const turn = phase + Math.floor((k * TRIG_SIZE) / size)
+    const reach = GUARD_RING_MIN + rngInt(s, GUARD_RING_SPREAD + 1)
+    deployHostile(s, type, bx + cosTurn(turn) * reach, by + sinTurn(turn) * reach)
+  }
+}
 
 function releaseLair(s: State, lair: number, x: number, y: number): void {
   const zone = s.poiZone[lair]!
@@ -46,6 +95,7 @@ function captureBeacon(s: State, beacon: number): void {
 
 function chargeBeacon(s: State, beacon: number, inside: boolean): void {
   let charge = s.poiCharge[beacon]!
+  if (inside && s.poiGuard[beacon] === 0) deployGuards(s, beacon)
   if (inside) charge += BEACON_CHARGE_RISE
   else if (charge > BEACON_CHARGE_DRAIN) charge -= BEACON_CHARGE_DRAIN
   else charge = 0

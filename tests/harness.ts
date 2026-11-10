@@ -1,4 +1,4 @@
-import { PHASE_DEAD, PHASE_WON, RUN_TICKS, TICK_HZ } from '../src/game/sim/content.ts'
+import { INTRO_TICKS, PHASE_DEAD, PHASE_WON, RUN_TICKS, TICK_HZ } from '../src/game/sim/content.ts'
 import { botInput } from '../src/game/sim/bot.hot.ts'
 import { createState, resetState, type State } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
@@ -7,6 +7,11 @@ export const STEP_LIMIT = RUN_TICKS * 4
 
 export function isTerminal(s: State): boolean {
   return s.phase === PHASE_DEAD || s.phase === PHASE_WON
+}
+
+export function surface(s: State, seed: number): void {
+  resetState(s, seed)
+  s.tick = INTRO_TICKS
 }
 
 export interface BotRun {

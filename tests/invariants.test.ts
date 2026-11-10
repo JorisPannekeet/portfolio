@@ -1,12 +1,20 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  BOSS_COUNT,
+  BOSS_PATTERNS,
+  BULLET_KIND_COUNT,
+  BULLET_LIFE,
   CHOICE_COUNT,
+  DESPAWN_RADIUS,
+  ENEMY_BOSS_FIRST,
+  ENEMY_TANK,
   EVENT_CAP,
   EV_WON,
   INPUT_CHOICE,
   INPUT_DIRECTIONS,
   INPUT_IDLE,
+  MAX_BULLETS,
   MAX_DRONES,
   MAX_ENEMIES,
   MAX_GEMS,
@@ -48,6 +56,20 @@ function assertInvariants(s: State): void {
   assert.ok(s.shotCount >= 0 && s.shotCount <= MAX_SHOTS)
   assert.ok(s.gemCount >= 0 && s.gemCount <= MAX_GEMS)
   assert.ok(s.droneCount >= 0 && s.droneCount <= MAX_DRONES)
+  assert.ok(s.bulletCount >= 0 && s.bulletCount <= MAX_BULLETS)
+  for (let j = 0; j < s.bulletCount; j++) {
+    assert.ok(s.bKind[j]! < BULLET_KIND_COUNT)
+    assert.ok(s.bAge[j]! < BULLET_LIFE[s.bKind[j]!]!, 'a bullet outlived its life')
+    assert.ok(Math.hypot(s.bx[j]! - s.px, s.by[j]! - s.py) <= DESPAWN_RADIUS, 'a bullet outlived the despawn radius')
+  }
+  for (let i = 0; i < s.enemyCount; i++) {
+    if (s.eAim[i] === 0) continue
+    assert.ok(s.eType[i] === ENEMY_TANK || s.eType[i]! >= ENEMY_BOSS_FIRST, 'only tanks and bosses wind up')
+  }
+  for (let b = 0; b < BOSS_COUNT; b++) {
+    assert.ok(s.bossPhase[b]! < BOSS_PATTERNS[b]!.length)
+    assert.ok(s.bossVolley[b]! < BOSS_PATTERNS[b]![s.bossPhase[b]!]!.length)
+  }
   assert.ok(s.hp >= 0 && s.hp <= s.maxHp, `hp ${s.hp} outside 0..${s.maxHp}`)
   assert.ok(s.tick <= RUN_TICKS)
   assert.ok(s.choiceCount <= CHOICE_COUNT)

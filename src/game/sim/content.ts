@@ -1,6 +1,6 @@
 export const TICK_HZ = 60
 export const RUN_TICKS = 8 * 60 * TICK_HZ
-export const GAME_VERSION = 2
+export const GAME_VERSION = 4
 
 export const MAX_ENEMIES = 512
 export const MAX_SHOTS = 256
@@ -163,9 +163,9 @@ export const ENEMY_BOSS_FIRST = 6
 export const BOSS_COUNT = 4
 export const ENEMY_COUNT = 10
 
-export const ENEMY_HP: readonly number[] = [6, 14, 10, 45, 90, 60, 2500, 1900, 3000, 2700]
+export const ENEMY_HP: readonly number[] = [6, 14, 10, 45, 90, 60, 850, 700, 1000, 950]
 export const ENEMY_SPEED: readonly number[] = [0.75, 0.5, 1.1, 0.32, 0.42, 0.9, 0.4, 0.56, 0.3, 0.38]
-export const ENEMY_DAMAGE: readonly number[] = [4, 6, 6, 10, 11, 10, 25, 21, 24, 34]
+export const ENEMY_DAMAGE: readonly number[] = [3, 6, 6, 10, 11, 10, 18, 16, 18, 24]
 export const ENEMY_RADIUS: readonly number[] = [5, 7, 6, 9, 10, 8, 20, 18, 26, 22]
 export const ENEMY_GEM: readonly number[] = [0, 0, 0, 1, 1, 1, 2, 2, 2, 2]
 export const ENEMY_MAX_RADIUS = 26
@@ -173,8 +173,9 @@ export const ENEMY_HP_GROWTH_PER_MINUTE = 0.1
 export const ENEMY_DAMAGE_GROWTH_PER_MINUTE = 0.12
 export const ENEMY_SPEED_GROWTH_PER_MINUTE = 0.03
 export const ENEMY_SURGE_START_MINUTE = 5.84
-export const ENEMY_HP_SURGE_PER_MINUTE_SQUARED = 2.7
-export const ENEMY_DAMAGE_SURGE_PER_MINUTE_SQUARED = 1.15
+export const ENEMY_HP_SURGE_PER_MINUTE_SQUARED = 1.45
+export const ENEMY_DAMAGE_SURGE_PER_MINUTE_SQUARED = 2
+export const BOSS_SURGE_SCALE = 0
 export const ENEMY_FLASH_TICKS = 4
 export const ENEMY_STOP_FACTOR = 0.6
 export const SEPARATION_STRENGTH = 0.3
@@ -227,7 +228,7 @@ export const WAVES: readonly WaveDef[] = [
   { interval: 28, floor: 47, batch: 2, pool: [ENEMY_STRIKER, ENEMY_TANK, ENEMY_GRUNT, ENEMY_HEAVY] },
   { interval: 24, floor: 60, batch: 3, pool: [ENEMY_TANK, ENEMY_HEAVY, ENEMY_GRUNT, ENEMY_STRIKER] },
   { interval: 20, floor: 78, batch: 3, pool: [ENEMY_STRIKER, ENEMY_TANK, ENEMY_HEAVY, ENEMY_GRUNT] },
-  { interval: 12, floor: 285, batch: 10, pool: [ENEMY_ACE, ENEMY_HEAVY, ENEMY_TANK, ENEMY_STRIKER] },
+  { interval: 12, floor: 200, batch: 8, pool: [ENEMY_ACE, ENEMY_HEAVY, ENEMY_TANK, ENEMY_STRIKER] },
   { interval: 9, floor: 399, batch: 11, pool: [ENEMY_ACE, ENEMY_HEAVY, ENEMY_STRIKER] },
   { interval: 7, floor: 480, batch: 14, pool: [ENEMY_ACE, ENEMY_HEAVY, ENEMY_TANK] },
   { interval: 5, floor: 508, batch: 17, pool: [ENEMY_ACE, ENEMY_HEAVY, ENEMY_STRIKER, ENEMY_TANK] },
@@ -262,13 +263,6 @@ export const EV_WON = 13
 export const EV_BEACON = 14
 export const EV_ZONE = 15
 export const EV_ENEMY_FIRE = 16
-
-export const MAX_BULLETS = 512
-export const BULLET_ORB = 0
-export const BULLET_SHELL = 1
-export const BULLET_SHARD = 2
-export const BULLET_KIND_COUNT = 3
-export const BULLET_RADIUS: readonly number[] = [4, 3, 2]
 
 export const WORLD_HALF = 1024
 export const ZONE_COUNT = 4
@@ -323,6 +317,29 @@ export const LAIR_MIN_ORIGIN_DIST = 450
 export const LAIR_MIN_BEACON_DIST = 200
 export const POI_PLACE_ATTEMPTS = 64
 
+export const PROP_MIN_GAP = 56
+export const PROP_BORDER_MARGIN = PROP_MIN_GAP / 2
+export const PROP_EDGE_MARGIN = PROP_MIN_GAP
+export const PROP_START_CLEARANCE = 150
+export const PROP_BEACON_GAP = 70
+export const PROP_LAIR_CLEARANCE = 150
+export const PROP_PLACE_ATTEMPTS = 96
+export const PROP_SCAN_STEP = 8
+export const PROP_GRID_CELL = 64
+export const PROP_GRID_DIM = (2 * WORLD_HALF) / PROP_GRID_CELL
+export const PROP_GRID_CELLS = PROP_GRID_DIM * PROP_GRID_DIM
+export const PROP_QUERY_PAD = ENEMY_MAX_RADIUS
+export const PROP_SLIDE_NUDGE = 0.5
+export const GEM_PROP_CLEARANCE = 3
+
+export const GUARD_SQUAD_SIZE: readonly number[] = [8, 12, 16, 20, 25, 30, 36, 42]
+export const GUARD_RING_MIN = 130
+export const GUARD_RING_SPREAD = 40
+export const GUARD_ELITE_MIN_SQUAD = 8
+export const GUARD_ELITE_EVERY = 3
+export const GUARD_ELITE_WAVE_LOOKAHEAD = 2
+export const GUARD_TANK_EVERY = 4
+
 export const GRID_CELL = 32
 export const GRID_DIM = 30
 export const GRID_CELLS = GRID_DIM * GRID_DIM
@@ -339,12 +356,129 @@ export const BOT_GEM_RADIUS = 250
 export const BOT_GEM_WEIGHT = 0.02
 export const BOT_BOSS_WEIGHT = 4
 export const BOT_CORE_WEAPONS = 3
+export const BOT_PAIR_WEAPON_LEVEL = 3
 export const BOT_STEADY_BONUS = 0.004
 export const BOT_THREAT_LIMIT = 0.02
 export const BOT_SAFE_HP_FRACTION = 0.5
 export const BOT_GOAL_WEIGHT = 0.04
-export const BOT_LAIR_LEVEL = 8
+export const BOT_LAIR_LEVEL = 22
 export const BOT_LAIR_MARGIN = 40
 export const BOT_LAIR_AVOID_WEIGHT = 0.5
 export const BOT_EDGE_BAND = 160
 export const BOT_EDGE_WEIGHT = 0.03
+export const BOT_BEACON_LEVEL: readonly number[] = [2, 6, 10, 16, 21, 27, 33, 39]
+export const BOT_BREAK_HP_FRACTION = 0.35
+export const BOT_BEACON_HOLD = 30
+export const BOT_BEACON_AVOID_MARGIN = 24
+export const BOT_BEACON_AVOID_WEIGHT = 0.5
+export const BOT_PROP_CLEARANCE = 14
+export const BOT_PROP_WEIGHT = 0.2
+export const BOT_DETOUR_CLEARANCE = 20
+
+export const MAX_BULLETS = 512
+export const BULLET_ORB = 0
+export const BULLET_SHELL = 1
+export const BULLET_SHARD = 2
+export const BULLET_KIND_COUNT = 3
+export const BULLET_RADIUS: readonly number[] = [4, 3, 2]
+export const BULLET_DAMAGE: readonly number[] = [10, 8, 7]
+export const BULLET_LIFE: readonly number[] = [520, 170, 220]
+export const BULLET_DAMAGE_GROWTH_PER_MINUTE = 0.03
+
+export const DAMAGE_CONTACT = 0
+export const DAMAGE_SHELL = 1
+export const DAMAGE_BOSS_BULLET = 2
+export const DAMAGE_SOURCE_COUNT = 3
+
+export const TANK_FIRE_MIN_RANGE = 60
+export const TANK_FIRE_MAX_RANGE = 190
+export const TANK_WINDUP_TICKS = 30
+export const TANK_RELOAD_TICKS = 210
+export const TANK_FIRST_RELOAD_TICKS = 60
+export const TANK_RELOAD_SPREAD = 150
+export const TANK_SHELL_SPEED = 1.9
+export const MAX_TANKS_AIMING = 4
+
+export const VOLLEY_FAN = 0
+export const VOLLEY_RING = 1
+export const VOLLEY_WALL = 2
+export const AIM_PLAYER = 0
+export const AIM_SPIN = 1
+
+export interface BossVolley {
+  readonly kind: number
+  readonly shape: number
+  readonly count: number
+  readonly spread: number
+  readonly arms: number
+  readonly gaps: number
+  readonly gapWidth: number
+  readonly speed: number
+  readonly aim: number
+  readonly spin: number
+  readonly bursts: number
+  readonly interval: number
+  readonly rest: number
+  readonly windup: number
+}
+
+const SPIRAL = { kind: BULLET_ORB, shape: VOLLEY_FAN, count: 1, spread: 0, gaps: 0, gapWidth: 0, aim: AIM_SPIN }
+const AIMED_FAN = { shape: VOLLEY_FAN, arms: 1, gaps: 0, gapWidth: 0, aim: AIM_PLAYER, spin: 0 }
+const SPUN_RING = { kind: BULLET_ORB, shape: VOLLEY_RING, spread: 0, arms: 1, aim: AIM_SPIN }
+const WALL = { kind: BULLET_ORB, shape: VOLLEY_WALL, arms: 1, aim: AIM_PLAYER, spin: 0 }
+
+export const BOSS_PATTERNS: readonly (readonly (readonly BossVolley[])[])[] = [
+  [
+    [
+      { ...SPIRAL, arms: 2, speed: 0.85, spin: 36, bursts: 20, interval: 7, rest: 40, windup: 36 },
+      { ...AIMED_FAN, kind: BULLET_SHARD, count: 3, spread: 40, speed: 1.9, bursts: 2, interval: 18, rest: 50, windup: 30 },
+    ],
+    [
+      { ...SPIRAL, arms: 3, speed: 0.85, spin: 36, bursts: 24, interval: 6, rest: 30, windup: 30 },
+      { ...AIMED_FAN, kind: BULLET_SHARD, count: 3, spread: 40, speed: 1.9, bursts: 3, interval: 14, rest: 36, windup: 24 },
+    ],
+  ],
+  [
+    [
+      { ...AIMED_FAN, kind: BULLET_SHARD, count: 7, spread: 26, speed: 1.7, bursts: 2, interval: 30, rest: 40, windup: 36 },
+      { ...SPUN_RING, count: 24, gaps: 1, gapWidth: 3, speed: 0.9, spin: 160, bursts: 3, interval: 45, rest: 60, windup: 36 },
+    ],
+    [
+      { ...AIMED_FAN, kind: BULLET_SHARD, count: 7, spread: 26, speed: 1.7, bursts: 3, interval: 22, rest: 30, windup: 30 },
+      { ...SPUN_RING, count: 24, gaps: 1, gapWidth: 3, speed: 0.9, spin: 160, bursts: 4, interval: 36, rest: 45, windup: 30 },
+    ],
+  ],
+  [
+    [
+      { ...SPUN_RING, count: 24, gaps: 0, gapWidth: 0, speed: 0.7, spin: 21, bursts: 3, interval: 40, rest: 50, windup: 40 },
+      { ...WALL, count: 24, spread: 12, gaps: 2, gapWidth: 3, speed: 0.6, bursts: 1, interval: 60, rest: 80, windup: 40 },
+    ],
+    [
+      { ...SPUN_RING, count: 24, gaps: 0, gapWidth: 0, speed: 0.7, spin: 21, bursts: 4, interval: 32, rest: 40, windup: 32 },
+      { ...WALL, count: 24, spread: 12, gaps: 2, gapWidth: 3, speed: 0.6, bursts: 2, interval: 60, rest: 60, windup: 32 },
+    ],
+  ],
+  [
+    [
+      { ...AIMED_FAN, kind: BULLET_SHARD, count: 3, spread: 18, speed: 2.1, bursts: 4, interval: 10, rest: 40, windup: 30 },
+      { ...SPUN_RING, count: 32, gaps: 2, gapWidth: 2, speed: 1, spin: 100, bursts: 1, interval: 30, rest: 70, windup: 40 },
+    ],
+    [
+      { ...AIMED_FAN, kind: BULLET_SHARD, count: 5, spread: 18, speed: 2.1, bursts: 5, interval: 8, rest: 30, windup: 24 },
+      { ...SPUN_RING, count: 32, gaps: 2, gapWidth: 2, speed: 1, spin: 100, bursts: 2, interval: 30, rest: 50, windup: 32 },
+    ],
+  ],
+]
+export const BOSS_PHASE_COUNT = 2
+export const BOSS_PHASE_TWO_FRACTION = 0.5
+export const BOSS_FIRE_RANGE = 280
+export const BOSS_FIRST_VOLLEY_DELAY = 60
+
+export const BOT_BULLET_SCAN = 170
+export const BOT_BULLET_HORIZON = 30
+export const BOT_BULLET_MARGIN = 5
+export const BOT_BULLET_WEIGHT = 0.15
+export const BOT_COVER_RANGE = 300
+export const BOT_COVER_SEARCH = 140
+export const BOT_COVER_GAP = 6
+export const BOT_COVER_WEIGHT = 0.03

@@ -18,7 +18,9 @@ import {
   EV_KILL,
   EV_ZONE,
   INPUT_CHOICE,
+  HUB_RADIUS,
   INPUT_DIRECTIONS,
+  INTRO_TICKS,
   INPUT_IDLE,
   LAIR_MIN_BEACON_DIST,
   LAIR_MIN_ORIGIN_DIST,
@@ -39,14 +41,17 @@ import {
   POI_LAIR,
   REPAIR_HEAL,
   SPAWN_RADIUS,
+  START_X,
+  START_Y,
   WORLD_HALF,
   ZONE_COUNT,
+  ZONE_HANGAR,
 } from '../src/game/sim/content.ts'
 import { spawnEnemy } from '../src/game/sim/enemies.hot.ts'
 import { createState, resetState, type State } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
 import { zoneAt } from '../src/game/sim/world.hot.ts'
-import { isTerminal } from './harness.ts'
+import { isTerminal, surface } from './harness.ts'
 
 interface Event {
   readonly type: number
@@ -58,7 +63,7 @@ interface Event {
 
 function freshState(seed: number): State {
   const s = createState()
-  resetState(s, seed)
+  surface(s, seed)
   s.maxHp = 1e9
   s.hp = 1e9
   s.xpNext = 1e9
@@ -75,7 +80,7 @@ function eventsSince(s: State, head: number, type: number): Event[] {
 }
 
 function layout(seed: number, s = createState()): number[] {
-  resetState(s, seed)
+  surface(s, seed)
   const rows: number[] = [s.poiCount]
   for (let i = 0; i < s.poiCount; i++) rows.push(s.poiKind[i]!, s.poiZone[i]!, s.poiX[i]!, s.poiY[i]!, s.poiDone[i]!, s.poiProgress[i]!)
   return rows
@@ -109,7 +114,7 @@ test('the same seed lays out the same points of interest and other seeds differ'
   assert.deepEqual(layout(5), layout(5))
   assert.notDeepEqual(layout(5), layout(6))
   const used = createState()
-  resetState(used, 99)
+  surface(used, 99)
   placePlayer(used, used.poiX[0]!, used.poiY[0]!)
   for (let t = 0; t < BEACON_CAPTURE_TICKS; t++) step(used, INPUT_IDLE)
   assert.equal(used.poiDone[0], 1)
@@ -119,7 +124,7 @@ test('the same seed lays out the same points of interest and other seeds differ'
 test('every layout over 200 seeds obeys the placement rules', () => {
   for (let seed = 1; seed <= 200; seed++) {
     const s = createState()
-    resetState(s, seed)
+    surface(s, seed)
     assert.equal(s.poiCount, MAX_POIS)
     const beacons = poisOf(s, POI_BEACON)
     const lairs = poisOf(s, POI_LAIR)
@@ -141,13 +146,13 @@ test('every layout over 200 seeds obeys the placement rules', () => {
       assert.equal(s.poiProgress[i], 0)
     }
     for (const b of beacons) {
-      assert.ok(distance(s.poiX[b]!, s.poiY[b]!, 0, 0) >= BEACON_MIN_ORIGIN_DIST, `seed ${seed} beacon ${b} near the origin`)
+      assert.ok(distance(s.poiX[b]!, s.poiY[b]!, START_X, START_Y) >= BEACON_MIN_ORIGIN_DIST, `seed ${seed} beacon ${b} near the start`)
       for (const c of beacons) {
         if (c > b) assert.ok(distance(s.poiX[b]!, s.poiY[b]!, s.poiX[c]!, s.poiY[c]!) >= BEACON_MIN_SPACING, `seed ${seed} beacons ${b} and ${c} too close`)
       }
     }
     for (const l of lairs) {
-      assert.ok(distance(s.poiX[l]!, s.poiY[l]!, 0, 0) >= LAIR_MIN_ORIGIN_DIST, `seed ${seed} lair ${l} near the origin`)
+      assert.ok(distance(s.poiX[l]!, s.poiY[l]!, START_X, START_Y) >= LAIR_MIN_ORIGIN_DIST, `seed ${seed} lair ${l} near the start`)
       for (const b of beacons) {
         assert.ok(distance(s.poiX[l]!, s.poiY[l]!, s.poiX[b]!, s.poiY[b]!) >= LAIR_MIN_BEACON_DIST, `seed ${seed} lair ${l} near beacon ${b}`)
       }
@@ -161,6 +166,7 @@ test('standing on a beacon captures it in exactly the capture time and grants on
   placePlayer(s, s.poiX[beacon]!, s.poiY[beacon]!)
   const before = Array.from(s.passiveLevel)
   const head = s.evHead
+  const startTick = s.tick
   for (let t = 1; t < BEACON_CAPTURE_TICKS; t++) {
     step(s, INPUT_IDLE)
     assert.equal(s.poiDone[beacon], 0, `captured early at tick ${t}`)
@@ -168,7 +174,7 @@ test('standing on a beacon captures it in exactly the capture time and grants on
   }
   assert.deepEqual(Array.from(s.passiveLevel), before)
   step(s, INPUT_IDLE)
-  assert.equal(s.tick, BEACON_CAPTURE_TICKS)
+  assert.equal(s.tick - startTick, BEACON_CAPTURE_TICKS)
   assert.equal(s.poiDone[beacon], 1)
   assert.equal(s.poiProgress[beacon], 1)
   const events = eventsSince(s, head, EV_BEACON)
@@ -258,9 +264,10 @@ for (let zone = 0; zone < ZONE_COUNT; zone++) {
     placePlayer(s, lx + side * (LAIR_RADIUS + 3), ly)
     const towardLair = side < 0 ? 1 : 1 + INPUT_DIRECTIONS / 2
     const head = s.evHead
+    const startTick = s.tick
     while (s.poiDone[lair] === 0) {
       step(s, towardLair)
-      assert.ok(s.tick < 10, 'the lair should trigger within a few steps')
+      assert.ok(s.tick - startTick < 10, 'the lair should trigger within a few steps')
     }
     assert.ok(distance(s.px, s.py, lx, ly) <= LAIR_RADIUS)
     const events = eventsSince(s, head, EV_BOSS)
@@ -299,7 +306,7 @@ test('killing a boss opens a level-up pick without gaining a level', () => {
   const s = freshState(31)
   s.xpNext = 5
   const type = ENEMY_BOSS_FIRST + 1
-  const boss = spawnEnemy(s, type, 120, 0)
+  const boss = spawnEnemy(s, type, s.px + 120, s.py)
   s.eHp[boss] = 1
   const head = s.evHead
   while (eventsSince(s, head, EV_KILL).every(e => e.a !== type)) {
@@ -317,13 +324,13 @@ test('killing a boss opens a level-up pick without gaining a level', () => {
 
 test('the boss bar follows the nearest of several bosses', () => {
   const s = freshState(32)
-  const far = spawnEnemy(s, ENEMY_BOSS_FIRST + 2, 250, 0)
-  const near = spawnEnemy(s, ENEMY_BOSS_FIRST + 1, -60, 0)
+  const far = spawnEnemy(s, ENEMY_BOSS_FIRST + 2, s.px + 250, s.py)
+  const near = spawnEnemy(s, ENEMY_BOSS_FIRST + 1, s.px - 60, s.py)
   step(s, INPUT_IDLE)
   assert.notEqual(s.eMaxHp[far], s.eMaxHp[near])
   assert.equal(s.bossMaxHp, s.eMaxHp[near])
-  s.ex[near] = -400
-  s.ey[near] = 0
+  s.ex[near] = s.px - 400
+  s.ey[near] = s.py
   step(s, INPUT_IDLE)
   assert.equal(s.bossMaxHp, s.eMaxHp[far])
 })
@@ -346,17 +353,32 @@ test('despawn and full-pool recycling never relocate a boss', () => {
   }
 })
 
+test('a fresh run starts in the Hangar Deck at the start position', () => {
+  const s = freshState(41)
+  assert.equal(s.px, START_X)
+  assert.equal(s.py, START_Y)
+  assert.equal(s.zone, ZONE_HANGAR)
+  assert.equal(zoneAt(START_X, START_Y), ZONE_HANGAR)
+})
+
 test('EV_ZONE fires on crossing a zone border and not on the first tick', () => {
   const s = freshState(40)
-  assert.equal(s.zone, zoneAt(0, 0))
+  assert.equal(s.zone, ZONE_HANGAR)
   const head = s.evHead
   step(s, INPUT_IDLE)
   assert.equal(eventsSince(s, head, EV_ZONE).length, 0)
+  const outsideHub = HUB_RADIUS + 30
   const left = 1 + INPUT_DIRECTIONS / 2
   const up = 1 + (3 * INPUT_DIRECTIONS) / 4
-  const down = 1 + INPUT_DIRECTIONS / 4
-  for (const input of [left, up, 1, 1, down, down]) step(s, input)
-  assert.deepEqual(eventsSince(s, head, EV_ZONE).map(e => e.a), [2, 0, 1, 3])
+  placePlayer(s, 0.5, outsideHub)
+  step(s, left)
+  placePlayer(s, -outsideHub, 0.5)
+  step(s, up)
+  placePlayer(s, -0.5, -outsideHub)
+  step(s, 1)
+  placePlayer(s, HUB_RADIUS + 0.5, -0.5)
+  step(s, left)
+  assert.deepEqual(eventsSince(s, head, EV_ZONE).map(e => e.a), [2, 0, 1, ZONE_HANGAR])
   assert.equal(s.zone, zoneAt(s.px, s.py))
 })
 
@@ -394,3 +416,20 @@ for (const seed of [7, 8, 9]) {
     assert.ok(touched > 100, 'the run should press against the world edge')
   })
 }
+
+test('the lift intro freezes the world: no movement, no spawns, no damage until the plate locks', () => {
+  const s = createState()
+  resetState(s, 3)
+  for (let t = 1; t < INTRO_TICKS; t++) {
+    step(s, 1)
+    assert.equal(s.tick, t)
+    assert.equal(s.px, START_X)
+    assert.equal(s.py, START_Y)
+    assert.equal(s.enemyCount, 0)
+    assert.equal(s.shotCount, 0)
+    assert.equal(s.hp, s.maxHp)
+  }
+  step(s, 1)
+  assert.equal(s.tick, INTRO_TICKS)
+  assert.ok(s.px > START_X, 'the unit moves on the first tick after the lift locks')
+})

@@ -1,20 +1,24 @@
 import type { State } from './state.ts'
 
-type CountField = 'enemyCount' | 'shotCount' | 'gemCount' | 'droneCount' | 'poiCount'
+type CountField = 'enemyCount' | 'shotCount' | 'bulletCount' | 'gemCount' | 'droneCount' | 'poiCount' | 'propCount'
 
-const ENEMY_FIELDS = ['eType', 'ex', 'ey', 'epx', 'epy', 'eHp', 'eFlash', 'eId', 'eMaxHp', 'eKx', 'eKy', 'eDroneReady']
+const ENEMY_FIELDS = ['eType', 'ex', 'ey', 'epx', 'epy', 'eHp', 'eFlash', 'eId', 'eMaxHp', 'eKx', 'eKy', 'eDroneReady', 'eAim', 'eReload']
 const SHOT_FIELDS = ['sKind', 'sx', 'sy', 'spx', 'spy', 'svx', 'svy', 'sLife', 'sDamage', 'sPierce', 'sRadius', 'sArea', 'sLastHit', 'sTarget', 'sTargetId', 'sSeq']
+const BULLET_FIELDS = ['bKind', 'bx', 'by', 'bpx', 'bpy', 'bvx', 'bvy', 'bAge']
 const GEM_FIELDS = ['gKind', 'gx', 'gy', 'gValue', 'gAttract']
 const DRONE_FIELDS = ['droneX', 'droneY', 'dronePx', 'dronePy']
-const POI_FIELDS = ['poiKind', 'poiZone', 'poiDone', 'poiX', 'poiY', 'poiProgress', 'poiCharge']
+const POI_FIELDS = ['poiKind', 'poiZone', 'poiDone', 'poiX', 'poiY', 'poiProgress', 'poiCharge', 'poiGuard']
+const PROP_FIELDS = ['propKind', 'propX', 'propY']
 const SCRATCH_PREFIX = 'scratch'
 
 const countFieldOf: Record<string, CountField> = {}
 for (const key of ENEMY_FIELDS) countFieldOf[key] = 'enemyCount'
 for (const key of SHOT_FIELDS) countFieldOf[key] = 'shotCount'
+for (const key of BULLET_FIELDS) countFieldOf[key] = 'bulletCount'
 for (const key of GEM_FIELDS) countFieldOf[key] = 'gemCount'
 for (const key of DRONE_FIELDS) countFieldOf[key] = 'droneCount'
 for (const key of POI_FIELDS) countFieldOf[key] = 'poiCount'
+for (const key of PROP_FIELDS) countFieldOf[key] = 'propCount'
 
 const FNV_OFFSET = 0x811c9dc5
 const FNV_PRIME = 0x01000193

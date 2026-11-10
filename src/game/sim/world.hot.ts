@@ -2,6 +2,7 @@ import {
   BEACONS_PER_ZONE,
   BEACON_MIN_ORIGIN_DIST,
   BEACON_MIN_SPACING,
+  HUB_RADIUS,
   LAIR_MIN_BEACON_DIST,
   LAIR_MIN_ORIGIN_DIST,
   POI_BEACON,
@@ -9,8 +10,11 @@ import {
   POI_EDGE_MARGIN,
   POI_LAIR,
   POI_PLACE_ATTEMPTS,
+  START_X,
+  START_Y,
   WORLD_HALF,
   ZONE_COUNT,
+  ZONE_HANGAR,
 } from './content.ts'
 import { rngInt } from './prng.hot.ts'
 import type { State } from './state.ts'
@@ -18,6 +22,7 @@ import type { State } from './state.ts'
 const POI_SPAN = WORLD_HALF - POI_EDGE_MARGIN - POI_BORDER_MARGIN
 
 export function zoneAt(x: number, y: number): number {
+  if (x * x + y * y < HUB_RADIUS * HUB_RADIUS) return ZONE_HANGAR
   return (x >= 0 ? 1 : 0) + (y >= 0 ? 2 : 0)
 }
 
@@ -36,7 +41,9 @@ function farFromKind(s: State, x: number, y: number, kind: number, gap: number):
 }
 
 function candidateValid(s: State, x: number, y: number, kind: number): boolean {
-  const d2 = x * x + y * y
+  const sx = x - START_X
+  const sy = y - START_Y
+  const d2 = sx * sx + sy * sy
   if (kind === POI_LAIR) {
     return d2 >= LAIR_MIN_ORIGIN_DIST * LAIR_MIN_ORIGIN_DIST && farFromKind(s, x, y, POI_BEACON, LAIR_MIN_BEACON_DIST)
   }

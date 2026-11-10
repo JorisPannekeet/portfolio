@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import { surface } from './harness.ts'
 import assert from 'node:assert/strict'
 import {
   CHOICE_EVOLVE,
@@ -15,12 +16,12 @@ import {
   WEAPON_MAX_LEVEL,
   WEAPON_RIFLE,
 } from '../src/game/sim/content.ts'
-import { createState, resetState, type State } from '../src/game/sim/state.ts'
+import { createState, type State } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
 
 function readyToEvolve(w: number, seed: number): State {
   const s = createState()
-  resetState(s, seed)
+  surface(s, seed)
   s.weaponLevel[w] = WEAPON_MAX_LEVEL
   s.passiveLevel[WEAPONS[w]!.pairedPassive] = 1
   s.xp = s.xpNext
@@ -47,7 +48,7 @@ for (let w = 0; w < WEAPON_COUNT; w++) {
 
 test('no evolution is offered without the paired passive', () => {
   const s = createState()
-  resetState(s, 50)
+  surface(s, 50)
   s.weaponLevel[WEAPON_RIFLE] = WEAPON_MAX_LEVEL
   for (let round = 0; round < 10; round++) {
     s.xp = s.xpNext

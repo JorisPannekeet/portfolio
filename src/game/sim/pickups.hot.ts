@@ -14,6 +14,7 @@ import {
   REPAIR_HEAL,
 } from './content.ts'
 import { emit } from './events.hot.ts'
+import { pushGemOutOfProps } from './props.hot.ts'
 import { pickupRadius, xpMultiplier } from './stats.hot.ts'
 import type { State } from './state.ts'
 import { clampToWorld } from './world.hot.ts'
@@ -41,6 +42,7 @@ function writeGem(s: State, i: number, kind: number, value: number, x: number, y
   s.gx[i] = clampToWorld(x)
   s.gy[i] = clampToWorld(y)
   s.gAttract[i] = 0
+  pushGemOutOfProps(s, i)
 }
 
 export function dropGem(s: State, kind: number, value: number, x: number, y: number): void {
