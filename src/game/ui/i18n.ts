@@ -17,6 +17,7 @@ const en = {
   tagNew: 'NEW',
   tagLevel: 'LV',
   tagEvolve: 'EVOLUTION',
+  tagRepair: 'SUPPLY',
   dead: 'UNIT LOST',
   won: 'EXTRACTION COMPLETE',
   statTime: 'TIME',
