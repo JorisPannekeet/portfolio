@@ -5,6 +5,7 @@ import {
   MAX_DRONES,
   MAX_ENEMIES,
   MAX_GEMS,
+  MAX_POIS,
   MAX_SHOTS,
   NEAR_CAP,
   PASSIVE_COUNT,
@@ -73,6 +74,15 @@ export interface State {
   dronePx: Float32Array
   dronePy: Float32Array
   auraRadius: number
+
+  zone: number
+  poiCount: number
+  poiKind: Uint8Array
+  poiZone: Uint8Array
+  poiDone: Uint8Array
+  poiX: Float32Array
+  poiY: Float32Array
+  poiProgress: Float32Array
 
   evHead: number
   evType: Uint8Array
@@ -188,6 +198,14 @@ export function createState(): State {
     dronePx: new Float32Array(MAX_DRONES),
     dronePy: new Float32Array(MAX_DRONES),
     auraRadius: 0,
+    zone: 0,
+    poiCount: 0,
+    poiKind: new Uint8Array(MAX_POIS),
+    poiZone: new Uint8Array(MAX_POIS),
+    poiDone: new Uint8Array(MAX_POIS),
+    poiX: new Float32Array(MAX_POIS),
+    poiY: new Float32Array(MAX_POIS),
+    poiProgress: new Float32Array(MAX_POIS),
     evHead: 0,
     evType: new Uint8Array(EVENT_CAP),
     evX: new Float32Array(EVENT_CAP),
@@ -279,6 +297,8 @@ export function resetState(s: State, seed: number): void {
   s.gemCount = 0
   s.droneCount = 0
   s.auraRadius = 0
+  s.zone = 0
+  s.poiCount = 0
   s.evHead = 0
   s.aimTurn = 0
   s.pendingLevels = 0

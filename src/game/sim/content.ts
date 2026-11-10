@@ -159,13 +159,15 @@ export const ENEMY_TANK = 3
 export const ENEMY_HEAVY = 4
 export const ENEMY_ACE = 5
 export const ENEMY_DREADNOUGHT = 6
-export const ENEMY_COUNT = 7
+export const ENEMY_BOSS_FIRST = 6
+export const BOSS_COUNT = 4
+export const ENEMY_COUNT = 10
 
-export const ENEMY_HP: readonly number[] = [6, 14, 10, 45, 90, 60, 2500]
-export const ENEMY_SPEED: readonly number[] = [0.75, 0.5, 1.1, 0.32, 0.42, 0.9, 0.4]
-export const ENEMY_DAMAGE: readonly number[] = [4, 6, 6, 10, 11, 10, 25]
-export const ENEMY_RADIUS: readonly number[] = [5, 7, 6, 9, 10, 8, 20]
-export const ENEMY_GEM: readonly number[] = [0, 0, 0, 1, 1, 1, 2]
+export const ENEMY_HP: readonly number[] = [6, 14, 10, 45, 90, 60, 2500, 2500, 2500, 2500]
+export const ENEMY_SPEED: readonly number[] = [0.75, 0.5, 1.1, 0.32, 0.42, 0.9, 0.4, 0.4, 0.4, 0.4]
+export const ENEMY_DAMAGE: readonly number[] = [4, 6, 6, 10, 11, 10, 25, 25, 25, 25]
+export const ENEMY_RADIUS: readonly number[] = [5, 7, 6, 9, 10, 8, 20, 20, 20, 20]
+export const ENEMY_GEM: readonly number[] = [0, 0, 0, 1, 1, 1, 2, 2, 2, 2]
 export const ENEMY_MAX_RADIUS = 20
 export const ENEMY_HP_GROWTH_PER_MINUTE = 0.064
 export const ENEMY_DAMAGE_GROWTH_PER_MINUTE = 0.064
@@ -257,6 +259,24 @@ export const EV_BOSS = 10
 export const EV_HEAL = 11
 export const EV_DEAD = 12
 export const EV_WON = 13
+export const EV_BEACON = 14
+export const EV_ZONE = 15
+
+export const WORLD_HALF = 1024
+export const ZONE_COUNT = 4
+export const ZONE_HANGAR = 0
+export const ZONE_SCRAPYARD = 1
+export const ZONE_CRYO = 2
+export const ZONE_FOUNDRY = 3
+
+export const POI_BEACON = 0
+export const POI_LAIR = 1
+export const BEACONS_PER_ZONE = 2
+export const MAX_POIS = ZONE_COUNT * (BEACONS_PER_ZONE + 1)
+export const BEACON_RADIUS = 26
+export const BEACON_CAPTURE_TICKS = 4 * TICK_HZ
+export const LAIR_RADIUS = 110
+export const BEACON_REWARD_HEAL = -1
 
 export const GRID_CELL = 32
 export const GRID_DIM = 30
