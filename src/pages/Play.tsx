@@ -13,6 +13,7 @@ import '@/game/ui/play.css'
 
 const MUTE_STORAGE_KEY = 'last-sortie-muted'
 const INPUT_LOG_SLACK = 4096
+const CARD_ARM_MS = 350
 
 function readMuted(): boolean {
   try {
@@ -50,6 +51,7 @@ export function Play() {
   const knobRef = useRef<HTMLDivElement | null>(null)
   const primaryRef = useRef<HTMLButtonElement | null>(null)
   const loopRef = useRef<Loop | null>(null)
+  const cardsShownAt = useRef(0)
 
   useEffect(() => {
     const previousTitle = document.title
@@ -91,6 +93,7 @@ export function Play() {
           const next: Card[] = []
           for (let i = 0; i < s.choiceCount; i++) next.push(describeChoice(s.choices[i]!, s.weaponLevel, s.passiveLevel, strings))
           setCards(next)
+          cardsShownAt.current = performance.now()
         } else if (event !== null) {
           setStats({ time: formatClock(s.tick, TICK_HZ), kills: s.kills, level: s.level, seed: s.seed })
         }
@@ -164,7 +167,7 @@ export function Play() {
 
   const pick = useCallback((index: number) => {
     const loop = loopRef.current
-    if (!loop || index >= cards.length) return
+    if (!loop || index >= cards.length || performance.now() - cardsShownAt.current < CARD_ARM_MS) return
     loop.pendingInput = INPUT_CHOICE + index
     dispatch('pick')
   }, [cards.length])
