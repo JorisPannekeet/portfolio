@@ -7,15 +7,18 @@ import { drawFrame } from '../src/game/render/renderer.hot.ts'
 import { createState, resetState } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
 import { botInput } from '../src/game/sim/bot.hot.ts'
+import { PROP_RADIUS, PROPS_PER_SLOT, PROP_SLOTS_PER_ZONE, START_X, START_Y, WORLD_HALF, ZONE_COUNT } from '../src/game/sim/content.ts'
 
 const [out, seedArg = '1', tickArg = '3600', widthArg = '195', heightArg = '422', upscaleArg = '3'] = process.argv.slice(2)
 if (!out) {
   console.error('usage: node scripts/frame-preview.mjs <out.png> [seed=1] [tick=3600] [width=195] [height=422] [upscale=3]')
-  console.error('env: SCALE=<css px per game px> PLAYER=<x,y> FAKE=1 (beacons, lairs, bosses) EVENTS=beacon,zone,heal FX_AGE=<ticks>')
+  console.error('env: SCALE=<css px per game px> PLAYER=<x,y> MOVING=1 FAKE=1|far|props EVENTS=beacon,zone,heal FX_AGE=<ticks>')
+  console.error('     NEAR=<kind:dx:dy;...> props placed relative to the player, SHRINK=<n> renders n times larger and averages down')
   process.exit(1)
 }
-const width = Number(widthArg)
-const height = Number(heightArg)
+const shrink = Math.max(1, Number(process.env.SHRINK ?? 1) | 0)
+const width = Number(widthArg) * shrink
+const height = Number(heightArg) * shrink
 const upscale = Number(upscaleArg)
 const targetTick = Number(tickArg)
 const FRAMES_DRAWN_BEFORE_CAPTURE = 90
@@ -23,8 +26,10 @@ const FRAMES_DRAWN_BEFORE_CAPTURE = 90
 const atlas = buildAtlas(SPRITE_DEFS)
 const frame = new Uint8Array(width * height * 4)
 
+let clip = [0, 0, width, height]
+
 function blend(x, y, r, g, b, a) {
-  if (x < 0 || y < 0 || x >= width || y >= height || a <= 0) return
+  if (x < clip[0] || y < clip[1] || x >= clip[2] || y >= clip[3] || a <= 0) return
   const i = (y * width + x) * 4
   frame[i] += (r - frame[i]) * a
   frame[i + 1] += (g - frame[i + 1]) * a
@@ -52,7 +57,31 @@ const softwareContext = {
   lineWidth: 1,
   imageSmoothingEnabled: false,
   path: [],
+  stack: [],
+  save() {
+    this.stack.push({ clip, fillStyle: this.fillStyle, strokeStyle: this.strokeStyle, globalAlpha: this.globalAlpha, lineWidth: this.lineWidth })
+  },
+  restore() {
+    const top = this.stack.pop()
+    if (!top) return
+    clip = top.clip
+    this.fillStyle = top.fillStyle
+    this.strokeStyle = top.strokeStyle
+    this.globalAlpha = top.globalAlpha
+    this.lineWidth = top.lineWidth
+  },
+  rect(x, y, w, h) {
+    this.path.push({ rect: [Math.round(x), Math.round(y), Math.round(x + w), Math.round(y + h)] })
+  },
+  clip() {
+    for (const e of this.path) {
+      if (!e.rect) continue
+      clip = [Math.max(clip[0], e.rect[0]), Math.max(clip[1], e.rect[1]), Math.min(clip[2], e.rect[2]), Math.min(clip[3], e.rect[3])]
+    }
+  },
+  draws: 0,
   drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh) {
+    this.draws++
     const kx = dw / sw
     const ky = dh / sh
     for (let y = 0; y < dh; y++) {
@@ -81,6 +110,7 @@ const softwareContext = {
     const [r, g, b] = rgb(this.strokeStyle)
     const seen = new Set()
     for (const e of this.path) {
+      if (e.rect) continue
       for (let w = 0; w < Math.max(1, Math.round(this.lineWidth)); w++) {
         const grow = w - (Math.max(1, Math.round(this.lineWidth)) - 1) / 2
         const rx = e.rx + grow
@@ -100,6 +130,7 @@ const softwareContext = {
   fill() {
     const [r, g, b] = rgb(this.fillStyle)
     for (const e of this.path) {
+      if (e.rect) continue
       for (let py = Math.floor(e.y - e.ry); py <= Math.ceil(e.y + e.ry); py++) {
         for (let px = Math.floor(e.x - e.rx); px <= Math.ceil(e.x + e.rx); px++) {
           const nx = (px - e.x) / e.rx
@@ -126,23 +157,96 @@ while (s.tick < targetTick && s.phase < 2 && guard++ < targetTick * 4) {
 }
 if (process.env.PLAYER) {
   const [x, y] = process.env.PLAYER.split(',').map(Number)
+  const dx = x - s.px
+  const dy = y - s.py
   s.px = s.ppx = x
   s.py = s.ppy = y
   if (process.env.MOVING) s.ppx = x - 1
   s.zone = (x >= 0 ? 1 : 0) + (y >= 0 ? 2 : 0)
   for (let i = 0; i < s.enemyCount; i++) {
-    s.ex[i] += x
-    s.ey[i] += y
-    s.epx[i] += x
-    s.epy[i] += y
+    s.ex[i] += dx
+    s.ey[i] += dy
+    s.epx[i] += dx
+    s.epy[i] += dy
   }
   for (let i = 0; i < s.gemCount; i++) {
-    s.gx[i] += x
-    s.gy[i] += y
+    s.gx[i] += dx
+    s.gy[i] += dy
+  }
+  for (let i = 0; i < s.droneCount; i++) {
+    s.droneX[i] += dx
+    s.droneY[i] += dy
+    s.dronePx[i] += dx
+    s.dronePy[i] += dy
   }
   s.shotCount = 0
 }
+function fakeRandom(seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = Math.imul(a ^ (a >>> 15), a | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function addProp(kind, x, y) {
+  const i = s.propCount++
+  s.propKind[i] = kind
+  s.propX[i] = x
+  s.propY[i] = y
+}
+
+function fakeProps(seed) {
+  const random = fakeRandom(seed)
+  const placed = []
+  const margin = 96
+  const free = (x, y, r) => placed.every(p => Math.hypot(p.x - x, p.y - y) >= p.r + r + 20) && Math.hypot(x - START_X, y - START_Y) > r + 50
+  for (let zone = 0; zone < ZONE_COUNT; zone++) {
+    const zx = zone & 1 ? 0 : -WORLD_HALF
+    const zy = zone & 2 ? 0 : -WORLD_HALF
+    const inside = (x, y, r) => x - r > zx + margin && x + r < zx + WORLD_HALF - margin && y - r > zy + margin && y + r < zy + WORLD_HALF - margin
+    const clusters = []
+    while (clusters.length < 3) {
+      const x = zx + margin + 60 + random() * (WORLD_HALF - 2 * margin - 120)
+      const y = zy + margin + 60 + random() * (WORLD_HALF - 2 * margin - 120)
+      if (clusters.every(c => Math.hypot(c.x - x, c.y - y) > 300)) clusters.push({ x, y })
+    }
+    console.error(`zone ${zone} clusters ${clusters.map(c => `${Math.round(c.x)},${Math.round(c.y)}`).join('  ')}`)
+    const reach = [[0, 30], [50, 110], [40, 160], [30, 230]]
+    for (let slot = 0; slot < PROP_SLOTS_PER_ZONE; slot++) {
+      const kind = zone * PROP_SLOTS_PER_ZONE + slot
+      const r = PROP_RADIUS[kind]
+      for (let n = 0; n < PROPS_PER_SLOT[slot]; n++) {
+        for (let attempt = 0; attempt < 400; attempt++) {
+          const c = clusters[(n + slot + attempt) % clusters.length]
+          const d = reach[slot][0] + random() * (reach[slot][1] - reach[slot][0])
+          const angle = random() * Math.PI * 2
+          const x = Math.round(c.x + Math.cos(angle) * d)
+          const y = Math.round(c.y + Math.sin(angle) * d)
+          if (!inside(x, y, r) || !free(x, y, r)) continue
+          placed.push({ x, y, r })
+          addProp(kind, x, y)
+          if (slot < 2) console.error(`  prop ${kind} at ${x},${y}`)
+          break
+        }
+      }
+    }
+  }
+}
+
 if (process.env.FAKE) {
+  s.propCount = 0
+  fakeProps(Number(seedArg))
+}
+if (process.env.NEAR) {
+  for (const entry of process.env.NEAR.split(';')) {
+    const [kind, dx, dy] = entry.split(':').map(Number)
+    addProp(kind, s.px + dx, s.py + dy)
+  }
+}
+if (process.env.FAKE && process.env.FAKE !== 'props') {
   const beacons = [
     [-58, -78, 0.35, 0], [62, -70, 0.8, 0], [-60, 74, 1, 1], [64, 70, 0, 0],
     [300, -420, 0, 0], [-520, 340, 0, 0], [600, 500, 0, 0],
@@ -195,7 +299,9 @@ if (process.env.EVENTS) {
   drawFrame(view, s, 1)
   s.tick += Number(process.env.FX_AGE ?? 10)
 }
+softwareContext.draws = 0
 drawFrame(view, s, 1)
+const drawCalls = softwareContext.draws
 
 function chunk(type, data) {
   const body = Buffer.concat([Buffer.from(type), data])
@@ -206,14 +312,26 @@ function chunk(type, data) {
   return Buffer.concat([length, body, sum])
 }
 
-const W = width * upscale
-const H = height * upscale
+const outW = width / shrink
+const outH = height / shrink
+const small = new Uint8Array(outW * outH * 4)
+for (let y = 0; y < outH; y++) {
+  for (let x = 0; x < outW; x++) {
+    for (let c = 0; c < 3; c++) {
+      let sum = 0
+      for (let j = 0; j < shrink; j++) for (let i = 0; i < shrink; i++) sum += frame[((y * shrink + j) * width + x * shrink + i) * 4 + c]
+      small[(y * outW + x) * 4 + c] = Math.round(sum / (shrink * shrink))
+    }
+  }
+}
+const W = outW * upscale
+const H = outH * upscale
 const raw = Buffer.alloc((W * 4 + 1) * H)
 for (let y = 0; y < H; y++) {
   const row = y * (W * 4 + 1)
   for (let x = 0; x < W; x++) {
-    const from = (Math.floor(y / upscale) * width + Math.floor(x / upscale)) * 4
-    raw.set(frame.subarray(from, from + 3), row + 1 + x * 4)
+    const from = (Math.floor(y / upscale) * outW + Math.floor(x / upscale)) * 4
+    raw.set(small.subarray(from, from + 3), row + 1 + x * 4)
     raw[row + 4 + x * 4] = 255
   }
 }
@@ -222,4 +340,4 @@ header.writeUInt32BE(W, 0)
 header.writeUInt32BE(H, 4)
 header.set([8, 6, 0, 0, 0], 8)
 writeFileSync(out, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]))
-console.log(`${out}: ${W}x${H} seed ${s.seed} tick ${s.tick} phase ${s.phase} level ${s.level} kills ${s.kills} hostiles ${s.enemyCount} shots ${s.shotCount} gems ${s.gemCount} hp ${Math.round(s.hp)}/${s.maxHp}`)
+console.log(`${out}: ${W}x${H} seed ${s.seed} tick ${s.tick} phase ${s.phase} level ${s.level} kills ${s.kills} hostiles ${s.enemyCount} shots ${s.shotCount} gems ${s.gemCount} hp ${Math.round(s.hp)}/${s.maxHp} props ${s.propCount} drawImage ${drawCalls}`)
