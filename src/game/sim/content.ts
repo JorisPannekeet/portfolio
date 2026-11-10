@@ -261,6 +261,14 @@ export const EV_DEAD = 12
 export const EV_WON = 13
 export const EV_BEACON = 14
 export const EV_ZONE = 15
+export const EV_ENEMY_FIRE = 16
+
+export const MAX_BULLETS = 512
+export const BULLET_ORB = 0
+export const BULLET_SHELL = 1
+export const BULLET_SHARD = 2
+export const BULLET_KIND_COUNT = 3
+export const BULLET_RADIUS: readonly number[] = [4, 3, 2]
 
 export const WORLD_HALF = 1024
 export const ZONE_COUNT = 4

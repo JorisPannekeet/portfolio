@@ -5,6 +5,7 @@ import {
   MAX_DRONES,
   MAX_ENEMIES,
   MAX_GEMS,
+  MAX_BULLETS,
   MAX_POIS,
   MAX_PROPS,
   MAX_SHOTS,
@@ -85,6 +86,16 @@ export interface State {
   poiX: Float32Array
   poiY: Float32Array
   poiProgress: Float32Array
+
+  bulletCount: number
+  bKind: Uint8Array
+  bx: Float32Array
+  by: Float32Array
+  bpx: Float32Array
+  bpy: Float32Array
+  bvx: Float32Array
+  bvy: Float32Array
+  eAim: Uint8Array
 
   propCount: number
   propKind: Uint8Array
@@ -215,6 +226,15 @@ export function createState(): State {
     poiX: new Float32Array(MAX_POIS),
     poiY: new Float32Array(MAX_POIS),
     poiProgress: new Float32Array(MAX_POIS),
+    bulletCount: 0,
+    bKind: new Uint8Array(MAX_BULLETS),
+    bx: new Float32Array(MAX_BULLETS),
+    by: new Float32Array(MAX_BULLETS),
+    bpx: new Float32Array(MAX_BULLETS),
+    bpy: new Float32Array(MAX_BULLETS),
+    bvx: new Float32Array(MAX_BULLETS),
+    bvy: new Float32Array(MAX_BULLETS),
+    eAim: new Uint8Array(MAX_ENEMIES),
     propCount: 0,
     propKind: new Uint8Array(MAX_PROPS),
     propX: new Float32Array(MAX_PROPS),
@@ -315,6 +335,7 @@ export function resetState(s: State, seed: number): void {
   s.zone = zoneAt(s.px, s.py)
   s.poiCount = 0
   s.propCount = 0
+  s.bulletCount = 0
   s.bossKills = 0
   s.evHead = 0
   s.aimTurn = 0
