@@ -1,15 +1,13 @@
 import {
   BOSS_KNOCKBACK_SCALE,
   BOSS_SPAWN_RESERVE,
-  BOSS_TICKS,
   DESPAWN_RADIUS,
-  ENEMY_DREADNOUGHT,
+  ENEMY_BOSS_FIRST,
   ENEMY_FLASH_TICKS,
   ENEMY_GEM,
   ENEMY_RADIUS,
   ENEMY_SPEED,
   ENEMY_STOP_FACTOR,
-  EV_BOSS,
   EV_HIT,
   EV_HURT,
   EV_KILL,
@@ -41,7 +39,7 @@ import type { State } from './state.ts'
 import { TRIG_SIZE, cosTurn, sinTurn } from './trig.ts'
 
 export function spawnEnemy(s: State, type: number, x: number, y: number): number {
-  const limit = type === ENEMY_DREADNOUGHT ? MAX_ENEMIES : MAX_ENEMIES - BOSS_SPAWN_RESERVE
+  const limit = type >= ENEMY_BOSS_FIRST ? MAX_ENEMIES : MAX_ENEMIES - BOSS_SPAWN_RESERVE
   if (s.enemyCount >= limit) return -1
   const i = s.enemyCount++
   const hp = enemyMaxHp(s, type)
@@ -69,7 +67,7 @@ function recycleFarthest(s: State): void {
   let far = -1
   let farD2 = RECYCLE_MIN_RADIUS * RECYCLE_MIN_RADIUS
   for (let i = 0; i < s.enemyCount; i++) {
-    if (s.eType[i] === ENEMY_DREADNOUGHT || s.eHp[i]! <= 0) continue
+    if (s.eType[i]! >= ENEMY_BOSS_FIRST || s.eHp[i]! <= 0) continue
     const dx = s.ex[i]! - s.px
     const dy = s.ey[i]! - s.py
     const d2 = dx * dx + dy * dy
@@ -109,11 +107,6 @@ export function runSpawns(s: State): void {
   }
   for (let k = 0; k < SPAWN_TOPUP_PER_TICK && s.enemyCount < wave.floor; k++) {
     if (spawnFromWave(s, segment) < 0) break
-  }
-  if (s.bossCursor < BOSS_TICKS.length && s.tick >= BOSS_TICKS[s.bossCursor]!) {
-    s.bossCursor++
-    const i = spawnEnemy(s, ENEMY_DREADNOUGHT, s.px + s.aimX * SPAWN_RADIUS, s.py + s.aimY * SPAWN_RADIUS)
-    if (i >= 0) emit(s, EV_BOSS, s.ex[i]!, s.ey[i]!, 0, 0)
   }
 }
 
@@ -204,7 +197,7 @@ export function moveEnemies(s: State): void {
     const rx = x - px
     const ry = y - py
     const r2 = rx * rx + ry * ry
-    if (r2 > despawn2) {
+    if (r2 > despawn2 && type < ENEMY_BOSS_FIRST) {
       const r = Math.sqrt(r2)
       x = px - (rx / r) * SPAWN_RADIUS
       y = py - (ry / r) * SPAWN_RADIUS
@@ -221,7 +214,7 @@ export function knockEnemy(s: State, e: number, fromX: number, fromY: number, fo
   const dy = s.ey[e]! - fromY
   const d = Math.sqrt(dx * dx + dy * dy)
   if (d < 0.0001) return
-  const scale = s.eType[e] === ENEMY_DREADNOUGHT ? force * BOSS_KNOCKBACK_SCALE : force
+  const scale = s.eType[e]! >= ENEMY_BOSS_FIRST ? force * BOSS_KNOCKBACK_SCALE : force
   s.eKx[e] = s.eKx[e]! + (dx / d) * scale
   s.eKy[e] = s.eKy[e]! + (dy / d) * scale
 }
@@ -241,6 +234,10 @@ export function damageEnemy(s: State, e: number, amount: number, weapon: number)
   s.eHp[e] = 0
   const type = s.eType[e]!
   s.kills++
+  if (type >= ENEMY_BOSS_FIRST) {
+    s.bossKills++
+    s.pendingLevels++
+  }
   if (s.killEvents < KILL_EVENTS_PER_TICK) {
     s.killEvents++
     emit(s, EV_KILL, x, y, type, 0)
@@ -296,12 +293,16 @@ export function contactDamage(s: State): void {
 export function mirrorBoss(s: State): void {
   s.bossHp = 0
   s.bossMaxHp = 0
+  let bestD2 = Number.POSITIVE_INFINITY
   const n = s.enemyCount
   for (let i = 0; i < n; i++) {
-    if (s.eType[i] === ENEMY_DREADNOUGHT && s.eHp[i]! > 0) {
-      s.bossHp = s.eHp[i]!
-      s.bossMaxHp = s.eMaxHp[i]!
-      return
-    }
+    if (s.eType[i]! < ENEMY_BOSS_FIRST || s.eHp[i]! <= 0) continue
+    const dx = s.ex[i]! - s.px
+    const dy = s.ey[i]! - s.py
+    const d2 = dx * dx + dy * dy
+    if (d2 >= bestD2) continue
+    bestD2 = d2
+    s.bossHp = s.eHp[i]!
+    s.bossMaxHp = s.eMaxHp[i]!
   }
 }

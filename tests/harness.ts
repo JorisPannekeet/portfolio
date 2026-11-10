@@ -14,12 +14,14 @@ export interface BotRun {
   readonly inputs: number[]
 }
 
-export function runBot(seed: number, maxTicks = RUN_TICKS, onTick?: (s: State) => void): BotRun {
+export type BotPolicy = (s: State) => number
+
+export function runBot(seed: number, maxTicks = RUN_TICKS, onTick?: (s: State) => void, policy: BotPolicy = botInput): BotRun {
   const state = createState()
   resetState(state, seed)
   const inputs: number[] = []
   while (!isTerminal(state) && state.tick < maxTicks && inputs.length < STEP_LIMIT) {
-    const input = botInput(state)
+    const input = policy(state)
     const before = state.tick
     step(state, input)
     inputs.push(input)
