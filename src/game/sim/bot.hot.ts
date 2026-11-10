@@ -295,7 +295,7 @@ function bulletDanger(s: State, vx: number, vy: number, found: number): number {
   return danger
 }
 
-function bossFiring(s: State): number {
+function nearestBoss(s: State): number {
   let best = -1
   let bestD2 = BOT_COVER_RANGE * BOT_COVER_RANGE
   for (let i = 0; i < s.enemyCount; i++) {
@@ -376,7 +376,7 @@ function botHeading(s: State, takeBeacons: boolean): number {
     }
   }
   const bullets = gatherBullets(s)
-  const boss = bossBulletsNear(s, bullets) ? bossFiring(s) : -1
+  const boss = bossBulletsNear(s, bullets) ? nearestBoss(s) : -1
   const covered = boss >= 0 && findCover(s, boss)
   const coverNow = covered ? coverDistance(s.px, s.py) : 0
   let best = INPUT_IDLE

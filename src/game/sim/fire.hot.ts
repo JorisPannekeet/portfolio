@@ -171,7 +171,7 @@ function updateTank(s: State, i: number, d2: number): void {
   tanksAiming++
 }
 
-export function tanksWindingUp(s: State): number {
+function tanksWindingUp(s: State): number {
   let n = 0
   for (let i = 0; i < s.enemyCount; i++) if (s.eType[i] === ENEMY_TANK && s.eAim[i]! > 0) n++
   return n
