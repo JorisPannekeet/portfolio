@@ -3,6 +3,7 @@ import {
   ENEMY_BOSS_FIRST,
   ENEMY_DAMAGE,
   ENEMY_DAMAGE_GROWTH_PER_MINUTE,
+  BOSS_HP_PER_MINUTE_CUBED,
   ENEMY_HP,
   ENEMY_DAMAGE_SURGE_PER_MINUTE_SQUARED,
   ENEMY_HP_GROWTH_PER_MINUTE,
@@ -108,7 +109,8 @@ function surge(minutes: number, type: number): number {
 
 export function enemyMaxHp(s: State, type: number): number {
   const m = minutesElapsed(s)
-  return ENEMY_HP[type]! * (1 + ENEMY_HP_GROWTH_PER_MINUTE * m + ENEMY_HP_SURGE_PER_MINUTE_SQUARED * surge(m, type))
+  const bossGrowth = type >= ENEMY_BOSS_FIRST ? BOSS_HP_PER_MINUTE_CUBED * m * m * m : 0
+  return ENEMY_HP[type]! * (1 + ENEMY_HP_GROWTH_PER_MINUTE * m + ENEMY_HP_SURGE_PER_MINUTE_SQUARED * surge(m, type) + bossGrowth)
 }
 
 export function enemyContactDamage(s: State, type: number): number {
