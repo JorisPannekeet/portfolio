@@ -31,6 +31,7 @@ const en = {
   toastBeacon: 'BEACON CAPTURED',
   toastBeaconRepair: 'Armor restored',
   toastEntering: 'ENTERING',
+  bossName: ['Dreadnought', 'Scrap Colossus', 'Cryo Leviathan', 'Furnace Titan'],
   zoneName: ['Hangar Deck', 'Dust Basin', 'Frost Shelf', 'Magma Works'],
   weaponName: [
     'Beam Rifle',

@@ -112,6 +112,7 @@ const softwareContext = {
 }
 
 const view = createView(softwareContext, atlas, atlas)
+view.bossNames = ['DREADNOUGHT', 'SCRAP COLOSSUS', 'CRYO LEVIATHAN', 'FURNACE TITAN']
 view.width = width
 view.height = height
 view.scale = Number(process.env.SCALE ?? 2)

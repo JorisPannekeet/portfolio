@@ -42,6 +42,15 @@ export function drawChar(v: View, code: number, tint: number, x: number, y: numb
   if (glyph >= 0) drawGlyph(v, glyph, tint, x, y, k)
 }
 
+export function drawText(v: View, text: string, tint: number, x: number, y: number, k: number): number {
+  let cursor = x
+  for (let i = 0; i < text.length; i++) {
+    drawChar(v, text.charCodeAt(i), tint, cursor, y, k)
+    cursor += FONT_ADVANCE * k
+  }
+  return cursor
+}
+
 export function drawNumber(v: View, n: number, minDigits: number, tint: number, x: number, y: number, k: number): number {
   let value = Math.max(0, Math.floor(n))
   const count = digitCount(value, minDigits)

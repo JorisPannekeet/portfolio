@@ -1,7 +1,7 @@
 import type { State } from '../sim/state.ts'
-import { PASSIVE_COUNT, TICK_HZ, WEAPON_COUNT } from '../sim/content.ts'
+import { BOSS_COUNT, ENEMY_BOSS_FIRST, PASSIVE_COUNT, TICK_HZ, WEAPON_COUNT } from '../sim/content.ts'
 import type { View } from './view.ts'
-import { GLYPH_DARK, GLYPH_LIGHT, ICON_FULL, ICON_MINI } from './atlas.ts'
+import { GLYPH_DARK, GLYPH_LIGHT, GLYPH_RED, ICON_FULL, ICON_MINI } from './atlas.ts'
 import {
   FONT_ADVANCE,
   FONT_HEIGHT,
@@ -13,12 +13,47 @@ import {
   SPR_HUD_MARKS,
   SPR_ICONS,
 } from './sheet.ts'
-import { blitAt, drawChar, drawNumber, frameId, numberWidth } from './sprite.hot.ts'
+import { blitAt, drawChar, drawNumber, drawText, frameId, numberWidth } from './sprite.hot.ts'
 import { drawNavigation } from './nav.hot.ts'
-import { AMBER, ARMOR, CORE, CORE_DEEP, CYAN, CYAN_DEEP, INK, LINE } from './colors.ts'
+import { ARMOR, CORE, CYAN, CYAN_DEEP, INK, LINE } from './colors.ts'
 
 const COLON = 58
 const FULL_ICON_SCALE = 2
+const BOSS_ROW_HEIGHT = 7
+const BOSS_NAME_CHARS = 14
+const HUD_BASE_HEIGHT = 13
+
+function findBosses(v: View, s: State): number {
+  const rows = v.bossRows
+  for (let b = 0; b < BOSS_COUNT; b++) rows[b] = -1
+  let alive = 0
+  for (let i = 0; i < s.enemyCount; i++) {
+    const boss = s.eType[i]! - ENEMY_BOSS_FIRST
+    if (boss < 0 || boss >= BOSS_COUNT || s.eHp[i]! <= 0 || rows[boss]! >= 0) continue
+    rows[boss] = i
+    alive++
+  }
+  return alive
+}
+
+function drawBossRows(v: View, s: State, left: number, right: number, top: number, unit: number): void {
+  const nameWidth = BOSS_NAME_CHARS * FONT_ADVANCE * unit
+  const nameX = left + 7 * unit
+  const barX = nameX + nameWidth + 2 * unit
+  const barWidth = right - barX - unit
+  let y = top
+  for (let b = 0; b < BOSS_COUNT; b++) {
+    const i = v.bossRows[b]!
+    if (i < 0) continue
+    blitAt(v, frameId(v, SPR_HUD_MARKS, HUD_MARK_KILLS, 0), left, y, unit)
+    const name = v.bossNames[b]!
+    drawText(v, name, GLYPH_DARK, nameX + unit, y + unit, unit)
+    drawText(v, name, GLYPH_RED, nameX, y, unit)
+    const max = s.eMaxHp[i]!
+    bar(v, barX, y + unit, barWidth, 3 * unit, max > 0 ? s.eHp[i]! / max : 0, CORE, LINE)
+    y += BOSS_ROW_HEIGHT * unit
+  }
+}
 
 function bar(v: View, x: number, y: number, w: number, h: number, fraction: number, fill: string, track: string): void {
   const ctx = v.ctx
@@ -92,7 +127,8 @@ export function drawHud(v: View, s: State, t: number, playerX: number, playerY: 
   const top = 2 * unit
   const barWidth = right - left
   const xpFraction = s.xpNext > 0 ? s.xp / s.xpNext : 0
-  const stripHeight = (s.bossMaxHp > 0 ? 20 : 13) * unit
+  const bosses = findBosses(v, s)
+  const stripHeight = (HUD_BASE_HEIGHT + bosses * BOSS_ROW_HEIGHT) * unit
   v.ctx.globalAlpha = 0.6
   v.ctx.fillStyle = INK
   v.ctx.fillRect(0, 0, right + 2 * unit, stripHeight)
@@ -113,15 +149,7 @@ export function drawHud(v: View, s: State, t: number, playerX: number, playerY: 
   shadowNumber(v, s.kills, 1, GLYPH_LIGHT, killsX, row, unit)
   blitAt(v, frameId(v, SPR_HUD_MARKS, HUD_MARK_KILLS, 0), killsX - 7 * unit, row, unit)
 
-  if (s.bossMaxHp > 0) {
-    const bossRow = row + (FONT_HEIGHT + 4) * unit
-    const bossWidth = Math.min(barWidth - 16 * unit, 140 * unit)
-    const bossX = left + ((barWidth - bossWidth) >> 1)
-    blitAt(v, frameId(v, SPR_HUD_MARKS, HUD_MARK_KILLS, 0), bossX - 7 * unit, bossRow - unit, unit)
-    bar(v, bossX, bossRow, bossWidth, 2 * unit, s.bossHp / s.bossMaxHp, CORE, CORE_DEEP)
-    v.ctx.fillStyle = AMBER
-    v.ctx.fillRect(bossX, bossRow + 2 * unit, bossWidth, unit)
-  }
+  if (bosses > 0) drawBossRows(v, s, left, right, row + (FONT_HEIGHT + 2) * unit, unit)
 
   v.hudTop = stripHeight
   drawIconRow(v, s, unit)

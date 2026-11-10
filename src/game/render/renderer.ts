@@ -9,6 +9,7 @@ export interface Renderer {
   resize(cssWidth: number, cssHeight: number): void
   draw(s: State, alpha: number): void
   drawIcon(target: CanvasRenderingContext2D, choice: number, x: number, y: number, scale: number): void
+  setBossNames(names: readonly string[]): void
 }
 
 const PIXELS_PER_SCALE_STEP = 96000
@@ -72,6 +73,9 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     },
     draw(s, alpha) {
       drawFrame(view, s, alpha)
+    },
+    setBossNames(names) {
+      for (let b = 0; b < view.bossNames.length; b++) view.bossNames[b] = (names[b] ?? '').toUpperCase()
     },
     drawIcon(target, choice, x, y, scale) {
       const frame = iconFrame(choice)

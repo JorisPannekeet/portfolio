@@ -82,6 +82,7 @@ export function Play() {
     const knob = knobRef.current
     if (!field || !canvas || !stick || !knob) return
     const renderer = createRenderer(canvas)
+    renderer.setBossNames(strings.bossName)
     const audio = createAudio()
     const loop: Loop = {
       s: createState(),

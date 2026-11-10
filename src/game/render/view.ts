@@ -36,6 +36,8 @@ export interface View {
   sweepUntil: number
   sweepColor: string
   hudTop: number
+  bossNames: string[]
+  bossRows: Int16Array
   hudBottom: number
   mapLeft: number
   mapBottom: number
@@ -83,6 +85,8 @@ export function createView(ctx: CanvasRenderingContext2D, atlas: Atlas, image: C
     sweepUntil: 0,
     sweepColor: '#F4F5F7',
     hudTop: 0,
+    bossNames: ['', '', '', ''],
+    bossRows: new Int16Array(4),
     hudBottom: 1,
     mapLeft: 0,
     mapBottom: 0,
