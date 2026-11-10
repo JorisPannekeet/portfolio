@@ -16,6 +16,7 @@ import {
   XP_BASE,
 } from './content.ts'
 import { seedRng } from './prng.hot.ts'
+import { placePois, zoneAt } from './world.hot.ts'
 
 export interface State {
   seed: number
@@ -83,6 +84,7 @@ export interface State {
   poiX: Float32Array
   poiY: Float32Array
   poiProgress: Float32Array
+  bossKills: number
 
   evHead: number
   evType: Uint8Array
@@ -112,6 +114,7 @@ export interface State {
   hitEvents: number
   killEvents: number
   pickupEvents: number
+  poiCharge: Int32Array
 
   eId: Int32Array
   eMaxHp: Float32Array
@@ -206,6 +209,7 @@ export function createState(): State {
     poiX: new Float32Array(MAX_POIS),
     poiY: new Float32Array(MAX_POIS),
     poiProgress: new Float32Array(MAX_POIS),
+    bossKills: 0,
     evHead: 0,
     evType: new Uint8Array(EVENT_CAP),
     evX: new Float32Array(EVENT_CAP),
@@ -232,6 +236,7 @@ export function createState(): State {
     hitEvents: 0,
     killEvents: 0,
     pickupEvents: 0,
+    poiCharge: new Int32Array(MAX_POIS),
     eId: new Int32Array(MAX_ENEMIES),
     eMaxHp: new Float32Array(MAX_ENEMIES),
     eKx: new Float32Array(MAX_ENEMIES),
@@ -297,8 +302,9 @@ export function resetState(s: State, seed: number): void {
   s.gemCount = 0
   s.droneCount = 0
   s.auraRadius = 0
-  s.zone = 0
+  s.zone = zoneAt(s.px, s.py)
   s.poiCount = 0
+  s.bossKills = 0
   s.evHead = 0
   s.aimTurn = 0
   s.pendingLevels = 0
@@ -318,4 +324,5 @@ export function resetState(s: State, seed: number): void {
   s.gridOx = 0
   s.gridOy = 0
   seedRng(s)
+  placePois(s)
 }

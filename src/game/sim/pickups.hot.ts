@@ -16,6 +16,7 @@ import {
 import { emit } from './events.hot.ts'
 import { pickupRadius, xpMultiplier } from './stats.hot.ts'
 import type { State } from './state.ts'
+import { clampToWorld } from './world.hot.ts'
 
 function kindForValue(value: number): number {
   if (value >= GEM_XP[GEM_LARGE]!) return GEM_LARGE
@@ -37,8 +38,8 @@ function addGemValue(s: State, i: number, value: number): void {
 function writeGem(s: State, i: number, kind: number, value: number, x: number, y: number): void {
   s.gKind[i] = kind
   s.gValue[i] = value
-  s.gx[i] = x
-  s.gy[i] = y
+  s.gx[i] = clampToWorld(x)
+  s.gy[i] = clampToWorld(y)
   s.gAttract[i] = 0
 }
 

@@ -2,6 +2,7 @@ import {
   CHOICE_COUNT,
   EV_DEAD,
   EV_WON,
+  EV_ZONE,
   INPUT_CHOICE,
   INPUT_DIRECTIONS,
   MAX_DRONES,
@@ -23,11 +24,13 @@ import { emit } from './events.hot.ts'
 import { gridBuild } from './grid.hot.ts'
 import { applyChoice, openLevelUp, processLevels } from './levelup.hot.ts'
 import { updateGems } from './pickups.hot.ts'
+import { runBossClock, updatePois } from './pois.hot.ts'
 import { updateShots } from './shots.hot.ts'
 import { playerRegenPerTick, playerSpeed } from './stats.hot.ts'
 import type { State } from './state.ts'
 import { HEADING_TURNS, cosTurn, sinTurn } from './trig.ts'
 import { runWeapons } from './weapons.hot.ts'
+import { clampToWorld, zoneAt } from './world.hot.ts'
 
 function snapshotPrevious(s: State): void {
   s.ppx = s.px
@@ -60,13 +63,20 @@ function movePlayer(s: State, input: number): void {
   const ux = cosTurn(turn)
   const uy = sinTurn(turn)
   const speed = playerSpeed(s)
-  s.px += ux * speed
-  s.py += uy * speed
+  s.px = clampToWorld(s.px + ux * speed)
+  s.py = clampToWorld(s.py + uy * speed)
   s.aimX = ux
   s.aimY = uy
   s.aimTurn = turn
   if (ux > 0) s.faceX = 1
   else if (ux < 0) s.faceX = -1
+}
+
+function updateZone(s: State): void {
+  const zone = zoneAt(s.px, s.py)
+  if (zone === s.zone) return
+  s.zone = zone
+  emit(s, EV_ZONE, s.px, s.py, zone, 0)
 }
 
 function tickPlayer(s: State): void {
@@ -89,8 +99,11 @@ function stepPlaying(s: State, input: number): void {
   s.pickupEvents = 0
   snapshotPrevious(s)
   movePlayer(s, input)
+  updateZone(s)
   tickPlayer(s)
+  updatePois(s)
   runSpawns(s)
+  runBossClock(s)
   gridBuild(s)
   computeSeparation(s)
   moveEnemies(s)

@@ -57,6 +57,39 @@ function ownedPassives(s: State): number {
   return n
 }
 
+function passiveAvailable(s: State, p: number, room: boolean): boolean {
+  const level = s.passiveLevel[p]!
+  return (level === 0 && room) || (level > 0 && level < PASSIVE_MAX_LEVEL[p]!)
+}
+
+function enablesEvolution(s: State, p: number): boolean {
+  if (s.passiveLevel[p] !== 0) return false
+  for (let w = 0; w < WEAPON_COUNT; w++) {
+    if (s.weaponLevel[w]! > 0 && s.weaponEvolved[w] === 0 && WEAPONS[w]!.pairedPassive === p) return true
+  }
+  return false
+}
+
+export function rollBeaconPassive(s: State): number {
+  const room = ownedPassives(s) < PASSIVE_SLOTS
+  let legal = 0
+  let preferred = 0
+  for (let p = 0; p < PASSIVE_COUNT; p++) {
+    if (!passiveAvailable(s, p, room)) continue
+    legal++
+    if (enablesEvolution(s, p)) preferred++
+  }
+  if (legal === 0) return -1
+  const onlyPreferred = preferred > 0
+  let pick = rngInt(s, onlyPreferred ? preferred : legal)
+  for (let p = 0; p < PASSIVE_COUNT; p++) {
+    if (!passiveAvailable(s, p, room) || (onlyPreferred && !enablesEvolution(s, p))) continue
+    if (pick === 0) return p
+    pick--
+  }
+  return -1
+}
+
 function choiceWeight(s: State, choice: number): number {
   if (choice >= CHOICE_EVOLVE) return OWNED_CHOICE_WEIGHT
   if (choice >= CHOICE_PASSIVE) return s.passiveLevel[choice - CHOICE_PASSIVE]! > 0 ? OWNED_CHOICE_WEIGHT : 1
@@ -79,10 +112,7 @@ export function rollChoices(s: State): void {
     if ((level === 0 && weaponRoom) || (level > 0 && level < WEAPON_MAX_LEVEL)) pool[count++] = CHOICE_WEAPON + w
   }
   const passiveRoom = ownedPassives(s) < PASSIVE_SLOTS
-  for (let p = 0; p < PASSIVE_COUNT; p++) {
-    const level = s.passiveLevel[p]!
-    if ((level === 0 && passiveRoom) || (level > 0 && level < PASSIVE_MAX_LEVEL[p]!)) pool[count++] = CHOICE_PASSIVE + p
-  }
+  for (let p = 0; p < PASSIVE_COUNT; p++) if (passiveAvailable(s, p, passiveRoom)) pool[count++] = CHOICE_PASSIVE + p
   if (count === 0) {
     s.choices[0] = CHOICE_REPAIR
     s.choiceCount = 1
@@ -133,7 +163,7 @@ function takeWeapon(s: State, w: number): void {
   }
 }
 
-function takePassive(s: State, p: number): void {
+export function takePassive(s: State, p: number): void {
   s.passiveLevel[p] = s.passiveLevel[p]! + 1
   if (p === PASSIVE_REACTOR) {
     s.maxHp += PASSIVE_HP_PER_LEVEL
