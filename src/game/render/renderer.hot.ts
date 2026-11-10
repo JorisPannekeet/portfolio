@@ -1,33 +1,18 @@
 import type { State } from '../sim/state.ts'
 import { PHASE_DEAD, WEAPON_FIELD } from '../sim/content.ts'
 import type { View } from './view.ts'
-import { ROTATIONS, VARIANT_FLIP, VARIANT_NORMAL, VARIANT_WHITE } from './atlas.ts'
-import {
-  ENEMY_SPRITE,
-  PLAYER_FRAME_IDLE,
-  PLAYER_FRAME_IDLE_COUNT,
-  PLAYER_FRAME_WALK,
-  PLAYER_FRAME_WALK_COUNT,
-  SPR_DRONE,
-  SPR_GEMS,
-  SPR_PLAYER,
-  SPR_SCOUT,
-  SPR_SHOTS,
-  SPR_THRUST,
-  THRUST_FRAME_COUNT,
-} from './sheet.ts'
-import { blitAt, blitCentered, frameId } from './sprite.hot.ts'
-import { drawFloor, drawPois } from './world.hot.ts'
+import { ROTATIONS } from './atlas.ts'
+import { SPR_GEMS, SPR_SHOTS } from './sheet.ts'
+import { blitCentered, frameId } from './sprite.hot.ts'
+import { drawActors, drawPropShadows } from './actors.hot.ts'
+import { drawPois } from './world.hot.ts'
+import { drawFloor } from './terrain.hot.ts'
 import { consumeEvents, drawEffects, drawFlash, drawSweep, shakeOffset } from './effects.hot.ts'
 import { drawHud, drawPlayerArmor } from './hud.hot.ts'
 import { AMBER, CYAN } from './colors.ts'
 
 const CULL = 48
 const TAU = Math.PI * 2
-const THRUST_LOW_X = -3
-const THRUST_LOW_Y = 16
-const THRUST_HIGH_X = -6
-const THRUST_HIGH_Y = 10
 
 function drawGems(v: View, s: State): void {
   const ox = v.originX
@@ -56,61 +41,6 @@ function drawAura(v: View, s: State, t: number, x: number, y: number): void {
   ctx.globalAlpha = 1
 }
 
-function drawEnemies(v: View, s: State, alpha: number, t: number): void {
-  const ox = v.originX
-  const oy = v.originY
-  const right = v.width + CULL
-  const bottom = v.height + CULL
-  const step = (t / 14) | 0
-  for (let i = 0; i < s.enemyCount; i++) {
-    const wx = s.epx[i]! + (s.ex[i]! - s.epx[i]!) * alpha
-    const wy = s.epy[i]! + (s.ey[i]! - s.epy[i]!) * alpha
-    const x = Math.round(wx - ox)
-    const y = Math.round(wy - oy)
-    if (x < -CULL || y < -CULL || x > right || y > bottom) continue
-    const type = s.eType[i]!
-    const frame = (step + type + ((wx / 24) | 0)) & 1
-    const variant = (s.px < wx ? VARIANT_FLIP : VARIANT_NORMAL) + (s.eFlash[i]! > 0 ? VARIANT_WHITE : 0)
-    blitCentered(v, frameId(v, ENEMY_SPRITE[type] ?? SPR_SCOUT, frame, variant), x, y)
-  }
-}
-
-function drawThrust(v: View, frame: number, flip: boolean, left: number, top: number, relX: number, relY: number): void {
-  const a = v.atlas
-  const id = frameId(v, SPR_THRUST, frame, flip ? VARIANT_FLIP : VARIANT_NORMAL)
-  const bodyW = a.rw[a.base[SPR_PLAYER]!]!
-  const x = flip ? bodyW - relX - a.rw[id]! : relX
-  blitAt(v, id, left + x, top + relY - (a.rh[id]! >> 1), 1)
-}
-
-function drawPlayer(v: View, s: State, t: number, x: number, y: number): void {
-  if (s.phase === PHASE_DEAD) return
-  if (s.iframes > 0 && ((s.tick >> 2) & 1) === 1) return
-  const moving = s.px !== s.ppx || s.py !== s.ppy
-  const flip = s.faceX < 0
-  const frame = moving
-    ? PLAYER_FRAME_WALK + (((t / 7) | 0) % PLAYER_FRAME_WALK_COUNT)
-    : PLAYER_FRAME_IDLE + (((t / 30) | 0) % PLAYER_FRAME_IDLE_COUNT)
-  const id = frameId(v, SPR_PLAYER, frame, flip ? VARIANT_FLIP : VARIANT_NORMAL)
-  const left = x - (v.atlas.rw[id]! >> 1)
-  const top = y - (v.atlas.rh[id]! >> 1)
-  if (moving) {
-    const flare = ((t / 3) | 0) % THRUST_FRAME_COUNT
-    drawThrust(v, flare, flip, left, top, THRUST_HIGH_X, THRUST_HIGH_Y)
-    drawThrust(v, (flare + 1) % THRUST_FRAME_COUNT, flip, left, top, THRUST_LOW_X, THRUST_LOW_Y)
-  }
-  blitAt(v, id, left, top, 1)
-}
-
-function drawDrones(v: View, s: State, alpha: number): void {
-  const id = frameId(v, SPR_DRONE, 0, 0)
-  for (let i = 0; i < s.droneCount; i++) {
-    const x = s.dronePx[i]! + (s.droneX[i]! - s.dronePx[i]!) * alpha
-    const y = s.dronePy[i]! + (s.droneY[i]! - s.dronePy[i]!) * alpha
-    blitCentered(v, id, Math.round(x - v.originX), Math.round(y - v.originY))
-  }
-}
-
 function drawShots(v: View, s: State, alpha: number): void {
   const ox = v.originX
   const oy = v.originY
@@ -136,13 +66,12 @@ export function drawFrame(v: View, s: State, alpha: number): void {
   const playerX = Math.round(camX) - v.originX
   const playerY = Math.round(camY) - v.originY
   v.ctx.globalAlpha = 1
-  drawFloor(v)
+  drawFloor(v, t)
   drawPois(v, s, t, playerX, playerY)
+  drawPropShadows(v, s)
   drawGems(v, s)
   drawAura(v, s, t, playerX, playerY)
-  drawEnemies(v, s, a, t)
-  drawPlayer(v, s, t, playerX, playerY)
-  drawDrones(v, s, a)
+  drawActors(v, s, a, t, playerX, playerY)
   drawShots(v, s, a)
   drawEffects(v, t, playerX, playerY)
   drawFlash(v, t)

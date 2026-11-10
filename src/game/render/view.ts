@@ -1,5 +1,6 @@
 import type { Atlas } from './atlas.ts'
 import { fontGlyphs } from '../sprites/font.ts'
+import { MAX_DRONES, MAX_ENEMIES, MAX_PROPS } from '../sim/content.ts'
 
 export const FX_CAP = 384
 export const FX_NONE = 0
@@ -15,6 +16,9 @@ export const FX_BEACON_ICON = 9
 export const FX_BEACON_RING = 10
 
 export const DIGIT_BUFFER = 12
+export const DEPTH_CAP = MAX_PROPS + MAX_ENEMIES + MAX_DRONES + 1
+export const DEPTH_ROWS = 2048
+export const DEPTH_MARGIN = 160
 
 export interface View {
   ctx: CanvasRenderingContext2D
@@ -60,6 +64,13 @@ export interface View {
   fxLife: Float32Array
   glyphIndex: Int8Array
   digits: Uint8Array
+  depthCount: number
+  depthId: Int32Array
+  depthX: Int16Array
+  depthY: Int16Array
+  depthRow: Int16Array
+  depthOrder: Int16Array
+  depthStart: Int32Array
 }
 
 export function createView(ctx: CanvasRenderingContext2D, atlas: Atlas, image: CanvasImageSource): View {
@@ -109,5 +120,12 @@ export function createView(ctx: CanvasRenderingContext2D, atlas: Atlas, image: C
     fxLife: new Float32Array(FX_CAP),
     glyphIndex,
     digits: new Uint8Array(DIGIT_BUFFER),
+    depthCount: 0,
+    depthId: new Int32Array(DEPTH_CAP),
+    depthX: new Int16Array(DEPTH_CAP),
+    depthY: new Int16Array(DEPTH_CAP),
+    depthRow: new Int16Array(DEPTH_CAP),
+    depthOrder: new Int16Array(DEPTH_CAP),
+    depthStart: new Int32Array(DEPTH_ROWS + 1),
   }
 }
