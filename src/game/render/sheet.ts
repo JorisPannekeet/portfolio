@@ -12,11 +12,34 @@ import { beamBolt, missile, particleLance, vulcanRound } from '../sprites/shots.
 import { orbitDrone } from '../sprites/drone.ts'
 import { debrisFrames, glintFrames, hudMarkFrames, sparkFrames } from '../sprites/effects.ts'
 import { fontFrames } from '../sprites/font.ts'
-import { decalArrow, decalHatch, decalHazard, decalVent, floorPlate, floorPlateWorn } from '../sprites/floor.ts'
-import { scrapHeap, scrapPlate, scrapPlateWorn, scrapTracks, scrapTyre, scrapWreck } from '../sprites/floor-scrapyard.ts'
-import { cryoCrack, cryoPlate, cryoPlateWorn, cryoPool, cryoShards, cryoVent } from '../sprites/floor-cryo.ts'
-import { foundryCrack, foundryPlate, foundryPlateWorn, foundrySeam, foundrySlag, foundryVent } from '../sprites/floor-foundry.ts'
-import { boundsHazardH, boundsHazardV, boundsSeamH, boundsSeamV, boundsWall } from '../sprites/bounds.ts'
+import {
+  decalArrow, decalHatch, decalHazard, decalOil, decalVent, deckLaneCross, deckLaneH, deckLaneV, deckPad,
+  floorPlate, floorPlateGrate, floorPlateTread, floorPlateWorn,
+} from '../sprites/floor.ts'
+import { deckDigitFrames } from '../sprites/deck-digits.ts'
+import { hangarA, hangarB } from '../sprites/prop-hangar.ts'
+import { generatorA, generatorB } from '../sprites/prop-generator.ts'
+import { fuelTank } from '../sprites/prop-fuel-tank.ts'
+import { crates } from '../sprites/prop-crates.ts'
+import { house } from '../sprites/prop-house.ts'
+import { wreck } from '../sprites/prop-wreck.ts'
+import { rock } from '../sprites/prop-rock.ts'
+import { cactus } from '../sprites/prop-cactus.ts'
+import { domeA, domeB } from '../sprites/prop-dome.ts'
+import { iceBoulder } from '../sprites/prop-ice-boulder.ts'
+import { pine } from '../sprites/prop-pine.ts'
+import { mastA, mastB } from '../sprites/prop-mast.ts'
+import { powerPlantA, powerPlantB } from '../sprites/prop-power-plant.ts'
+import { smelterA, smelterB } from '../sprites/prop-smelter.ts'
+import { spire } from '../sprites/prop-spire.ts'
+import { pylonA, pylonB } from '../sprites/prop-pylon.ts'
+import { propShadowFrames } from '../sprites/prop-shadows.ts'
+import { propAnchorX, propAnchorY, propShadowX, propShadowY } from '../sprites/prop-anchors.ts'
+import * as sand from '../sprites/ground-sand.ts'
+import * as ice from '../sprites/ground-ice.ts'
+import * as magma from '../sprites/ground-magma.ts'
+import { groundEdgeFrames } from '../sprites/ground-edges.ts'
+import { boundsHazardH, boundsHazardV, boundsWall } from '../sprites/bounds.ts'
 import { thrustA, thrustB, thrustC } from '../sprites/thrust.ts'
 import { scrapColossusA, scrapColossusB } from '../sprites/scrap-colossus.ts'
 import { cryoLeviathanA, cryoLeviathanB } from '../sprites/cryo-leviathan.ts'
@@ -72,6 +95,11 @@ export const SPR_FURNACE_TITAN = 21
 export const SPR_BOUNDS = 22
 export const SPR_POI = 23
 export const SPR_ARROWS = 24
+export const SPR_GROUND = 25
+export const SPR_EDGES = 26
+export const SPR_DECK_DIGITS = 27
+export const SPR_PROPS = 28
+export const SPR_PROP_SHADOWS = 29
 
 export const ENEMY_SPRITE = Uint8Array.of(
   SPR_SCOUT,
@@ -107,15 +135,112 @@ export const DEBRIS_PLAYER_FRAME = 10
 
 export const FLOOR_PLATE = 0
 export const FLOOR_PLATE_WORN = 1
-export const FLOOR_DECAL_FIRST = 2
-export const FLOOR_DECAL_COUNT = 4
-export const FLOOR_ZONE_STRIDE = FLOOR_DECAL_FIRST + FLOOR_DECAL_COUNT
+export const FLOOR_PLATE_GRATE = 2
+export const FLOOR_PLATE_TREAD = 3
+export const FLOOR_DECAL_FIRST = 4
+export const FLOOR_DECAL_COUNT = 5
+export const FLOOR_LANE_V = 9
+export const FLOOR_LANE_H = 10
+export const FLOOR_LANE_CROSS = 11
+export const FLOOR_PAD = 12
+export const DECK_DIGIT_W = 5
+export const DECK_DIGIT_H = 7
+
+export const GROUND_PATCH_LOW = 0
+export const GROUND_PATCH_HIGH = 1
+export const GROUND_FEATURE_A = 2
+export const GROUND_FEATURE_B = 3
+export const GROUND_SPECK = 4
+export const GROUND_GLOW = 5
+export const GROUND_RARE = 6
+export const GROUND_CATEGORIES = 7
+
+type Frames = readonly (readonly string[])[]
+
+const GROUND_SETS: readonly (readonly Frames[])[] = [
+  [[], [], [], [], [], [], []],
+  [
+    [sand.sandShadeA, sand.sandShadeB, sand.sandShadeC],
+    [sand.sandDriftA, sand.sandDriftB, sand.sandDriftC],
+    [
+      sand.sandRippleA, sand.sandRippleB, sand.sandRippleC, sand.sandRippleD,
+      sand.sandDuneA, sand.sandDuneB, sand.sandDuneC,
+    ],
+    [sand.sandCrackedA, sand.sandCrackedB, sand.sandCrackedC, sand.sandShrub],
+    [sand.sandPebblesA, sand.sandPebblesB, sand.sandPebbleC, sand.sandGrainsA, sand.sandGrainsB, sand.sandDash],
+    [],
+    [sand.sandScrap, sand.sandPipe, sand.sandBones, sand.sandSkull, sand.sandTracks],
+  ],
+  [
+    [ice.iceDeepA, ice.iceDeepB, ice.iceDeepC],
+    [ice.iceSnowA, ice.iceSnowB, ice.iceSnowC],
+    [
+      ice.iceCrackA, ice.iceCrackB, ice.iceCrackC, ice.iceCrackD, ice.iceCrackE,
+      ice.icePoolA, ice.icePoolB, ice.icePoolC, ice.iceGlossA, ice.iceGlossB,
+    ],
+    [ice.iceDriftA, ice.iceDriftB, ice.iceSastrugiA, ice.iceSastrugiB, ice.iceCrackB, ice.iceGlossA],
+    [ice.iceGlintA, ice.iceGlintB, ice.iceShardA, ice.iceShardB, ice.iceFlakesA, ice.iceFlakesB, ice.iceFrost],
+    [],
+    [],
+  ],
+  [
+    [magma.magmaObsidianA, magma.magmaObsidianB, magma.magmaObsidianC],
+    [magma.magmaAshA, magma.magmaAshB, magma.magmaAshC],
+    [magma.magmaCrustA, magma.magmaCrustB, magma.magmaCrustC, magma.magmaCrustD],
+    [magma.magmaRubbleA, magma.magmaRubbleB, magma.magmaRubbleC, magma.magmaCrustC],
+    [magma.magmaGrainsA, magma.magmaGrainsB, magma.magmaPebble, magma.magmaFissure],
+    [
+      magma.magmaVeinADim, magma.magmaVeinABright, magma.magmaVeinBDim, magma.magmaVeinBBright,
+      magma.magmaVeinCDim, magma.magmaVeinCBright, magma.magmaPoolADim, magma.magmaPoolABright,
+      magma.magmaPoolBDim, magma.magmaPoolBBright, magma.magmaEmberADim, magma.magmaEmberABright,
+      magma.magmaEmberBDim, magma.magmaEmberBBright,
+    ],
+    [],
+  ],
+]
+
+const groundFrames: (readonly string[])[] = []
+export const GROUND_FIRST = new Uint16Array(GROUND_SETS.length * GROUND_CATEGORIES)
+export const GROUND_COUNT = new Uint8Array(GROUND_SETS.length * GROUND_CATEGORIES)
+for (let zone = 0; zone < GROUND_SETS.length; zone++) {
+  for (let category = 0; category < GROUND_CATEGORIES; category++) {
+    const frames = GROUND_SETS[zone]![category]!
+    GROUND_FIRST[zone * GROUND_CATEGORIES + category] = groundFrames.length
+    GROUND_COUNT[zone * GROUND_CATEGORIES + category] = category === GROUND_GLOW ? frames.length >> 1 : frames.length
+    groundFrames.push(...frames)
+  }
+}
+
+const PROP_ART: readonly Frames[] = [
+  [hangarA, hangarB], [generatorA, generatorB], [fuelTank], [crates],
+  [house], [wreck], [rock], [cactus],
+  [domeA, domeB], [iceBoulder], [pine], [mastA, mastB],
+  [powerPlantA, powerPlantB], [smelterA, smelterB], [spire], [pylonA, pylonB],
+]
+
+const propFrames: (readonly string[])[] = []
+export const PROP_FRAME_FIRST = new Uint8Array(PROP_ART.length)
+export const PROP_FRAME_COUNT = new Uint8Array(PROP_ART.length)
+for (let kind = 0; kind < PROP_ART.length; kind++) {
+  PROP_FRAME_FIRST[kind] = propFrames.length
+  PROP_FRAME_COUNT[kind] = PROP_ART[kind]!.length
+  propFrames.push(...PROP_ART[kind]!)
+}
+export const PROP_ANCHOR_X = Uint8Array.from(propAnchorX)
+export const PROP_ANCHOR_Y = Uint8Array.from(propAnchorY)
+export const PROP_SHADOW_X = Uint8Array.from(propShadowX)
+export const PROP_SHADOW_Y = Uint8Array.from(propShadowY)
+
+export const EDGE_SHAPES = 3
+export const EDGE_EAST = 0
+export const EDGE_WEST = 1
+export const EDGE_SOUTH = 2
+export const EDGE_NORTH = 3
+export const EDGE_DIRECTIONS = 4
 
 export const BOUNDS_WALL = 0
 export const BOUNDS_HAZARD_H = 1
 export const BOUNDS_HAZARD_V = 2
-export const BOUNDS_SEAM_H = 3
-export const BOUNDS_SEAM_V = 4
 
 export const POI_FRAME_BEACON = 0
 export const POI_FRAME_BEACON_PULSE = 1
@@ -163,17 +288,21 @@ export const SPRITE_DEFS: readonly SpriteDef[] = [
     name: 'floor',
     kind: KIND_PLAIN,
     frames: [
-      floorPlate, floorPlateWorn, decalVent, decalHazard, decalArrow, decalHatch,
-      scrapPlate, scrapPlateWorn, scrapWreck, scrapTracks, scrapHeap, scrapTyre,
-      cryoPlate, cryoPlateWorn, cryoCrack, cryoPool, cryoShards, cryoVent,
-      foundryPlate, foundryPlateWorn, foundrySeam, foundryVent, foundrySlag, foundryCrack,
+      floorPlate, floorPlateWorn, floorPlateGrate, floorPlateTread,
+      decalVent, decalHazard, decalArrow, decalHatch, decalOil,
+      deckLaneV, deckLaneH, deckLaneCross, deckPad,
     ],
   },
   { name: 'thrust', kind: KIND_ACTOR, frames: [thrustA, thrustB, thrustC] },
   { name: 'scrap-colossus', kind: KIND_ACTOR, frames: [scrapColossusA, scrapColossusB] },
   { name: 'cryo-leviathan', kind: KIND_ACTOR, frames: [cryoLeviathanA, cryoLeviathanB] },
   { name: 'furnace-titan', kind: KIND_ACTOR, frames: [furnaceTitanA, furnaceTitanB] },
-  { name: 'bounds', kind: KIND_PLAIN, frames: [boundsWall, boundsHazardH, boundsHazardV, boundsSeamH, boundsSeamV] },
+  { name: 'bounds', kind: KIND_PLAIN, frames: [boundsWall, boundsHazardH, boundsHazardV] },
   { name: 'poi', kind: KIND_PLAIN, frames: [beaconLive, beaconPulse, beaconSpent, lairSealed, lairOpen] },
   { name: 'arrows', kind: KIND_ROTATED, frames: [arrowCyan, arrowRed] },
+  { name: 'ground', kind: KIND_PLAIN, frames: groundFrames },
+  { name: 'edges', kind: KIND_PLAIN, frames: groundEdgeFrames },
+  { name: 'deck-digits', kind: KIND_PLAIN, frames: deckDigitFrames },
+  { name: 'props', kind: KIND_PLAIN, frames: propFrames },
+  { name: 'prop-shadows', kind: KIND_PLAIN, frames: propShadowFrames },
 ]
