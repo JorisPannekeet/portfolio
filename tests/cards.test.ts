@@ -78,7 +78,7 @@ test('every weapon level-up and evolution lists exactly the stats that change, e
     const lines = weaponChangeLines(w, from, to, strings)
     assert.deepEqual(lines, expectedChanges(w, from, to), `weapon ${w} tier ${from} -> ${to}`)
     assert.ok(lines.length > 0, `weapon ${w} tier ${from} -> ${to} has no visible change`)
-    for (const line of lines) assert.match(line, /^(\+\d|\d+% faster|Never docks|Pierces everything)/, line)
+    for (const line of lines) assert.match(line, /^(\+\d|\d+% faster|Never docks|Pierces everything|Cuts both sides)/, line)
   }
 })
 
