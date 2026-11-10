@@ -1,4 +1,4 @@
-import { ENEMY_DREADNOUGHT, EV_KILL, EV_PICKUP, EV_SHOOT, GEM_LARGE, GEM_REPAIR, WEAPON_COUNT } from '../sim/content.ts'
+import { BEACON_REWARD_HEAL, ENEMY_BOSS_FIRST, EV_BEACON, EV_KILL, EV_PICKUP, EV_SHOOT, GEM_LARGE, GEM_REPAIR, WEAPON_COUNT } from '../sim/content.ts'
 
 export const SFX_PULSE = 0
 export const SFX_WAVE = 1
@@ -78,6 +78,11 @@ export const SFX_TABLE: readonly (readonly SfxDef[])[] = [
   [sfx({ wave: SFX_WAVE, startHz: 523, endHz: 1046, sustain: 0.1, decay: 0.2, level: 0.16, arpRatio: 1.5, arpAt: 0.08, priority: 5, gapMs: 150 })],
   [],
   [],
+  [
+    sfx({ duty: 1, startHz: 587, endHz: 1175, attack: 0.004, sustain: 0.12, decay: 0.35, level: 0.2, arpRatio: 1.5, arpAt: 0.09, vibratoHz: 14, vibratoCents: 15, priority: 7, gapMs: 200 }),
+    sfx({ wave: SFX_WAVE, startHz: 440, endHz: 660, attack: 0.01, sustain: 0.1, decay: 0.3, level: 0.13, arpRatio: 1.25, arpAt: 0.1, priority: 6, gapMs: 200 }),
+  ],
+  [sfx({ wave: SFX_WAVE, startHz: 70, endHz: 180, attack: 0.02, sustain: 0.06, decay: 0.22, level: 0.16, priority: 4, gapMs: 400 })],
 ]
 
 export const SFX_VARIANT_STRIDE = 16
@@ -88,7 +93,8 @@ export function sfxVariant(type: number, a: number, b: number): number {
     const weapon = a >= 0 && a < WEAPON_COUNT ? a | 0 : 0
     return weapon * 2 + (b === 1 ? 1 : 0)
   }
-  if (type === EV_KILL) return a === ENEMY_DREADNOUGHT ? 1 : 0
+  if (type === EV_KILL) return a >= ENEMY_BOSS_FIRST ? 1 : 0
+  if (type === EV_BEACON) return a === BEACON_REWARD_HEAL ? 1 : 0
   if (type === EV_PICKUP) return a <= GEM_LARGE ? 0 : a === GEM_REPAIR ? 1 : 2
   return 0
 }

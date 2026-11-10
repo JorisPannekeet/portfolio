@@ -46,8 +46,8 @@ export function parseNote(text: string): number {
   return midi
 }
 
-function parseHex(text: string, what: string): number {
-  const value = parseInt(text, 16)
+function parseDigit(text: string, radix: number, what: string): number {
+  const value = parseInt(text, radix)
   if (text.length !== 1 || Number.isNaN(value)) throw new Error(`bad ${what} "${text}"`)
   return value
 }
@@ -76,14 +76,14 @@ export function parsePattern(text: string): PatternTable {
       const index = row * VOICE_COUNT + voice
       const midi = parseNote(noteText)
       note[index] = midi
-      if (instrumentText !== '.') instrument[index] = parseHex(instrumentText, 'instrument')
+      if (instrumentText !== '.') instrument[index] = parseDigit(instrumentText, 36, 'instrument')
       if (midi !== NOTE_EMPTY && midi !== NOTE_OFF && instrument[index] === 0) {
         throw new Error(`row ${row} voice ${VOICE_NAMES[voice]}: note without instrument`)
       }
       if (effectText !== '..') {
         if (!FX_LETTERS.includes(effectText[0]!)) throw new Error(`row ${row}: unknown effect "${effectText}"`)
         effect[index] = effectText.charCodeAt(0)
-        effectArg[index] = parseHex(effectText[1]!, 'effect argument')
+        effectArg[index] = parseDigit(effectText[1]!, 16, 'effect argument')
       }
     })
   })

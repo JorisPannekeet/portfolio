@@ -2,7 +2,23 @@ import { DUCK_CUTOFF, DUCK_LEVEL, MUSIC_LEVEL, OPEN_CUTOFF } from './runtime.ts'
 import type { AudioRuntime } from './runtime.ts'
 import { SFX_NOISE_LONG, SFX_NOISE_SHORT, SFX_PULSE, SFX_WAVE } from './sfx.ts'
 import type { SfxDef } from './sfx.ts'
-import { BAR_SECONDS, CHORD_MAJOR, INSTRUMENTS, NOISE_SHORT, SECTION_SYNTH_CUTOFF, SECTION_SYNTH_LEVEL } from './song.ts'
+import {
+  BAR_SECONDS,
+  CHORD_MAJOR,
+  INS_HAT,
+  INS_SHORT_BASS,
+  INSTRUMENTS,
+  INTENSITY_LEVELS,
+  NOISE_SHORT,
+  STEP_SECONDS,
+  TENSION_FADE_IN_SECONDS,
+  TENSION_FADE_OUT_BARS,
+  TENSION_HAT_NOTE,
+  TENSION_HAT_VOLUME,
+  TENSION_LEVEL,
+  TENSION_LOW_NOTE,
+  ZONE_SYNTH_BRIGHTNESS,
+} from './song.ts'
 import type { Instrument, Jingle } from './song.ts'
 import {
   FX_DUTY,
@@ -24,6 +40,8 @@ const NOISE_CLOCK_PER_HZ = 32
 const KICK_DROP_SECONDS = 0.08
 const PAD_DETUNE_CENTS = 7
 const STEAL_FADE = 0.004
+const BEND_SECONDS = 0.04
+const RING_MIX = 0.35
 
 function shapeEnvelope(param: AudioParam, time: number, peak: number, ins: Instrument, end: number): number {
   const attackEnd = time + ins.attack
@@ -56,7 +74,13 @@ function tone(
   const osc = ctx.createOscillator()
   if (wave) osc.setPeriodicWave(wave)
   else osc.type = type
-  osc.frequency.setValueAtTime(midiToHz(note), time)
+  const hz = midiToHz(note)
+  if (ins.bend !== 0) {
+    osc.frequency.setValueAtTime(hz * 2 ** (ins.bend / 12), time)
+    osc.frequency.exponentialRampToValueAtTime(hz, time + BEND_SECONDS)
+  } else {
+    osc.frequency.setValueAtTime(hz, time)
+  }
   if (sweep !== 0) {
     osc.detune.setValueAtTime(0, time)
     osc.detune.linearRampToValueAtTime(sweep * 100, time + duration)
@@ -68,9 +92,19 @@ function tone(
   if (send) env.connect(send)
   osc.start(time)
   osc.stop(stopAt)
+  if (ins.ring > 0) {
+    const partial = ctx.createOscillator()
+    partial.frequency.setValueAtTime(hz * ins.ring, time)
+    const mix = ctx.createGain()
+    mix.gain.value = RING_MIX
+    partial.connect(mix)
+    mix.connect(env)
+    partial.start(time)
+    partial.stop(stopAt)
+  }
 }
 
-function noise(rt: AudioRuntime, note: number, peak: number, ins: Instrument, time: number, duration: number): void {
+function noise(rt: AudioRuntime, note: number, peak: number, ins: Instrument, time: number, duration: number, destination: AudioNode): void {
   const ctx = rt.ctx
   const src = ctx.createBufferSource()
   src.buffer = ins.noise === NOISE_SHORT ? rt.noiseShort : rt.noiseLong
@@ -87,7 +121,7 @@ function noise(rt: AudioRuntime, note: number, peak: number, ins: Instrument, ti
   } else {
     src.connect(env)
   }
-  env.connect(rt.noiseBus)
+  env.connect(destination)
   src.start(time, Math.random() * src.buffer.duration)
   src.stop(stopAt)
 }
@@ -157,7 +191,7 @@ export function playMusicNote(
       tone(rt, rt.bassWave, 'sine', note, peak, ins, sweep, time, duration, rt.chipBus, null)
       break
     case VOICE_NOISE:
-      noise(rt, note, peak, ins, time, duration)
+      noise(rt, note, peak, ins, time, duration, rt.noiseBus)
       break
     case VOICE_KICK:
       kick(rt, note, peak, ins, time)
@@ -254,25 +288,67 @@ export function playJingle(rt: AudioRuntime, jingle: Jingle, time: number): void
   playLine(rt, jingle.bass, jingle, false, time)
 }
 
-export function startMusic(rt: AudioRuntime, section: number, time: number): void {
+function synthLevel(rt: AudioRuntime): number {
+  return INTENSITY_LEVELS[rt.level]!.synthLevel
+}
+
+function synthCutoff(rt: AudioRuntime): number {
+  return INTENSITY_LEVELS[rt.level]!.synthCutoff * ZONE_SYNTH_BRIGHTNESS[rt.theme]!
+}
+
+export function startMusic(rt: AudioRuntime, time: number): void {
   rt.musicBus.gain.setTargetAtTime(MUSIC_LEVEL, time, 0.02)
   rt.activeSynth = 0
-  rt.synthBus[0]!.gain.setTargetAtTime(SECTION_SYNTH_LEVEL[section]!, time, 0.02)
+  rt.synthBus[0]!.gain.setTargetAtTime(synthLevel(rt), time, 0.02)
   rt.synthBus[1]!.gain.setTargetAtTime(0, time, 0.02)
-  rt.synthTone.frequency.setTargetAtTime(SECTION_SYNTH_CUTOFF[section]!, time, 0.02)
+  rt.synthTone.frequency.setTargetAtTime(synthCutoff(rt), time, 0.02)
 }
 
 export function stopMusic(rt: AudioRuntime, time: number): void {
   rt.musicBus.gain.setTargetAtTime(0, time, 0.06)
 }
 
-export function crossfadeSynth(rt: AudioRuntime, section: number, time: number): void {
+export function crossfadeSynth(rt: AudioRuntime, time: number): void {
   const outgoing = rt.synthBus[rt.activeSynth]!
   rt.activeSynth = 1 - rt.activeSynth
   const incoming = rt.synthBus[rt.activeSynth]!
   outgoing.gain.setTargetAtTime(0, time, BAR_SECONDS / 4)
-  incoming.gain.setTargetAtTime(SECTION_SYNTH_LEVEL[section]!, time, BAR_SECONDS / 6)
-  rt.synthTone.frequency.setTargetAtTime(SECTION_SYNTH_CUTOFF[section]!, time, BAR_SECONDS / 3)
+  incoming.gain.setTargetAtTime(synthLevel(rt), time, BAR_SECONDS / 6)
+  rt.synthTone.frequency.setTargetAtTime(synthCutoff(rt), time, BAR_SECONDS / 3)
+}
+
+export function applyIntensity(rt: AudioRuntime, time: number): void {
+  rt.synthBus[rt.activeSynth]!.gain.setTargetAtTime(synthLevel(rt), time, BAR_SECONDS / 6)
+  rt.synthTone.frequency.setTargetAtTime(synthCutoff(rt), time, BAR_SECONDS / 3)
+}
+
+export function setTension(rt: AudioRuntime, on: boolean, time: number): void {
+  rt.tensionOn = on ? 1 : 0
+  if (on) {
+    rt.tensionBus.gain.setTargetAtTime(TENSION_LEVEL, time, TENSION_FADE_IN_SECONDS / 3)
+    return
+  }
+  const fade = TENSION_FADE_OUT_BARS * BAR_SECONDS
+  rt.tensionEnd = time + fade
+  rt.tensionBus.gain.setTargetAtTime(0, time, fade / 4)
+}
+
+export function silenceTension(rt: AudioRuntime, time: number): void {
+  rt.tensionOn = 0
+  rt.tensionEnd = 0
+  rt.tensionBus.gain.cancelScheduledValues(time)
+  rt.tensionBus.gain.setValueAtTime(0, time)
+}
+
+const TENSION_BASS = INSTRUMENTS[INS_SHORT_BASS]!
+const TENSION_HAT = INSTRUMENTS[INS_HAT]!
+
+export function playTension(rt: AudioRuntime, row: number, time: number): void {
+  if ((row & 1) === 0) {
+    const note = (row & 2) === 0 ? TENSION_LOW_NOTE : TENSION_LOW_NOTE + 12
+    tone(rt, rt.bassWave, 'sine', note, TENSION_BASS.level, TENSION_BASS, 0, time, STEP_SECONDS * 2, rt.tensionBus, null)
+  }
+  noise(rt, TENSION_HAT_NOTE, (TENSION_HAT.level * TENSION_HAT_VOLUME) / 15, TENSION_HAT, time, STEP_SECONDS, rt.tensionBus)
 }
 
 export function setDuck(rt: AudioRuntime, ducked: boolean, time: number): void {
