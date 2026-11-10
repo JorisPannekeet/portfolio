@@ -101,6 +101,7 @@ const en = {
   repairEffect: '+{0} armor, restored now',
   statDamage: '{0} damage',
   statNeverDocks: 'Never docks',
+  statBothSides: 'Cuts both sides',
   statPiercesAll: 'Pierces everything',
   statPierce: '{0} pierce',
   statRange: '{0} range',

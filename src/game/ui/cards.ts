@@ -107,7 +107,9 @@ export function weaponChangeLines(w: number, from: number, to: number, t: String
   const damage = def.damage[to]! - def.damage[from]!
   if (damage !== 0) lines.push(signed(t.statDamage, damage))
   const amount = def.amount[to]! - def.amount[from]!
-  if (meaning.count && amount !== 0) lines.push(countLine(t, meaning.count, amount, true))
+  const bothSides = meaning.count === 'slash' && def.amount[from] === 1 && def.amount[to]! > 1
+  if (bothSides) lines.push(t.statBothSides)
+  else if (meaning.count && amount !== 0) lines.push(countLine(t, meaning.count, amount, true))
   const before = def.cooldown[from]!
   const after = def.cooldown[to]!
   if (!permanent && after !== before) lines.push(fill(t.statFaster[meaning.cadence], [Math.max(1, Math.round(((before - after) / before) * 100))]))

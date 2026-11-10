@@ -44,7 +44,9 @@ function expectedChanges(w: number, from: number, to: number): string[] {
   if (permanent && def.duration[from] !== 0) out.push(strings.statNeverDocks)
   if (def.damage[to] !== def.damage[from]) out.push(signed(strings.statDamage, def.damage[to]! - def.damage[from]!))
   const amount = def.amount[to]! - def.amount[from]!
-  if (meaning.count && amount !== 0) {
+  if (meaning.count === 'slash' && def.amount[from] === 1 && amount > 0) {
+    out.push(strings.statBothSides)
+  } else if (meaning.count && amount !== 0) {
     const forms = strings.statCount[meaning.count]
     out.push('+' + fill(amount === 1 ? forms[0] : forms[1], amount))
   }
