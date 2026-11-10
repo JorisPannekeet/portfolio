@@ -14,6 +14,7 @@ export const FX_GLINT = 7
 export const FX_LEVEL_RING = 8
 export const FX_BEACON_ICON = 9
 export const FX_BEACON_RING = 10
+export const FX_MUZZLE = 11
 
 export const DIGIT_BUFFER = 12
 export const DEPTH_CAP = MAX_PROPS + MAX_ENEMIES + MAX_DRONES + 1
@@ -50,6 +51,7 @@ export interface View {
   numbersThisFrame: number
   sparksThisFrame: number
   debrisThisFrame: number
+  muzzlesThisFrame: number
   activeNumbers: number
   fxNext: number
   fxKind: Uint8Array
@@ -106,6 +108,7 @@ export function createView(ctx: CanvasRenderingContext2D, atlas: Atlas, image: C
     numbersThisFrame: 0,
     sparksThisFrame: 0,
     debrisThisFrame: 0,
+    muzzlesThisFrame: 0,
     activeNumbers: 0,
     fxNext: 0,
     fxKind: new Uint8Array(FX_CAP),

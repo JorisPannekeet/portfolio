@@ -7,13 +7,14 @@ import { drawFrame } from '../src/game/render/renderer.hot.ts'
 import { createState, resetState } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
 import { botInput } from '../src/game/sim/bot.hot.ts'
-import { PROP_RADIUS, PROPS_PER_SLOT, PROP_SLOTS_PER_ZONE, START_X, START_Y, WORLD_HALF, ZONE_COUNT } from '../src/game/sim/content.ts'
+import { BULLET_ORB, BULLET_SHARD, BULLET_SHELL, ENEMY_TANK, MAX_BULLETS, PROP_RADIUS, PROPS_PER_SLOT, PROP_SLOTS_PER_ZONE, START_X, START_Y, WORLD_HALF, ZONE_COUNT } from '../src/game/sim/content.ts'
 
 const [out, seedArg = '1', tickArg = '3600', widthArg = '195', heightArg = '422', upscaleArg = '3'] = process.argv.slice(2)
 if (!out) {
   console.error('usage: node scripts/frame-preview.mjs <out.png> [seed=1] [tick=3600] [width=195] [height=422] [upscale=3]')
   console.error('env: SCALE=<css px per game px> PLAYER=<x,y> MOVING=1 FAKE=1|far|props EVENTS=beacon,zone,heal FX_AGE=<ticks>')
   console.error('     NEAR=<kind:dx:dy;...> props placed relative to the player, SHRINK=<n> renders n times larger and averages down')
+  console.error('     BULLETS=1|fill hostile fire patterns around the player (fill tops the pool up to MAX_BULLETS), EVENTS=fire muzzle flash')
   process.exit(1)
 }
 const shrink = Math.max(1, Number(process.env.SHRINK ?? 1) | 0)
@@ -100,6 +101,14 @@ const softwareContext = {
   beginPath() {
     this.path = []
   },
+  moveTo(x, y) {
+    this.path.push({ move: [x, y] })
+  },
+  lineTo(x, y) {
+    const last = this.path[this.path.length - 1]
+    const from = last?.move ?? last?.line?.slice(2)
+    if (from) this.path.push({ line: [from[0], from[1], x, y] })
+  },
   arc(x, y, radius, a0, a1) {
     this.path.push({ x, y, rx: radius, ry: radius, a0, a1 })
   },
@@ -110,7 +119,19 @@ const softwareContext = {
     const [r, g, b] = rgb(this.strokeStyle)
     const seen = new Set()
     for (const e of this.path) {
-      if (e.rect) continue
+      if (e.line) {
+        const [x0, y0, x1, y1] = e.line
+        const steps = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))))
+        for (let i = 0; i <= steps; i++) {
+          const px = Math.floor(x0 + ((x1 - x0) * i) / steps)
+          const py = Math.floor(y0 + ((y1 - y0) * i) / steps)
+          if (seen.has(py * 100000 + px)) continue
+          seen.add(py * 100000 + px)
+          blend(px, py, r, g, b, this.globalAlpha)
+        }
+        continue
+      }
+      if (e.rect || e.move) continue
       for (let w = 0; w < Math.max(1, Math.round(this.lineWidth)); w++) {
         const grow = w - (Math.max(1, Math.round(this.lineWidth)) - 1) / 2
         const rx = e.rx + grow
@@ -130,7 +151,7 @@ const softwareContext = {
   fill() {
     const [r, g, b] = rgb(this.fillStyle)
     for (const e of this.path) {
-      if (e.rect) continue
+      if (e.rect || e.move || e.line) continue
       for (let py = Math.floor(e.y - e.ry); py <= Math.ceil(e.y + e.ry); py++) {
         for (let px = Math.floor(e.x - e.rx); px <= Math.ceil(e.x + e.rx); px++) {
           const nx = (px - e.x) / e.rx
@@ -285,8 +306,78 @@ if (process.env.FAKE && process.env.FAKE !== 'props') {
   s.bossHp = 1700
   s.bossMaxHp = 2500
 }
+function addBullet(kind, x, y, vx, vy) {
+  if (s.bulletCount >= MAX_BULLETS) return
+  const i = s.bulletCount++
+  s.bKind[i] = kind
+  s.bx[i] = x
+  s.by[i] = y
+  s.bvx[i] = vx
+  s.bvy[i] = vy
+  s.bpx[i] = x - vx
+  s.bpy[i] = y - vy
+}
+
+function addHostile(type, x, y, aim) {
+  const i = s.enemyCount++
+  s.eType[i] = type
+  s.ex[i] = s.epx[i] = x
+  s.ey[i] = s.epy[i] = y
+  s.eFlash[i] = 0
+  s.eAim[i] = aim
+}
+
+const boss = { x: 0, y: -100 }
+if (process.env.BULLETS) {
+  s.bulletCount = 0
+  s.shotCount = 0
+  for (let i = 0; i < s.enemyCount; i++) s.eAim[i] = 0
+  const bx = s.px + boss.x
+  const by = s.py + boss.y
+  addHostile(6 + s.zone, bx, by, 18)
+  s.bossHp = 1700
+  s.bossMaxHp = 2500
+  for (let arm = 0; arm < 2; arm++) {
+    for (let k = 0; k < 16; k++) {
+      const r = 26 + k * 5
+      const angle = k * 0.42 + arm * Math.PI
+      addBullet(BULLET_ORB, bx + Math.cos(angle) * r, by + Math.sin(angle) * r, Math.cos(angle + 0.5) * 0.9, Math.sin(angle + 0.5) * 0.9)
+    }
+  }
+  const toPlayer = Math.atan2(s.py - by, s.px - bx)
+  const ringCount = 36
+  for (let k = 0; k < ringCount; k++) {
+    const angle = toPlayer + (k * Math.PI * 2) / ringCount
+    if (k <= 1 || k >= ringCount - 1) continue
+    addBullet(BULLET_ORB, bx + Math.cos(angle) * 100, by + Math.sin(angle) * 100, Math.cos(angle) * 0.8, Math.sin(angle) * 0.8)
+  }
+  for (let k = -2; k <= 2; k++) {
+    const angle = toPlayer + k * 0.16
+    for (const d of [44, 58]) addBullet(BULLET_SHARD, bx + Math.cos(angle) * d, by + Math.sin(angle) * d, Math.cos(angle) * 2.2, Math.sin(angle) * 2.2)
+  }
+  const tanks = [[-72, 64, 8], [78, 96, 46], [-80, -30, 0]]
+  for (const [dx, dy, aim] of tanks) {
+    const tx = s.px + dx
+    const ty = s.py + dy
+    addHostile(ENEMY_TANK, tx, ty, aim)
+    const angle = Math.atan2(-dy, -dx)
+    if (aim === 0) for (const d of [22, 40]) addBullet(BULLET_SHELL, tx + Math.cos(angle) * d, ty + Math.sin(angle) * d, Math.cos(angle) * 1.6, Math.sin(angle) * 1.6)
+  }
+  if (process.env.BULLETS === 'fill') {
+    const random = fakeRandom(7)
+    while (s.bulletCount < MAX_BULLETS) {
+      const angle = random() * Math.PI * 2
+      const kind = random() < 0.6 ? BULLET_ORB : random() < 0.5 ? BULLET_SHARD : BULLET_SHELL
+      addBullet(kind, s.px + (random() - 0.5) * width * 1.4, s.py + (random() - 0.5) * height * 1.4, Math.cos(angle), Math.sin(angle))
+    }
+  }
+  console.error(`bullets ${s.bulletCount}`)
+}
 if (process.env.EVENTS) {
-  const kinds = { beacon: [14, 62, -70, 2, 1], heal: [14, -58, -78, -1, 0], zone: [15, 0, 0, s.zone, 0] }
+  const kinds = {
+    beacon: [14, 62, -70, 2, 1], heal: [14, -58, -78, -1, 0], zone: [15, 0, 0, s.zone, 0],
+    fire: [16, boss.x, boss.y + 22, 6, BULLET_ORB], shell: [16, -72 + 8, 64 - 4, ENEMY_TANK, BULLET_SHELL],
+  }
   for (const name of process.env.EVENTS.split(',')) {
     const [type, dx, dy, a, b] = kinds[name]
     const slot = s.evHead % s.evType.length
@@ -341,4 +432,4 @@ header.writeUInt32BE(W, 0)
 header.writeUInt32BE(H, 4)
 header.set([8, 6, 0, 0, 0], 8)
 writeFileSync(out, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]))
-console.log(`${out}: ${W}x${H} seed ${s.seed} tick ${s.tick} phase ${s.phase} level ${s.level} kills ${s.kills} hostiles ${s.enemyCount} shots ${s.shotCount} gems ${s.gemCount} hp ${Math.round(s.hp)}/${s.maxHp} props ${s.propCount} drawImage ${drawCalls}`)
+console.log(`${out}: ${W}x${H} seed ${s.seed} tick ${s.tick} phase ${s.phase} level ${s.level} kills ${s.kills} hostiles ${s.enemyCount} shots ${s.shotCount} gems ${s.gemCount} hp ${Math.round(s.hp)}/${s.maxHp} bullets ${s.bulletCount} props ${s.propCount} drawImage ${drawCalls}`)

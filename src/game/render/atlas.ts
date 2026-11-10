@@ -5,6 +5,7 @@ export const KIND_ACTOR = 1
 export const KIND_ROTATED = 2
 export const KIND_GLYPH = 3
 export const KIND_ICON = 4
+export const KIND_ROTATED_OUTLINED = 5
 
 export const ICON_FULL = 0
 export const ICON_MINI = 1
@@ -47,12 +48,13 @@ interface Bitmap {
 }
 
 const FLASH_KEY = 'W'
+const OUTLINE_KEY = '0'
 const GLYPH_TINT_KEYS = ['', '0', 'R', 'A', 'G']
 
 export function variantCount(kind: number): number {
   if (kind === KIND_ACTOR) return 4
   if (kind === KIND_GLYPH) return GLYPH_TINT_KEYS.length
-  if (kind === KIND_ROTATED) return ROTATIONS
+  if (kind === KIND_ROTATED || kind === KIND_ROTATED_OUTLINED) return ROTATIONS
   if (kind === KIND_ICON) return 2
   return 1
 }
@@ -115,8 +117,8 @@ function salientKey(block: string): string {
   return TRANSPARENT_KEY
 }
 
-export function rotate(source: Bitmap, angle: number): Bitmap {
-  const size = Math.ceil(Math.hypot(source.w, source.h)) | 1
+export function rotate(source: Bitmap, angle: number, margin = 0): Bitmap {
+  const size = (Math.ceil(Math.hypot(source.w, source.h)) | 1) + margin * 2
   const data = new Uint8Array(size * size * 4)
   const cos = Math.cos(angle)
   const sin = Math.sin(angle)
@@ -136,6 +138,40 @@ export function rotate(source: Bitmap, angle: number): Bitmap {
   return { w: size, h: size, data }
 }
 
+export function closeGaps(source: Bitmap): Bitmap {
+  const { w, h } = source
+  const data = source.data.slice()
+  const at = (x: number, y: number) => (x >= 0 && y >= 0 && x < w && y < h && source.data[(y * w + x) * 4 + 3]! > 0 ? (y * w + x) * 4 : -1)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (at(x, y) >= 0) continue
+      const left = at(x - 1, y)
+      const up = at(x, y - 1)
+      const from = left >= 0 && at(x + 1, y) >= 0 ? left : up >= 0 && at(x, y + 1) >= 0 ? up : -1
+      if (from >= 0) data.copyWithin((y * w + x) * 4, from, from + 4)
+    }
+  }
+  return { w, h, data }
+}
+
+export function outline(source: Bitmap, rgba: Uint8Array): Bitmap {
+  const { w, h } = source
+  const data = source.data.slice()
+  const ink = paletteIndex(OUTLINE_KEY) * 4
+  const opaque = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && source.data[(y * w + x) * 4 + 3]! > 0
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (opaque(x, y) || !(opaque(x - 1, y) || opaque(x + 1, y) || opaque(x, y - 1) || opaque(x, y + 1))) continue
+      const target = (y * w + x) * 4
+      data[target] = rgba[ink]!
+      data[target + 1] = rgba[ink + 1]!
+      data[target + 2] = rgba[ink + 2]!
+      data[target + 3] = 255
+    }
+  }
+  return { w, h, data }
+}
+
 function framesFor(def: SpriteDef, rgba: Uint8Array): Bitmap[] {
   const out: Bitmap[] = []
   for (const rows of def.frames) {
@@ -149,6 +185,9 @@ function framesFor(def: SpriteDef, rgba: Uint8Array): Bitmap[] {
     } else if (def.kind === KIND_ICON) {
       out.push(rasterise(def.name, rows, rgba, '', false))
       out.push(rasterise(def.name, miniRows(rows), rgba, '', false))
+    } else if (def.kind === KIND_ROTATED_OUTLINED) {
+      const upright = rasterise(def.name, rows, rgba, '', false)
+      for (let r = 0; r < ROTATIONS; r++) out.push(outline(closeGaps(rotate(upright, (r * Math.PI * 2) / ROTATIONS, 1)), rgba))
     } else if (def.kind === KIND_ROTATED) {
       const upright = rasterise(def.name, rows, rgba, '', false)
       for (let r = 0; r < ROTATIONS; r++) out.push(rotate(upright, (r * Math.PI * 2) / ROTATIONS))

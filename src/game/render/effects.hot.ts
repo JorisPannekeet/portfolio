@@ -9,6 +9,7 @@ import {
   EV_BLAST,
   EV_BOSS,
   EV_DEAD,
+  EV_ENEMY_FIRE,
   EV_EVOLVE,
   EV_HEAL,
   EV_HIT,
@@ -28,6 +29,7 @@ import {
   FX_DEBRIS,
   FX_GLINT,
   FX_LEVEL_RING,
+  FX_MUZZLE,
   FX_NONE,
   FX_NUMBER,
   FX_PULSE,
@@ -36,7 +38,7 @@ import {
   type View,
 } from './view.ts'
 import { GLYPH_AMBER, GLYPH_DARK, GLYPH_GREEN, GLYPH_LIGHT, GLYPH_RED } from './atlas.ts'
-import { DEBRIS_PLAYER_FRAME, ICON_PASSIVE_FIRST, ICON_REPAIR, ICON_SIZE, SPR_DEBRIS, SPR_GLINT, SPR_ICONS, SPR_SPARK } from './sheet.ts'
+import { DEBRIS_PLAYER_FRAME, ICON_PASSIVE_FIRST, ICON_REPAIR, ICON_SIZE, MUZZLE_FRAME_COUNT, SPR_DEBRIS, SPR_GLINT, SPR_ICONS, SPR_MUZZLE, SPR_SPARK } from './sheet.ts'
 import { ICON_FULL } from './atlas.ts'
 import { blitAt, blitCentered, drawNumber, frameId, numberWidth } from './sprite.hot.ts'
 import { AMBER, ARMOR, CORE, CYAN, CYAN_DEEP, INK, PALE, ZONE_COLOR } from './colors.ts'
@@ -49,6 +51,8 @@ const MAX_DEBRIS_KILLS_PER_FRAME = 14
 const BEACON_ICON_LIFE = 72
 const SWEEP_LIFE = 26
 const HEAVY_HIT = 40
+const MUZZLE_LIFE = 9
+const MAX_MUZZLES_PER_FRAME = 8
 
 export function random(v: View): number {
   let x = v.rng | 0
@@ -121,6 +125,7 @@ export function consumeEvents(v: View, s: State): void {
   v.numbersThisFrame = 0
   v.sparksThisFrame = 0
   v.debrisThisFrame = 0
+  v.muzzlesThisFrame = 0
   const now = s.tick
   for (let n = v.eventCursor; n < s.evHead; n++) {
     const slot = n % EVENT_CAP
@@ -195,6 +200,11 @@ export function consumeEvents(v: View, s: State): void {
       v.sweepColor = ZONE_COLOR[a >= 0 && a < ZONE_COUNT ? a : 0]!
       v.sweepStart = now
       v.sweepUntil = now + SWEEP_LIFE
+    } else if (type === EV_ENEMY_FIRE) {
+      if (v.muzzlesThisFrame < MAX_MUZZLES_PER_FRAME) {
+        v.muzzlesThisFrame++
+        spawn(v, FX_MUZZLE, x, y, now, MUZZLE_LIFE)
+      }
     } else if (type === EV_WON) {
       startFlash(v, ARMOR, now, 30)
       spawn(v, FX_LEVEL_RING, x, y, now, 30)
@@ -286,6 +296,8 @@ export function drawEffects(v: View, t: number, playerX: number, playerY: number
       blitCentered(v, frameId(v, SPR_SPARK, p < 0.34 ? 0 : p < 0.67 ? 1 : 2, 0), Math.round(x), Math.round(y))
     } else if (kind === FX_GLINT) {
       blitCentered(v, frameId(v, SPR_GLINT, p < 0.34 ? 0 : p < 0.67 ? 1 : 2, 0), Math.round(x), Math.round(y))
+    } else if (kind === FX_MUZZLE) {
+      blitCentered(v, frameId(v, SPR_MUZZLE, (p * MUZZLE_FRAME_COUNT) | 0, 0), Math.round(x), Math.round(y))
     } else if (kind === FX_DEBRIS) {
       const travel = age * (1 - p * 0.5)
       x += v.fxVx[i]! * travel

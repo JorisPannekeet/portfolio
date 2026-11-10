@@ -1,4 +1,4 @@
-export const PALETTE_KEYS = '012345gswWRrOoAaUuTtHhVvCcGeBbYkKmMiIjJfnNpPEFqzZyx6789lLQSdDX'
+export const PALETTE_KEYS = '012345gswWRrOoAaUuTtHhVvCcGeBbYkKmMiIjJfnNpPEFqzZyx6789lLQSdDX+*'
 
 export const PALETTE_HEX: readonly string[] = [
   '#0D0F12',
@@ -63,6 +63,8 @@ export const PALETTE_HEX: readonly string[] = [
   '#6B605A',
   '#3F2C25',
   '#3F7258',
+  '#D23CFF',
+  '#F6DDFF',
 ]
 
 export const TRANSPARENT_KEY = '.'

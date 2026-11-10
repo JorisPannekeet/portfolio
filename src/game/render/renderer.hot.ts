@@ -6,6 +6,7 @@ import { SPR_GEMS, SPR_SHOTS } from './sheet.ts'
 import { blitCentered, frameId } from './sprite.hot.ts'
 import { drawActors, drawPropShadows } from './actors.hot.ts'
 import { drawPois } from './world.hot.ts'
+import { drawBullets, drawWindUps } from './bullets.hot.ts'
 import { drawFloor } from './terrain.hot.ts'
 import { consumeEvents, drawEffects, drawFlash, drawSweep, shakeOffset } from './effects.hot.ts'
 import { drawHud, drawPlayerArmor } from './hud.hot.ts'
@@ -73,9 +74,11 @@ export function drawFrame(v: View, s: State, alpha: number): void {
   drawAura(v, s, t, playerX, playerY)
   drawActors(v, s, a, t, playerX, playerY)
   drawShots(v, s, a)
+  drawWindUps(v, s, a, t, playerX, playerY)
   drawEffects(v, t, playerX, playerY)
   drawFlash(v, t)
   drawSweep(v, t)
+  drawBullets(v, s, a, t)
   if (s.phase !== PHASE_DEAD) drawPlayerArmor(v, s, playerX, playerY)
   drawHud(v, s, t, playerX, playerY)
 }

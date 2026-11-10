@@ -29,7 +29,7 @@ function contactSheet() {
   defs.forEach((def, sprite) => {
     if (only && !only.includes(def.name) && def.name !== 'compare') return
     const variants = atlas.variants[sprite]
-    const shown = def.kind === 1 ? [0, 2] : def.kind === 4 ? [0, 1] : [0]
+    const shown = def.kind === 1 ? [0, 2] : def.kind === 4 ? [0, 1] : def.kind === 5 || (def.kind === 2 && process.env.ROTATIONS) ? [...Array(variants).keys()] : [0]
     def.frames.forEach((_, frame) => {
       for (const variant of shown) {
         if (def.kind === 1 && variant === 2 && frame > 0) continue

@@ -1,4 +1,4 @@
-import { KIND_ACTOR, KIND_GLYPH, KIND_ICON, KIND_PLAIN, KIND_ROTATED, type SpriteDef } from './atlas.ts'
+import { KIND_ACTOR, KIND_GLYPH, KIND_ICON, KIND_PLAIN, KIND_ROTATED, KIND_ROTATED_OUTLINED, type SpriteDef } from './atlas.ts'
 import { playerIdleA, playerIdleB, playerWalkA, playerWalkB, playerWalkC, playerWalkD } from '../sprites/player.ts'
 import { scoutA, scoutB } from '../sprites/scout.ts'
 import { gruntA, gruntB } from '../sprites/grunt.ts'
@@ -10,6 +10,7 @@ import { dreadnoughtA, dreadnoughtB } from '../sprites/dreadnought.ts'
 import { cellLarge, cellMedium, cellSmall, magnet, repairKit } from '../sprites/pickups.ts'
 import { beamBolt, missile, particleLance, vulcanRound } from '../sprites/shots.ts'
 import { orbitDrone } from '../sprites/drone.ts'
+import { muzzleFrames, orbBright, orbDim, shard, shell } from '../sprites/bullets.ts'
 import { debrisFrames, glintFrames, hudMarkFrames, sparkFrames } from '../sprites/effects.ts'
 import { fontFrames } from '../sprites/font.ts'
 import {
@@ -100,6 +101,14 @@ export const SPR_EDGES = 26
 export const SPR_DECK_DIGITS = 27
 export const SPR_PROPS = 28
 export const SPR_PROP_SHADOWS = 29
+export const SPR_ORBS = 30
+export const SPR_HOSTILE_SHOTS = 31
+export const SPR_MUZZLE = 32
+
+export const HOSTILE_SHOT_SHELL = 0
+export const HOSTILE_SHOT_SHARD = 1
+export const ORB_FRAME_COUNT = 2
+export const MUZZLE_FRAME_COUNT = 3
 
 export const ENEMY_SPRITE = Uint8Array.of(
   SPR_SCOUT,
@@ -305,4 +314,7 @@ export const SPRITE_DEFS: readonly SpriteDef[] = [
   { name: 'deck-digits', kind: KIND_PLAIN, frames: deckDigitFrames },
   { name: 'props', kind: KIND_PLAIN, frames: propFrames },
   { name: 'prop-shadows', kind: KIND_PLAIN, frames: propShadowFrames },
+  { name: 'orbs', kind: KIND_PLAIN, frames: [orbBright, orbDim] },
+  { name: 'hostile-shots', kind: KIND_ROTATED_OUTLINED, frames: [shell, shard] },
+  { name: 'muzzle', kind: KIND_PLAIN, frames: muzzleFrames },
 ]
