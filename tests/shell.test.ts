@@ -121,8 +121,9 @@ test('choice codes resolve to card text and tags', () => {
   const passiveLevel = new Uint8Array(9)
   passiveLevel[2] = 4
   assert.deepEqual(describeChoice(0, weaponLevel, passiveLevel, strings), {
-    choice: 0, name: strings.weaponName[0], tag: `${strings.tagLevel} 2`, desc: strings.weaponDesc[0], evolution: false,
+    choice: 0, name: strings.weaponName[0], tag: `${strings.tagLevel} 2`, blurb: '', lines: ['+2 damage', '5% faster fire'], evolution: false,
   })
+  assert.equal(describeChoice(1, weaponLevel, passiveLevel, strings).blurb, strings.weaponDesc[1])
   assert.equal(describeChoice(1, weaponLevel, passiveLevel, strings).tag, strings.tagNew)
   assert.equal(describeChoice(CHOICE_PASSIVE + 2, weaponLevel, passiveLevel, strings).tag, `${strings.tagLevel} 5`)
   assert.equal(describeChoice(CHOICE_PASSIVE + 8, weaponLevel, passiveLevel, strings).name, strings.passiveName[8])

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode, type MutableRefObject } from 'react'
 import { Link } from 'react-router-dom'
 import type { Renderer } from '../render/renderer.ts'
+import { BEACON_REWARD_HEAL, CHOICE_PASSIVE, CHOICE_REPAIR, EV_BEACON } from '../sim/content.ts'
 import type { Card } from './cards.ts'
 import { strings } from './i18n.ts'
 
@@ -8,7 +9,15 @@ export interface RunStats {
   time: string
   kills: number
   level: number
+  beacons: number
   seed: number
+}
+
+export interface Notice {
+  id: number
+  type: number
+  a: number
+  b: number
 }
 
 function Dialog({ labelId, primaryRef, variant, children }: {
@@ -57,6 +66,7 @@ export function TitleOverlay({ primaryRef, coarsePointer, muted, onLaunch, onTog
       <span className="play-decal">{strings.unit}</span>
       <h1 id="play-title-heading" className="play-title">{strings.title}</h1>
       <p className="play-tagline">{strings.tagline}</p>
+      <p className="play-tagline play-tagline--map">{strings.mapHint}</p>
       <p className="play-hint">{coarsePointer ? strings.controlsMobile : strings.controlsDesktop}</p>
       <div className="play-actions">
         <button ref={primaryRef} type="button" className="btn btn--primary play-btn" onClick={onLaunch}>
@@ -90,7 +100,7 @@ export function PauseOverlay({ primaryRef, muted, onResume, onToggleSound }: {
   )
 }
 
-function CardIcon({ choice, renderer }: { choice: number; renderer: Renderer | null }) {
+function ChoiceIcon({ choice, renderer, className }: { choice: number; renderer: Renderer | null; className: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d')
@@ -98,7 +108,7 @@ function CardIcon({ choice, renderer }: { choice: number; renderer: Renderer | n
     ctx.clearRect(0, 0, 16, 16)
     renderer.drawIcon(ctx, choice, 0, 0, 1)
   }, [choice, renderer])
-  return <canvas ref={canvasRef} className="play-card-icon" width={16} height={16} aria-hidden="true" />
+  return <canvas ref={canvasRef} className={className} width={16} height={16} aria-hidden="true" />
 }
 
 export function LevelUpOverlay({ primaryRef, cards, renderer, onPick }: {
@@ -122,10 +132,15 @@ export function LevelUpOverlay({ primaryRef, cards, renderer, onPick }: {
             onClick={() => onPick(index)}
           >
             <span className="play-card-key" aria-hidden="true">{index + 1}</span>
-            <CardIcon choice={card.choice} renderer={renderer} />
+            <ChoiceIcon choice={card.choice} renderer={renderer} className="play-card-icon" />
             <span className="play-card-name">{card.name}</span>
             <span className="play-card-tag">{card.tag}</span>
-            <span className="play-card-desc">{card.desc}</span>
+            <span className="play-card-body">
+              {card.blurb && <span className="play-card-blurb">{card.blurb}</span>}
+              <span className="play-card-lines" role="list">
+                {card.lines.map((line, lineIndex) => <span key={lineIndex} className="play-card-line" role="listitem">{line}</span>)}
+              </span>
+            </span>
           </button>
         ))}
       </div>
@@ -147,6 +162,7 @@ export function EndOverlay({ primaryRef, won, stats, onRelaunch }: {
         <div><dt>{strings.statTime}</dt><dd>{stats.time}</dd></div>
         <div><dt>{strings.statKills}</dt><dd>{stats.kills}</dd></div>
         <div><dt>{strings.statLevel}</dt><dd>{stats.level}</dd></div>
+        <div><dt>{strings.statBeacons}</dt><dd>{stats.beacons}</dd></div>
         <div><dt>{strings.statSeed}</dt><dd>{stats.seed}</dd></div>
       </dl>
       <div className="play-actions">
@@ -156,5 +172,38 @@ export function EndOverlay({ primaryRef, won, stats, onRelaunch }: {
         <ExitLink />
       </div>
     </Dialog>
+  )
+}
+
+function NoticeBody({ notice, renderer }: { notice: Notice; renderer: Renderer | null }) {
+  if (notice.type !== EV_BEACON) {
+    return (
+      <>
+        <span className="play-toast-label">{strings.toastEntering}</span>
+        <span className="play-toast-text">{strings.zoneName[notice.a] ?? ''}</span>
+      </>
+    )
+  }
+  const repaired = notice.a === BEACON_REWARD_HEAL
+  return (
+    <>
+      <ChoiceIcon choice={repaired ? CHOICE_REPAIR : CHOICE_PASSIVE + notice.a} renderer={renderer} className="play-toast-icon" />
+      <span className="play-toast-label">{strings.toastBeacon}</span>
+      <span className="play-toast-text">
+        {repaired ? strings.toastBeaconRepair : `${strings.passiveName[notice.a] ?? ''} ${strings.tagLevel} ${notice.b}`}
+      </span>
+    </>
+  )
+}
+
+export function NoticeToast({ notice, renderer }: { notice: Notice | null; renderer: Renderer | null }) {
+  return (
+    <div className="play-toast-region" role="status" aria-live="polite" aria-atomic="true">
+      {notice && (
+        <div key={notice.id} className="play-toast" data-kind={notice.type === EV_BEACON ? 'beacon' : 'zone'}>
+          <NoticeBody notice={notice} renderer={renderer} />
+        </div>
+      )}
+    </div>
   )
 }

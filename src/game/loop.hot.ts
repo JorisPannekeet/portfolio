@@ -1,4 +1,4 @@
-import { INPUT_CHOICE, PHASE_PLAYING, TICK_HZ } from './sim/content.ts'
+import { EVENT_CAP, EV_BEACON, EV_ZONE, INPUT_CHOICE, PHASE_PLAYING, TICK_HZ } from './sim/content.ts'
 import type { State } from './sim/state.ts'
 import { step } from './sim/step.hot.ts'
 import type { Renderer } from './render/renderer.ts'
@@ -22,7 +22,9 @@ export interface Loop {
   alpha: number
   lastPhase: number
   frameHandle: number
+  eventCursor: number
   onPhase: (phase: number) => void
+  onNotice: (type: number, a: number, b: number) => void
 }
 
 let current: Loop | null = null
@@ -60,6 +62,18 @@ function stepOnce(loop: Loop): void {
   }
 }
 
+function readNotices(loop: Loop): void {
+  const s = loop.s
+  if (s.evHead < loop.eventCursor) loop.eventCursor = 0
+  if (s.evHead - loop.eventCursor > EVENT_CAP) loop.eventCursor = s.evHead - EVENT_CAP
+  while (loop.eventCursor < s.evHead) {
+    const slot = loop.eventCursor % EVENT_CAP
+    const type = s.evType[slot]!
+    loop.eventCursor++
+    if (type === EV_BEACON || type === EV_ZONE) loop.onNotice(type, s.evA[slot]!, s.evB[slot]!)
+  }
+}
+
 function frame(now: number): void {
   const loop = current
   if (loop === null) return
@@ -77,6 +91,7 @@ function frame(now: number): void {
     if (!loop.active || loop.accumulator >= TICK_MS) loop.accumulator = 0
     loop.alpha = loop.accumulator / TICK_MS
   }
+  readNotices(loop)
   loop.renderer.draw(loop.s, loop.alpha)
   loop.audio.update(loop.s)
 }

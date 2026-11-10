@@ -1,19 +1,28 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { INPUT_CHOICE, INPUT_IDLE, PHASE_PLAYING, RUN_TICKS, TICK_HZ } from '@/game/sim/content.ts'
-import { createState, resetState } from '@/game/sim/state.ts'
-import { createRenderer } from '@/game/render/renderer.ts'
+import { INPUT_CHOICE, INPUT_IDLE, PHASE_PLAYING, POI_BEACON, RUN_TICKS, TICK_HZ } from '@/game/sim/content.ts'
+import { createState, resetState, type State } from '@/game/sim/state.ts'
+import { createRenderer, pickScale } from '@/game/render/renderer.ts'
 import { createAudio } from '@/game/audio/audio.ts'
 import { NO_PENDING_INPUT, setLoopActive, startLoop, stopLoop, type Loop } from '@/game/loop.hot.ts'
 import { describeChoice, formatClock, parseSeed, type Card } from '@/game/ui/cards.ts'
 import { eventForPhase, shellReduce, type ShellEvent } from '@/game/ui/shell.ts'
 import { attachMovement } from '@/game/ui/input.ts'
 import { strings } from '@/game/ui/i18n.ts'
-import { EndOverlay, LevelUpOverlay, PauseOverlay, TitleOverlay, type RunStats } from '@/game/ui/Overlays.tsx'
+import { EndOverlay, LevelUpOverlay, NoticeToast, PauseOverlay, TitleOverlay, type Notice, type RunStats } from '@/game/ui/Overlays.tsx'
 import '@/game/ui/play.css'
 
 const MUTE_STORAGE_KEY = 'last-sortie-muted'
 const INPUT_LOG_SLACK = 4096
 const CARD_ARM_MS = 350
+const NOTICE_HOLD_MS = 2500
+const HUD_STRIP_GAME_PX = 20
+const MINIMAP_RESERVE_GAME_PX = 50
+
+function beaconsCaptured(s: State): number {
+  let captured = 0
+  for (let i = 0; i < s.poiCount; i++) if (s.poiKind[i] === POI_BEACON && s.poiDone[i] === 1) captured++
+  return captured
+}
 
 function readMuted(): boolean {
   try {
@@ -42,7 +51,8 @@ function isActivatable(element: Element | null): boolean {
 export function Play() {
   const [shell, dispatch] = useReducer(shellReduce, 'title')
   const [cards, setCards] = useState<Card[]>([])
-  const [stats, setStats] = useState<RunStats>({ time: formatClock(0, TICK_HZ), kills: 0, level: 1, seed: 0 })
+  const [stats, setStats] = useState<RunStats>({ time: formatClock(0, TICK_HZ), kills: 0, level: 1, beacons: 0, seed: 0 })
+  const [notice, setNotice] = useState<Notice | null>(null)
   const [muted, setMuted] = useState(readMuted)
   const [coarsePointer] = useState(() => window.matchMedia('(pointer: coarse)').matches)
   const fieldRef = useRef<HTMLDivElement | null>(null)
@@ -52,6 +62,7 @@ export function Play() {
   const primaryRef = useRef<HTMLButtonElement | null>(null)
   const loopRef = useRef<Loop | null>(null)
   const cardsShownAt = useRef(0)
+  const noticeCount = useRef(0)
 
   useEffect(() => {
     const previousTitle = document.title
@@ -86,6 +97,11 @@ export function Play() {
       alpha: 0,
       lastPhase: PHASE_PLAYING,
       frameHandle: 0,
+      eventCursor: 0,
+      onNotice(type, a, b) {
+        noticeCount.current++
+        setNotice({ id: noticeCount.current, type, a, b })
+      },
       onPhase(phase) {
         const s = loop.s
         const event = eventForPhase(phase)
@@ -95,7 +111,7 @@ export function Play() {
           setCards(next)
           cardsShownAt.current = performance.now()
         } else if (event !== null) {
-          setStats({ time: formatClock(s.tick, TICK_HZ), kills: s.kills, level: s.level, seed: s.seed })
+          setStats({ time: formatClock(s.tick, TICK_HZ), kills: s.kills, level: s.level, beacons: beaconsCaptured(s), seed: s.seed })
         }
         if (event !== null) dispatch(event)
       },
@@ -104,7 +120,13 @@ export function Play() {
 
     const resize = new ResizeObserver(entries => {
       const box = entries[0]?.contentRect
-      if (box) renderer.resize(box.width, box.height)
+      if (!box) return
+      renderer.resize(box.width, box.height)
+      const scale = pickScale(box.width, box.height)
+      const hudUnit = scale === 1 ? 2 : 1
+      const root = field.parentElement
+      root?.style.setProperty('--play-strip', `${HUD_STRIP_GAME_PX * hudUnit * scale}px`)
+      root?.style.setProperty('--play-minimap', `${MINIMAP_RESERVE_GAME_PX * scale}px`)
     })
     resize.observe(field)
 
@@ -138,6 +160,12 @@ export function Play() {
   }, [shell])
 
   useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(null), NOTICE_HOLD_MS)
+    return () => window.clearTimeout(timer)
+  }, [notice])
+
+  useEffect(() => {
     loopRef.current?.audio.setMuted(muted)
     writeMuted(muted)
   }, [muted])
@@ -162,6 +190,8 @@ export function Play() {
     loop.inputLogLength = 0
     loop.pendingInput = NO_PENDING_INPUT
     loop.lastPhase = PHASE_PLAYING
+    loop.eventCursor = 0
+    setNotice(null)
     dispatch(event)
   }, [])
 
@@ -207,6 +237,7 @@ export function Play() {
         <div className="play-stick" ref={stickRef} aria-hidden="true" />
         <div className="play-knob" ref={knobRef} aria-hidden="true" />
       </div>
+      <NoticeToast notice={inRun ? notice : null} renderer={loopRef.current?.renderer ?? null} />
       {inRun && (
         <div className="play-hud">
           <button type="button" className="play-hud-btn play-hud-btn--pause" aria-label={strings.pause} onClick={() => dispatch('pause')} />
