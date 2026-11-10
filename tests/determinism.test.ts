@@ -32,6 +32,26 @@ test('different seeds diverge', () => {
   assert.notEqual(a[0], b[0])
 })
 
+test('the hash covers zone, point-of-interest and boss-kill state', () => {
+  const s = createState()
+  resetState(s, 3)
+  const base = hashState(s)
+  const mutations: [string, () => void, () => void][] = [
+    ['zone', () => (s.zone = 0), () => (s.zone = 3)],
+    ['bossKills', () => (s.bossKills = 1), () => (s.bossKills = 0)],
+    ['poiX', () => (s.poiX[s.poiCount - 1] = s.poiX[s.poiCount - 1]! + 1), () => (s.poiX[s.poiCount - 1] = s.poiX[s.poiCount - 1]! - 1)],
+    ['poiDone', () => (s.poiDone[0] = 1), () => (s.poiDone[0] = 0)],
+    ['poiProgress', () => (s.poiProgress[1] = 0.5), () => (s.poiProgress[1] = 0)],
+    ['poiCharge', () => (s.poiCharge[2] = 7), () => (s.poiCharge[2] = 0)],
+  ]
+  for (const [name, change, undo] of mutations) {
+    change()
+    assert.notEqual(hashState(s), base, `${name} is not hashed`)
+    undo()
+    assert.equal(hashState(s), base)
+  }
+})
+
 test('resetting a used state replays exactly like a fresh state', () => {
   const ticks = 3000
   const fresh = runBot(21, ticks).state

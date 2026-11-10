@@ -18,6 +18,12 @@ test('a recorded bot run survives the codec and replays to the same state', () =
   assert.equal(replayed.kills, state.kills)
   assert.equal(replayed.level, state.level)
   assert.equal(replayed.tick, state.tick)
+  assert.equal(replayed.zone, state.zone)
+  assert.equal(replayed.bossKills, state.bossKills)
+  assert.deepEqual(Array.from(replayed.poiDone), Array.from(state.poiDone))
+  assert.deepEqual(Array.from(replayed.poiX), Array.from(state.poiX))
+  assert.deepEqual(Array.from(replayed.poiProgress), Array.from(state.poiProgress))
+  assert.ok(state.poiDone.some(done => done === 1), 'the bot run should finish a point of interest')
 })
 
 test('the codec round-trips edge cases', () => {

@@ -10,21 +10,26 @@ import {
   MAX_DRONES,
   MAX_ENEMIES,
   MAX_GEMS,
+  MAX_POIS,
   MAX_SHOTS,
   PASSIVE_COUNT,
   PASSIVE_MAX_LEVEL,
   PASSIVE_SLOTS,
   PHASE_LEVEL_UP,
   PHASE_WON,
+  POI_BEACON,
+  POI_LAIR,
   RUN_TICKS,
   WEAPONS,
   WEAPON_COUNT,
   WEAPON_MAX_LEVEL,
   WEAPON_SLOTS,
+  WORLD_HALF,
 } from '../src/game/sim/content.ts'
 import { hashState } from '../src/game/sim/hash.ts'
 import { createState, resetState, type State } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
+import { zoneAt } from '../src/game/sim/world.hot.ts'
 import { isTerminal } from './harness.ts'
 
 function testRandom(seed: number): () => number {
@@ -63,6 +68,19 @@ function assertInvariants(s: State): void {
   }
   assert.ok(weapons <= WEAPON_SLOTS)
   assert.ok(passives <= PASSIVE_SLOTS)
+  assert.ok(Math.abs(s.px) <= WORLD_HALF && Math.abs(s.py) <= WORLD_HALF, `player at ${s.px}, ${s.py} left the world`)
+  assert.equal(s.zone, zoneAt(s.px, s.py))
+  for (let g = 0; g < s.gemCount; g++) assert.ok(Math.abs(s.gx[g]!) <= WORLD_HALF && Math.abs(s.gy[g]!) <= WORLD_HALF, 'gem outside the world')
+  assert.equal(s.poiCount, MAX_POIS)
+  let lairsDone = 0
+  for (let i = 0; i < s.poiCount; i++) {
+    const progress = s.poiProgress[i]!
+    assert.ok(progress >= 0 && progress <= 1)
+    if (s.poiKind[i] === POI_BEACON && s.poiDone[i] === 1) assert.equal(progress, 1)
+    if (s.poiKind[i] === POI_LAIR && s.poiDone[i] === 1) lairsDone++
+  }
+  assert.ok(s.bossKills <= lairsDone, 'every boss comes from a lair')
+  assert.ok(s.bossHp >= 0 && s.bossHp <= s.bossMaxHp)
   if (s.phase === PHASE_LEVEL_UP) {
     assert.ok(s.choiceCount > 0)
     for (let a = 0; a < s.choiceCount; a++) for (let b = a + 1; b < s.choiceCount; b++) assert.notEqual(s.choices[a], s.choices[b])
@@ -76,6 +94,7 @@ function randomRun(seed: number): State {
   let heading = INPUT_IDLE
   let hold = 0
   let steps = 0
+  const done = new Uint8Array(MAX_POIS)
   while (!isTerminal(s) && steps < RUN_TICKS * 2) {
     if (hold <= 0) {
       heading = random() < 0.15 ? INPUT_IDLE : 1 + Math.floor(random() * INPUT_DIRECTIONS)
@@ -86,6 +105,10 @@ function randomRun(seed: number): State {
     step(s, input)
     steps++
     assertInvariants(s)
+    for (let i = 0; i < MAX_POIS; i++) {
+      assert.ok(s.poiDone[i]! >= done[i]!, 'a finished point of interest never reopens')
+      done[i] = s.poiDone[i]!
+    }
   }
   return s
 }
