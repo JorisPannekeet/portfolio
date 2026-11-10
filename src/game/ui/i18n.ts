@@ -1,5 +1,5 @@
 const en = {
-  title: 'LAST SORTIE',
+  title: 'MECH SURVIVORS',
   unit: 'UNIT JP-12',
   tagline: 'Hold the line for eight minutes. Extraction is not coming early.',
   mapHint: 'Hold a beacon to gain a passive, and expect a boss in every zone.',
@@ -27,7 +27,7 @@ const en = {
   statBeacons: 'BEACONS',
   statSeed: 'SEED',
   loadout: 'LOADOUT',
-  canvasLabel: 'Last Sortie game screen',
+  canvasLabel: 'Mech Survivors game screen',
   toastBeacon: 'BEACON CAPTURED',
   toastBeaconRepair: 'Armor restored',
   toastEntering: 'ENTERING',

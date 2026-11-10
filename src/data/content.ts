@@ -11,7 +11,7 @@ export const content = {
   },
 
   playBanner: {
-    decal: 'SIM // LAST SORTIE',
+    decal: 'SIM // MECH SURVIVORS',
     text: 'Pilot Unit JP-12 through an eight-minute sortie. Built for this site, playable in your browser.',
     cta: 'Play the game',
   },

@@ -11,7 +11,7 @@ import { strings } from '@/game/ui/i18n.ts'
 import { EndOverlay, LevelUpOverlay, NoticeToast, PauseOverlay, TitleOverlay, type Notice, type RunStats } from '@/game/ui/Overlays.tsx'
 import '@/game/ui/play.css'
 
-const MUTE_STORAGE_KEY = 'last-sortie-muted'
+const MUTE_STORAGE_KEY = 'mech-survivors-muted'
 const INPUT_LOG_SLACK = 4096
 const CARD_ARM_MS = 350
 const NOTICE_HOLD_MS = 2500
