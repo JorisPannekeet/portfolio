@@ -1,4 +1,6 @@
 import {
+  BOSS_SURGE_SCALE,
+  ENEMY_BOSS_FIRST,
   ENEMY_DAMAGE,
   ENEMY_DAMAGE_GROWTH_PER_MINUTE,
   ENEMY_HP,
@@ -98,19 +100,20 @@ export function minutesElapsed(s: State): number {
   return s.tick / TICKS_PER_MINUTE
 }
 
-function surge(minutes: number): number {
+function surge(minutes: number, type: number): number {
   const over = minutes - ENEMY_SURGE_START_MINUTE
-  return over > 0 ? over * over : 0
+  if (over <= 0) return 0
+  return type >= ENEMY_BOSS_FIRST ? over * over * BOSS_SURGE_SCALE : over * over
 }
 
 export function enemyMaxHp(s: State, type: number): number {
   const m = minutesElapsed(s)
-  return ENEMY_HP[type]! * (1 + ENEMY_HP_GROWTH_PER_MINUTE * m + ENEMY_HP_SURGE_PER_MINUTE_SQUARED * surge(m))
+  return ENEMY_HP[type]! * (1 + ENEMY_HP_GROWTH_PER_MINUTE * m + ENEMY_HP_SURGE_PER_MINUTE_SQUARED * surge(m, type))
 }
 
 export function enemyContactDamage(s: State, type: number): number {
   const m = minutesElapsed(s)
-  return ENEMY_DAMAGE[type]! * (1 + ENEMY_DAMAGE_GROWTH_PER_MINUTE * m + ENEMY_DAMAGE_SURGE_PER_MINUTE_SQUARED * surge(m))
+  return ENEMY_DAMAGE[type]! * (1 + ENEMY_DAMAGE_GROWTH_PER_MINUTE * m + ENEMY_DAMAGE_SURGE_PER_MINUTE_SQUARED * surge(m, type))
 }
 
 export function enemySpeedScale(s: State): number {

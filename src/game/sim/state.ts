@@ -1,8 +1,11 @@
 import {
+  BOSS_COUNT,
   CHOICE_COUNT,
+  DAMAGE_SOURCE_COUNT,
   EVENT_CAP,
   GRID_CELLS,
   MAX_DRONES,
+  MAX_BULLETS,
   MAX_ENEMIES,
   MAX_GEMS,
   MAX_POIS,
@@ -63,6 +66,7 @@ export interface State {
   epy: Float32Array
   eHp: Float32Array
   eFlash: Uint8Array
+  eAim: Uint8Array
   bossHp: number
   bossMaxHp: number
 
@@ -74,6 +78,15 @@ export interface State {
   spy: Float32Array
   svx: Float32Array
   svy: Float32Array
+
+  bulletCount: number
+  bKind: Uint8Array
+  bx: Float32Array
+  by: Float32Array
+  bpx: Float32Array
+  bpy: Float32Array
+  bvx: Float32Array
+  bvy: Float32Array
 
   gemCount: number
   gKind: Uint8Array
@@ -134,12 +147,21 @@ export interface State {
   killEvents: number
   pickupEvents: number
   poiCharge: Int32Array
+  bossVolley: Uint8Array
+  bossBurst: Uint8Array
+  bossPhase: Uint8Array
+  bossTimer: Int32Array
+  bossSpin: Int32Array
+  damageBySource: Float64Array
 
   eId: Int32Array
   eMaxHp: Float32Array
   eKx: Float32Array
   eKy: Float32Array
   eDroneReady: Int32Array
+  eReload: Int32Array
+
+  bAge: Uint16Array
 
   sLife: Int32Array
   sDamage: Float32Array
@@ -166,6 +188,7 @@ export interface State {
   scratchChoices: Uint8Array
   scratchNearIdx: Int32Array
   scratchNearDist: Float64Array
+  scratchBullets: Int32Array
 }
 
 export function createState(): State {
@@ -200,6 +223,7 @@ export function createState(): State {
     epy: new Float32Array(MAX_ENEMIES),
     eHp: new Float32Array(MAX_ENEMIES),
     eFlash: new Uint8Array(MAX_ENEMIES),
+    eAim: new Uint8Array(MAX_ENEMIES),
     bossHp: 0,
     bossMaxHp: 0,
     shotCount: 0,
@@ -210,6 +234,14 @@ export function createState(): State {
     spy: new Float32Array(MAX_SHOTS),
     svx: new Float32Array(MAX_SHOTS),
     svy: new Float32Array(MAX_SHOTS),
+    bulletCount: 0,
+    bKind: new Uint8Array(MAX_BULLETS),
+    bx: new Float32Array(MAX_BULLETS),
+    by: new Float32Array(MAX_BULLETS),
+    bpx: new Float32Array(MAX_BULLETS),
+    bpy: new Float32Array(MAX_BULLETS),
+    bvx: new Float32Array(MAX_BULLETS),
+    bvy: new Float32Array(MAX_BULLETS),
     gemCount: 0,
     gKind: new Uint8Array(MAX_GEMS),
     gx: new Float32Array(MAX_GEMS),
@@ -263,11 +295,19 @@ export function createState(): State {
     killEvents: 0,
     pickupEvents: 0,
     poiCharge: new Int32Array(MAX_POIS),
+    bossVolley: new Uint8Array(BOSS_COUNT),
+    bossBurst: new Uint8Array(BOSS_COUNT),
+    bossPhase: new Uint8Array(BOSS_COUNT),
+    bossTimer: new Int32Array(BOSS_COUNT),
+    bossSpin: new Int32Array(BOSS_COUNT),
+    damageBySource: new Float64Array(DAMAGE_SOURCE_COUNT),
     eId: new Int32Array(MAX_ENEMIES),
     eMaxHp: new Float32Array(MAX_ENEMIES),
     eKx: new Float32Array(MAX_ENEMIES),
     eKy: new Float32Array(MAX_ENEMIES),
     eDroneReady: new Int32Array(MAX_ENEMIES),
+    eReload: new Int32Array(MAX_ENEMIES),
+    bAge: new Uint16Array(MAX_BULLETS),
     sLife: new Int32Array(MAX_SHOTS),
     sDamage: new Float32Array(MAX_SHOTS),
     sPierce: new Uint8Array(MAX_SHOTS),
@@ -291,6 +331,7 @@ export function createState(): State {
     scratchChoices: new Uint8Array(64),
     scratchNearIdx: new Int32Array(NEAR_CAP),
     scratchNearDist: new Float64Array(NEAR_CAP),
+    scratchBullets: new Int32Array(MAX_BULLETS),
   }
   resetState(s, 0)
   return s
@@ -325,6 +366,7 @@ export function resetState(s: State, seed: number): void {
   s.bossHp = 0
   s.bossMaxHp = 0
   s.shotCount = 0
+  s.bulletCount = 0
   s.gemCount = 0
   s.droneCount = 0
   s.auraRadius = 0

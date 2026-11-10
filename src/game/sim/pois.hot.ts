@@ -6,6 +6,7 @@ import {
   BEACON_REWARD_HEAL,
   BOSS_TICKS,
   ENEMY_BOSS_FIRST,
+  ENEMY_TANK,
   EV_BEACON,
   EV_BOSS,
   ENEMY_HP,
@@ -16,6 +17,7 @@ import {
   GUARD_RING_MIN,
   GUARD_RING_SPREAD,
   GUARD_SQUAD_SIZE,
+  GUARD_TANK_EVERY,
   LAIR_RADIUS,
   POI_BEACON,
   POI_LAIR,
@@ -59,7 +61,7 @@ function deployGuards(s: State, beacon: number): void {
   const by = s.poiY[beacon]!
   const phase = rngInt(s, TRIG_SIZE)
   for (let k = 0; k < size; k++) {
-    const type = k < elites ? elite : pool[rngInt(s, pool.length)]!
+    const type = k < elites ? elite : k % GUARD_TANK_EVERY === GUARD_TANK_EVERY - 1 ? ENEMY_TANK : pool[rngInt(s, pool.length)]!
     const turn = phase + Math.floor((k * TRIG_SIZE) / size)
     const reach = GUARD_RING_MIN + rngInt(s, GUARD_RING_SPREAD + 1)
     deployHostile(s, type, bx + cosTurn(turn) * reach, by + sinTurn(turn) * reach)

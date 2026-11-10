@@ -20,7 +20,9 @@ import {
   removeDeadEnemies,
   runSpawns,
 } from './enemies.hot.ts'
+import { updateBullets } from './bullets.hot.ts'
 import { emit } from './events.hot.ts'
+import { runEnemyFire } from './fire.hot.ts'
 import { gridBuild } from './grid.hot.ts'
 import { applyChoice, openLevelUp, processLevels } from './levelup.hot.ts'
 import { updateGems } from './pickups.hot.ts'
@@ -51,6 +53,11 @@ function snapshotPrevious(s: State): void {
   for (let i = 0; i < m; i++) {
     s.spx[i] = s.sx[i]!
     s.spy[i] = s.sy[i]!
+  }
+  const b = s.bulletCount
+  for (let i = 0; i < b; i++) {
+    s.bpx[i] = s.bx[i]!
+    s.bpy[i] = s.by[i]!
   }
   for (let i = 0; i < MAX_DRONES; i++) {
     s.dronePx[i] = s.droneX[i]!
@@ -109,10 +116,12 @@ function stepPlaying(s: State, input: number): void {
   gridBuild(s)
   computeSeparation(s)
   moveEnemies(s)
+  runEnemyFire(s)
   gridBuild(s)
   runWeapons(s)
   updateShots(s)
   contactDamage(s)
+  updateBullets(s)
   removeDeadEnemies(s)
   mirrorBoss(s)
   if (s.hp <= 0) {

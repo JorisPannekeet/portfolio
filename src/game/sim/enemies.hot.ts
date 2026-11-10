@@ -1,6 +1,7 @@
 import {
   BOSS_KNOCKBACK_SCALE,
   BOSS_SPAWN_RESERVE,
+  DAMAGE_CONTACT,
   DESPAWN_RADIUS,
   ENEMY_BOSS_FIRST,
   ENEMY_FLASH_TICKS,
@@ -9,7 +10,6 @@ import {
   ENEMY_SPEED,
   ENEMY_STOP_FACTOR,
   EV_HIT,
-  EV_HURT,
   EV_KILL,
   GEM_MAGNET,
   GEM_REPAIR,
@@ -20,7 +20,6 @@ import {
   KNOCKBACK_DECAY,
   MAGNET_DROP_CHANCE,
   MAX_ENEMIES,
-  PLAYER_IFRAMES,
   PLAYER_RADIUS,
   PROP_SLIDE_NUDGE,
   RECYCLE_MIN_RADIUS,
@@ -32,11 +31,13 @@ import {
   WAVE_TICKS,
 } from './content.ts'
 import { emit } from './events.hot.ts'
+import { armHostile } from './fire.hot.ts'
 import { gridQuery } from './grid.hot.ts'
 import { dropGem } from './pickups.hot.ts'
 import { rngFloat, rngInt } from './prng.hot.ts'
+import { hurtPlayer } from './player.hot.ts'
 import { pushHostileOutOfProps } from './props.hot.ts'
-import { enemyContactDamage, enemyMaxHp, enemySpeedScale, playerArmor } from './stats.hot.ts'
+import { enemyContactDamage, enemyMaxHp, enemySpeedScale } from './stats.hot.ts'
 import type { State } from './state.ts'
 import { TRIG_SIZE, cosTurn, sinTurn } from './trig.ts'
 
@@ -58,6 +59,7 @@ function initEnemy(s: State, i: number, type: number, x: number, y: number): voi
   s.eKx[i] = 0
   s.eKy[i] = 0
   s.eDroneReady[i] = 0
+  armHostile(s, i, type)
   settle(s, i)
 }
 
@@ -98,6 +100,7 @@ function recycleFarthest(s: State): void {
   s.ey[far] = s.py + sinTurn(turn) * SPAWN_RADIUS
   s.eKx[far] = 0
   s.eKy[far] = 0
+  s.eAim[far] = 0
   settle(s, far)
 }
 
@@ -195,6 +198,7 @@ export function moveEnemies(s: State): void {
   const eKx = s.eKx
   const eKy = s.eKy
   const eType = s.eType
+  const eAim = s.eAim
   const sepX = s.scratchSepX
   const sepY = s.scratchSepY
   const px = s.px
@@ -210,7 +214,8 @@ export function moveEnemies(s: State): void {
     const d2 = dx * dx + dy * dy
     const d = Math.sqrt(d2)
     const stop = PLAYER_RADIUS + ENEMY_RADIUS[type]! * ENEMY_STOP_FACTOR
-    if (d > stop) {
+    const braced = eAim[i]! > 0 && type < ENEMY_BOSS_FIRST
+    if (d > stop && !braced) {
       const speed = ENEMY_SPEED[type]! * speedScale
       x += (dx / d) * speed
       y += (dy / d) * speed
@@ -297,6 +302,8 @@ export function removeDeadEnemies(s: State): void {
     s.eKx[i] = s.eKx[last]!
     s.eKy[i] = s.eKy[last]!
     s.eDroneReady[i] = s.eDroneReady[last]!
+    s.eAim[i] = s.eAim[last]!
+    s.eReload[i] = s.eReload[last]!
   }
 }
 
@@ -309,11 +316,7 @@ export function contactDamage(s: State): void {
     const dmg = enemyContactDamage(s, s.eType[out[k]!]!)
     if (dmg > worst) worst = dmg
   }
-  if (worst <= 0) return
-  const taken = Math.max(1, Math.round(worst - playerArmor(s)))
-  s.hp = Math.max(0, s.hp - taken)
-  s.iframes = PLAYER_IFRAMES
-  emit(s, EV_HURT, s.px, s.py, taken, 0)
+  hurtPlayer(s, worst, DAMAGE_CONTACT)
 }
 
 export function mirrorBoss(s: State): void {

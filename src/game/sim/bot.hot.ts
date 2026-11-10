@@ -6,6 +6,14 @@ import {
   BOT_BEACON_LEVEL,
   BOT_BOSS_WEIGHT,
   BOT_BREAK_HP_FRACTION,
+  BOT_BULLET_HORIZON,
+  BOT_BULLET_MARGIN,
+  BOT_BULLET_SCAN,
+  BOT_BULLET_WEIGHT,
+  BOT_COVER_GAP,
+  BOT_COVER_RANGE,
+  BOT_COVER_SEARCH,
+  BOT_COVER_WEIGHT,
   BOT_CORE_WEAPONS,
   BOT_EDGE_BAND,
   BOT_EDGE_WEIGHT,
@@ -16,6 +24,7 @@ import {
   BOT_LAIR_LEVEL,
   BOT_LAIR_MARGIN,
   BOT_LOOKAHEAD,
+  BOT_PAIR_WEAPON_LEVEL,
   BOT_DETOUR_CLEARANCE,
   BOT_PROP_CLEARANCE,
   BOT_PROP_WEIGHT,
@@ -24,6 +33,8 @@ import {
   BOT_SOFTEN,
   BOT_STEADY_BONUS,
   BOT_THREAT_LIMIT,
+  BULLET_RADIUS,
+  BULLET_SHELL,
   CHOICE_EVOLVE,
   CHOICE_PASSIVE,
   CHOICE_REPAIR,
@@ -50,10 +61,12 @@ import { HEADING_TURNS, cosTurn, sinTurn } from './trig.ts'
 
 let waypointX = 0
 let waypointY = 0
+let coverX = 0
+let coverY = 0
 
-function pairsWithOwnedWeapon(s: State, passive: number): boolean {
+function pairsWithOwnedWeapon(s: State, passive: number, level: number): boolean {
   for (let w = 0; w < WEAPON_COUNT; w++) {
-    if (s.weaponLevel[w]! > 0 && WEAPONS[w]!.pairedPassive === passive) return true
+    if (s.weaponLevel[w]! >= level && WEAPONS[w]!.pairedPassive === passive) return true
   }
   return false
 }
@@ -69,7 +82,8 @@ function choiceScore(s: State, choice: number): number {
   if (choice >= CHOICE_EVOLVE) return 1000
   if (choice >= CHOICE_PASSIVE) {
     const p = choice - CHOICE_PASSIVE
-    const paired = pairsWithOwnedWeapon(s, p) ? 100 : 0
+    if (s.passiveLevel[p] === 0 && pairsWithOwnedWeapon(s, p, BOT_PAIR_WEAPON_LEVEL)) return 700
+    const paired = pairsWithOwnedWeapon(s, p, 1) ? 100 : 0
     return s.passiveLevel[p]! > 0 ? 400 + paired : 150 + paired
   }
   const level = s.weaponLevel[choice]!
@@ -243,6 +257,97 @@ function terrainCost(s: State, x: number, y: number, avoidLairs: boolean, goal: 
   return cost
 }
 
+function gatherBullets(s: State): number {
+  const out = s.scratchBullets
+  const scan2 = BOT_BULLET_SCAN * BOT_BULLET_SCAN
+  let found = 0
+  for (let j = 0; j < s.bulletCount; j++) {
+    const dx = s.bx[j]! - s.px
+    const dy = s.by[j]! - s.py
+    if (dx * dx + dy * dy > scan2) continue
+    if (dx * s.bvx[j]! + dy * s.bvy[j]! >= 0) continue
+    out[found++] = j
+  }
+  return found
+}
+
+function bulletDanger(s: State, vx: number, vy: number, found: number): number {
+  const out = s.scratchBullets
+  let danger = 0
+  for (let k = 0; k < found; k++) {
+    const j = out[k]!
+    const rx = s.bx[j]! - s.px
+    const ry = s.by[j]! - s.py
+    const wx = s.bvx[j]! - vx
+    const wy = s.bvy[j]! - vy
+    const w2 = wx * wx + wy * wy
+    let t = w2 > 1e-6 ? -(rx * wx + ry * wy) / w2 : 0
+    if (t < 0) t = 0
+    else if (t > BOT_BULLET_HORIZON) t = BOT_BULLET_HORIZON
+    const cx = rx + wx * t
+    const cy = ry + wy * t
+    const reach = BULLET_RADIUS[s.bKind[j]!]! + PLAYER_RADIUS + BOT_BULLET_MARGIN
+    const d2 = cx * cx + cy * cy
+    if (d2 >= reach * reach) continue
+    const closeness = 1 - Math.sqrt(d2) / reach
+    danger += BOT_BULLET_WEIGHT * closeness * (2 - t / BOT_BULLET_HORIZON)
+  }
+  return danger
+}
+
+function bossFiring(s: State): number {
+  let best = -1
+  let bestD2 = BOT_COVER_RANGE * BOT_COVER_RANGE
+  for (let i = 0; i < s.enemyCount; i++) {
+    if (s.eType[i]! < ENEMY_BOSS_FIRST) continue
+    const dx = s.ex[i]! - s.px
+    const dy = s.ey[i]! - s.py
+    const d2 = dx * dx + dy * dy
+    if (d2 < bestD2) {
+      best = i
+      bestD2 = d2
+    }
+  }
+  return best
+}
+
+function findCover(s: State, boss: number): boolean {
+  const bx = s.ex[boss]!
+  const by = s.ey[boss]!
+  let bestD2 = BOT_COVER_SEARCH * BOT_COVER_SEARCH
+  let found = false
+  for (let k = 0; k < s.propCount; k++) {
+    const ox = s.propX[k]! - bx
+    const oy = s.propY[k]! - by
+    const d = Math.sqrt(ox * ox + oy * oy)
+    if (d < 1) continue
+    const reach = PROP_RADIUS[s.propKind[k]!]! + PLAYER_RADIUS + BOT_COVER_GAP
+    const x = s.propX[k]! + (ox / d) * reach
+    const y = s.propY[k]! + (oy / d) * reach
+    const dx = x - s.px
+    const dy = y - s.py
+    const d2 = dx * dx + dy * dy
+    if (d2 >= bestD2) continue
+    bestD2 = d2
+    coverX = x
+    coverY = y
+    found = true
+  }
+  return found
+}
+
+function bossBulletsNear(s: State, found: number): boolean {
+  const out = s.scratchBullets
+  for (let k = 0; k < found; k++) if (s.bKind[out[k]!] !== BULLET_SHELL) return true
+  return false
+}
+
+function coverDistance(x: number, y: number): number {
+  const dx = coverX - x
+  const dy = coverY - y
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
 function waypointDistance(x: number, y: number): number {
   const dx = waypointX - x
   const dy = waypointY - y
@@ -270,8 +375,12 @@ function botHeading(s: State, takeBeacons: boolean): number {
       gemY = dy / d
     }
   }
+  const bullets = gatherBullets(s)
+  const boss = bossBulletsNear(s, bullets) ? bossFiring(s) : -1
+  const covered = boss >= 0 && findCover(s, boss)
+  const coverNow = covered ? coverDistance(s.px, s.py) : 0
   let best = INPUT_IDLE
-  let bestScore = here + terrainCost(s, s.px, s.py, avoidLairs, goal)
+  let bestScore = here + terrainCost(s, s.px, s.py, avoidLairs, goal) + bulletDanger(s, 0, 0, bullets)
   for (let h = 0; h < INPUT_DIRECTIONS; h++) {
     const turn = h * HEADING_TURNS
     const ux = cosTurn(turn)
@@ -279,9 +388,18 @@ function botHeading(s: State, takeBeacons: boolean): number {
     const steady = turn === s.aimTurn ? BOT_STEADY_BONUS : 0
     const aheadX = s.px + ux * BOT_LOOKAHEAD
     const aheadY = s.py + uy * BOT_LOOKAHEAD
-    const toGoal = goal >= 0 ? BOT_GOAL_WEIGHT * (waypointDistance(s.px + ux * speed, s.py + uy * speed) - goalNow) : 0
+    const nextX = s.px + ux * speed
+    const nextY = s.py + uy * speed
+    const toGoal = goal >= 0 ? BOT_GOAL_WEIGHT * (waypointDistance(nextX, nextY) - goalNow) : 0
+    const toCover = covered ? BOT_COVER_WEIGHT * (coverDistance(nextX, nextY) - coverNow) : 0
     const score =
-      dangerAt(s, aheadX, aheadY, found) + terrainCost(s, aheadX, aheadY, avoidLairs, goal) + toGoal - BOT_GEM_WEIGHT * (ux * gemX + uy * gemY) - steady
+      dangerAt(s, aheadX, aheadY, found) +
+      terrainCost(s, aheadX, aheadY, avoidLairs, goal) +
+      bulletDanger(s, ux * speed, uy * speed, bullets) +
+      toGoal +
+      toCover -
+      BOT_GEM_WEIGHT * (ux * gemX + uy * gemY) -
+      steady
     if (score < bestScore) {
       best = h + 1
       bestScore = score

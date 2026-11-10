@@ -3,6 +3,10 @@ import { Worker, isMainThread, parentPort, workerData } from 'node:worker_thread
 import {
   BEACONS_PER_ZONE,
   CHOICE_COUNT,
+  DAMAGE_BOSS_BULLET,
+  DAMAGE_CONTACT,
+  DAMAGE_SHELL,
+  ENEMY_BOSS_FIRST,
   INPUT_CHOICE,
   INPUT_IDLE,
   PHASE_LEVEL_UP,
@@ -25,6 +29,7 @@ const LATE_TICKS = RUN_TICKS - 2 * TICKS_PER_MINUTE
 const EDGE_BAND = 8
 const PRESS_TOLERANCE = 0.05
 const BEACON_TOTAL = ZONE_COUNT * BEACONS_PER_ZONE
+const BOSS_NEARBY = 300
 
 interface Job {
   readonly seed: number
@@ -37,6 +42,11 @@ interface RunResult {
   readonly beacons: number
   readonly bossesReleased: number
   readonly bossesKilled: number
+  readonly bossNearAtDeath: boolean
+  readonly damageContact: number
+  readonly damageShell: number
+  readonly damageBoss: number
+  readonly peakBullets: number
   readonly edgeShare: number
   readonly propShare: number
   readonly captureTicks: readonly number[]
@@ -78,7 +88,18 @@ function pressedAgainstProp(s: State): boolean {
   return false
 }
 
+function bossWithin(s: State, reach: number): boolean {
+  for (let i = 0; i < s.enemyCount; i++) {
+    if (s.eType[i]! < ENEMY_BOSS_FIRST || s.eHp[i]! <= 0) continue
+    const dx = s.ex[i]! - s.px
+    const dy = s.ey[i]! - s.py
+    if (dx * dx + dy * dy <= reach * reach) return true
+  }
+  return false
+}
+
 function playSeed({ seed, takeBeacons }: Job): RunResult {
+  let peakBullets = 0
   let edgeTicks = 0
   let propTicks = 0
   const captureTicks: number[] = []
@@ -88,6 +109,7 @@ function playSeed({ seed, takeBeacons }: Job): RunResult {
   const hpByMinute: number[] = []
   const { state } = runBot(seed, RUN_TICKS, s => {
     if (s.enemyCount > peak) peak = s.enemyCount
+    if (s.bulletCount > peakBullets) peakBullets = s.bulletCount
     if (s.tick > LATE_TICKS && s.enemyCount > latePeak) latePeak = s.enemyCount
     if (evolvedAt < 0 && s.weaponEvolved.some(v => v > 0)) evolvedAt = s.tick
     if (s.tick % TICKS_PER_MINUTE === 0) hpByMinute.push(Math.round(s.hp))
@@ -101,6 +123,11 @@ function playSeed({ seed, takeBeacons }: Job): RunResult {
     beacons: countDone(state, POI_BEACON),
     bossesReleased: countDone(state, POI_LAIR),
     bossesKilled: state.bossKills,
+    bossNearAtDeath: state.hp <= 0 && bossWithin(state, BOSS_NEARBY),
+    damageContact: state.damageBySource[DAMAGE_CONTACT]!,
+    damageShell: state.damageBySource[DAMAGE_SHELL]!,
+    damageBoss: state.damageBySource[DAMAGE_BOSS_BULLET]!,
+    peakBullets,
     edgeShare: edgeTicks / Math.max(1, state.tick),
     propShare: propTicks / Math.max(1, state.tick),
     captureTicks,
@@ -152,6 +179,14 @@ function captureMedians(results: readonly RunResult[]): string {
   return [captureMedian(results, t => t[0]), captureMedian(results, t => t[3]), captureMedian(results, t => t[t.length - 1])].join(' / ')
 }
 
+function damageSplit(results: readonly RunResult[]): string {
+  const contact = mean(results.map(r => r.damageContact))
+  const shell = mean(results.map(r => r.damageShell))
+  const boss = mean(results.map(r => r.damageBoss))
+  const total = contact + shell + boss
+  return `${contact.toFixed(0)} (${percent(contact, total)}) / ${shell.toFixed(0)} (${percent(shell, total)}) / ${boss.toFixed(0)} (${percent(boss, total)})`
+}
+
 function report(title: string, results: readonly RunResult[]): void {
   console.log(`\n${title}`)
   const wins = results.filter(r => r.won)
@@ -176,6 +211,10 @@ function report(title: string, results: readonly RunResult[]): void {
     ['mean bot hp at minute 1..8, runs alive', [0, 1, 2, 3, 4, 5, 6, 7].map(m => mean(results.filter(r => r.hpByMinute.length > m).map(r => r.hpByMinute[m]!)).toFixed(0)).join(' ')],
     ['mean beacons captured', mean(results.map(r => r.beacons)).toFixed(2)],
     ['mean bosses released / killed', `${mean(results.map(r => r.bossesReleased)).toFixed(2)} / ${mean(results.map(r => r.bossesKilled)).toFixed(2)}`],
+    ['bosses released / killed, total', `${results.reduce((n, r) => n + r.bossesReleased, 0)} / ${results.reduce((n, r) => n + r.bossesKilled, 0)} (${percent(results.reduce((n, r) => n + r.bossesKilled, 0), results.reduce((n, r) => n + r.bossesReleased, 0))})`],
+    ['deaths with a boss alive within 300 px', `${deaths.filter(r => r.bossNearAtDeath).length}/${deaths.length} (${percent(deaths.filter(r => r.bossNearAtDeath).length, deaths.length)})`],
+    ['mean damage taken: contact / tank shells / boss bullets', damageSplit(results)],
+    ['peak hostile bullets, any run', String(Math.max(...results.map(r => r.peakBullets)))],
     ['median capture time of beacon 1 / 4 / last', captureMedians(results)],
     ['mean share of time pinned to the world edge', `${(100 * mean(results.map(r => r.edgeShare))).toFixed(2)}%`],
     ['mean share of time pressed against a prop', `${(100 * mean(results.map(r => r.propShare))).toFixed(2)}%`],
