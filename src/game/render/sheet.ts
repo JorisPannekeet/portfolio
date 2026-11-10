@@ -70,6 +70,10 @@ import { iconThrusterPack } from '../sprites/icon-thruster-pack.ts'
 import { iconArmorPlating } from '../sprites/icon-armor-plating.ts'
 import { iconSalvageMagnet } from '../sprites/icon-salvage-magnet.ts'
 import { iconFieldRepair } from '../sprites/icon-field-repair.ts'
+import {
+  liftApron, liftDoorLeft, liftDoorRight, liftLampAmber, liftLampGreen, liftLampOff, liftLampRed,
+  liftPlate, liftPlateLocked, liftSteamA, liftSteamB, liftSteamC, liftWall,
+} from '../sprites/lift.ts'
 
 export const SPR_PLAYER = 0
 export const SPR_SCOUT = 1
@@ -104,6 +108,20 @@ export const SPR_PROP_SHADOWS = 29
 export const SPR_ORBS = 30
 export const SPR_HOSTILE_SHOTS = 31
 export const SPR_MUZZLE = 32
+export const SPR_LIFT = 33
+
+export const LIFT_APRON = 0
+export const LIFT_WALL = 1
+export const LIFT_PLATE = 2
+export const LIFT_PLATE_LOCKED = 3
+export const LIFT_DOOR_LEFT = 4
+export const LIFT_DOOR_RIGHT = 5
+export const LIFT_LAMP_OFF = 6
+export const LIFT_LAMP_RED = 7
+export const LIFT_LAMP_AMBER = 8
+export const LIFT_LAMP_GREEN = 9
+export const LIFT_STEAM_FIRST = 10
+export const LIFT_STEAM_COUNT = 3
 
 export const HOSTILE_SHOT_SHELL = 0
 export const HOSTILE_SHOT_SHARD = 1
@@ -317,4 +335,12 @@ export const SPRITE_DEFS: readonly SpriteDef[] = [
   { name: 'orbs', kind: KIND_PLAIN, frames: [orbBright, orbDim] },
   { name: 'hostile-shots', kind: KIND_ROTATED_OUTLINED, frames: [shell, shard] },
   { name: 'muzzle', kind: KIND_PLAIN, frames: muzzleFrames },
+  {
+    name: 'lift',
+    kind: KIND_PLAIN,
+    frames: [
+      liftApron, liftWall, liftPlate, liftPlateLocked, liftDoorLeft, liftDoorRight,
+      liftLampOff, liftLampRed, liftLampAmber, liftLampGreen, liftSteamA, liftSteamB, liftSteamC,
+    ],
+  },
 ]

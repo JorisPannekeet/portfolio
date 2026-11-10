@@ -23,6 +23,7 @@ import {
   THRUST_FRAME_COUNT,
 } from './sheet.ts'
 import { blitAt, frameId } from './sprite.hot.ts'
+import { drawLiftRider, liftFlare, liftRecoil, liftRiding } from './lift.hot.ts'
 
 const CULL = 48
 const THRUST_LOW_X = -3
@@ -133,12 +134,16 @@ function playerHidden(s: State): boolean {
 
 function drawPlayer(v: View, s: State, t: number, x: number, y: number): void {
   if (playerHidden(s)) return
+  if (liftRiding(s.tick)) {
+    drawLiftRider(v, s)
+    return
+  }
   const moving = s.px !== s.ppx || s.py !== s.ppy
   const flip = s.faceX < 0
   const id = frameId(v, SPR_PLAYER, playerFrame(s, t), flip ? VARIANT_FLIP : VARIANT_NORMAL)
   const left = x - (v.atlas.rw[id]! >> 1)
-  const top = y - (v.atlas.rh[id]! >> 1)
-  if (moving) {
+  const top = y - (v.atlas.rh[id]! >> 1) + liftRecoil(s.tick)
+  if (moving || liftFlare(s.tick)) {
     const flare = ((t / 3) | 0) % THRUST_FRAME_COUNT
     drawThrust(v, flare, flip, left, top, THRUST_HIGH_X, THRUST_HIGH_Y)
     drawThrust(v, (flare + 1) % THRUST_FRAME_COUNT, flip, left, top, THRUST_LOW_X, THRUST_LOW_Y)
@@ -194,7 +199,7 @@ export function drawActors(v: View, s: State, alpha: number, t: number, playerX:
     blitAt(v, id, v.depthX[i]!, v.depthY[i]!, 1)
     if (playerDrawn && !covered && i < propsEnd) covered = covers(v, id, v.depthX[i]!, v.depthY[i]!, ghostLeft, ghostTop, ghostId)
   }
-  if (!covered || playerHidden(s)) return
+  if (!covered || playerHidden(s) || liftRiding(s.tick)) return
   v.ctx.globalAlpha = GHOST_ALPHA
   blitAt(v, ghostId, ghostLeft, ghostTop, 1)
   v.ctx.globalAlpha = 1

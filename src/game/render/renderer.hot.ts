@@ -11,6 +11,7 @@ import { drawFloor } from './terrain.hot.ts'
 import { consumeEvents, drawEffects, drawFlash, drawSweep, shakeOffset } from './effects.hot.ts'
 import { drawHud, drawPlayerArmor } from './hud.hot.ts'
 import { AMBER, CYAN } from './colors.ts'
+import { armLiftShake, drawLiftHub, drawLiftSteam, liftBuried } from './lift.hot.ts'
 
 const CULL = 48
 const TAU = Math.PI * 2
@@ -60,6 +61,7 @@ export function drawFrame(v: View, s: State, alpha: number): void {
   const a = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha
   const t = s.tick + a
   consumeEvents(v, s)
+  armLiftShake(v, s.tick)
   const camX = s.ppx + (s.px - s.ppx) * a
   const camY = s.ppy + (s.py - s.ppy) * a
   v.originX = Math.round(camX) - (v.width >> 1) + shakeOffset(v, t)
@@ -68,17 +70,19 @@ export function drawFrame(v: View, s: State, alpha: number): void {
   const playerY = Math.round(camY) - v.originY
   v.ctx.globalAlpha = 1
   drawFloor(v, t)
+  drawLiftHub(v, s)
   drawPois(v, s, t, playerX, playerY)
   drawPropShadows(v, s)
   drawGems(v, s)
   drawAura(v, s, t, playerX, playerY)
   drawActors(v, s, a, t, playerX, playerY)
+  drawLiftSteam(v, s)
   drawShots(v, s, a)
   drawWindUps(v, s, a, t, playerX, playerY)
   drawEffects(v, t, playerX, playerY)
   drawFlash(v, t)
   drawSweep(v, t)
   drawBullets(v, s, a, t)
-  if (s.phase !== PHASE_DEAD) drawPlayerArmor(v, s, playerX, playerY)
+  if (s.phase !== PHASE_DEAD && !liftBuried(s.tick)) drawPlayerArmor(v, s, playerX, playerY)
   drawHud(v, s, t, playerX, playerY)
 }

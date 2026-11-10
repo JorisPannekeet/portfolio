@@ -1,5 +1,5 @@
 import type { State } from '../sim/state.ts'
-import { ENEMY_BOSS_FIRST, POI_BEACON, POI_LAIR, WORLD_HALF, ZONE_COUNT } from '../sim/content.ts'
+import { ENEMY_BOSS_FIRST, POI_BEACON, POI_LAIR, START_X, START_Y, WORLD_HALF, ZONE_COUNT } from '../sim/content.ts'
 import type { View } from './view.ts'
 import { GLYPH_DARK, GLYPH_LIGHT, GLYPH_RED, ROTATIONS } from './atlas.ts'
 import { ARROW_CYAN, ARROW_RED, HUD_MARK_SKULL_PIP, HUD_MARK_SKULL_RED, SPR_ARROWS, SPR_HUD_MARKS } from './sheet.ts'
@@ -14,6 +14,7 @@ const MAP_CLEARANCE = 8
 const LABEL_OFFSET = 14
 const DISTANCE_UNIT = 10
 const SKULL_W = 5
+const HUB_PIP = 3
 
 function mapX(wx: number, left: number, size: number): number {
   const cell = Math.floor(((wx + WORLD_HALF) * size) / (2 * WORLD_HALF))
@@ -45,6 +46,10 @@ function drawMinimap(v: View, s: State, t: number): void {
   ctx.fillStyle = INK
   ctx.fillRect(left + half, top, 1, size)
   ctx.fillRect(left, top + half, size, 1)
+  const hubX = mapX(START_X, left, size)
+  const hubY = mapX(START_Y, top, size)
+  pip(v, hubX, hubY, HUB_PIP + 2, INK)
+  pip(v, hubX, hubY, HUB_PIP, STEEL)
   for (let i = 0; i < s.poiCount; i++) {
     if (s.poiDone[i]! > 0) continue
     const x = mapX(s.poiX[i]!, left, size)

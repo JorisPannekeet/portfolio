@@ -7,7 +7,7 @@ import { drawFrame } from '../src/game/render/renderer.hot.ts'
 import { createState, resetState } from '../src/game/sim/state.ts'
 import { step } from '../src/game/sim/step.hot.ts'
 import { botInput } from '../src/game/sim/bot.hot.ts'
-import { BULLET_ORB, BULLET_SHARD, BULLET_SHELL, ENEMY_TANK, MAX_BULLETS, PROP_RADIUS, PROPS_PER_SLOT, PROP_SLOTS_PER_ZONE, START_X, START_Y, WORLD_HALF, ZONE_COUNT } from '../src/game/sim/content.ts'
+import { BULLET_ORB, BULLET_SHARD, BULLET_SHELL, ENEMY_TANK, MAX_BULLETS, PROP_RADIUS, PROPS_PER_SLOT, PROP_SLOTS_PER_ZONE, START_X, START_Y, WORLD_HALF, ZONE_COUNT, ZONE_HANGAR } from '../src/game/sim/content.ts'
 
 const [out, seedArg = '1', tickArg = '3600', widthArg = '195', heightArg = '422', upscaleArg = '3'] = process.argv.slice(2)
 if (!out) {
@@ -15,13 +15,15 @@ if (!out) {
   console.error('env: SCALE=<css px per game px> PLAYER=<x,y> MOVING=1 FAKE=1|far|props EVENTS=beacon,zone,heal FX_AGE=<ticks>')
   console.error('     NEAR=<kind:dx:dy;...> props placed relative to the player, SHRINK=<n> renders n times larger and averages down')
   console.error('     BULLETS=1|fill hostile fire patterns around the player (fill tops the pool up to MAX_BULLETS), EVENTS=fire muzzle flash')
+  console.error('     INTRO=<tick> captures the lift intro at that exact tick: idle input, player held at the start position, tick arg ignored, REDUCED=1 prefers-reduced-motion')
   process.exit(1)
 }
 const shrink = Math.max(1, Number(process.env.SHRINK ?? 1) | 0)
 const width = Number(widthArg) * shrink
 const height = Number(heightArg) * shrink
 const upscale = Number(upscaleArg)
-const targetTick = Number(tickArg)
+const intro = process.env.INTRO === undefined ? -1 : Number(process.env.INTRO)
+const targetTick = intro >= 0 ? intro : Number(tickArg)
 const FRAMES_DRAWN_BEFORE_CAPTURE = 90
 
 const atlas = buildAtlas(SPRITE_DEFS)
@@ -169,12 +171,21 @@ view.width = width
 view.height = height
 view.scale = Number(process.env.SCALE ?? 2)
 view.clearRight = Math.ceil(40 / view.scale)
+view.reducedMotion = process.env.REDUCED === '1'
 
 const s = createState()
 resetState(s, Number(seedArg))
+function holdAtStart() {
+  s.px = s.ppx = START_X
+  s.py = s.ppy = START_Y
+  s.zone = ZONE_HANGAR
+}
+
 let guard = 0
+if (intro >= 0) holdAtStart()
 while (s.tick < targetTick && s.phase < 2 && guard++ < targetTick * 4) {
-  step(s, botInput(s))
+  step(s, intro >= 0 ? 0 : botInput(s))
+  if (intro >= 0) holdAtStart()
   if (targetTick - s.tick < FRAMES_DRAWN_BEFORE_CAPTURE) drawFrame(view, s, 1)
 }
 if (process.env.PLAYER) {
