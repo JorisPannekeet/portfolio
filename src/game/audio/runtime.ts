@@ -1,6 +1,6 @@
-import { PHASE_PLAYING } from '../sim/content.ts'
+import { MAX_POIS, PHASE_PLAYING } from '../sim/content.ts'
 import { SFX_VARIANT_STRIDE, SFX_VOICES } from './sfx.ts'
-import { STEP_SECONDS } from './song.ts'
+import { MIN_THEME_BARS, STEP_SECONDS } from './song.ts'
 import { BASS_WAVETABLE, DUTY_STEPS, lfsrSequence, stepWaveCoefficients, WAVE_HARMONICS } from './waves.ts'
 
 export const MASTER_LEVEL = 0.8
@@ -10,6 +10,10 @@ export const DUCK_LEVEL = 0.55
 export const DUCK_CUTOFF = 650
 export const OPEN_CUTOFF = 18000
 export const NOISE_CUTOFF = 9000
+export const HUM_LEVEL = 0.045
+export const HUM_LOW_HZ = 110
+export const HUM_OCTAVES = 2
+export const HUM_HOLD_FRAMES = 6
 
 export interface AudioRuntime {
   readonly ctx: AudioContext
@@ -22,6 +26,10 @@ export interface AudioRuntime {
   readonly drumBus: GainNode
   readonly synthBus: readonly GainNode[]
   readonly synthTone: BiquadFilterNode
+  readonly tensionBus: GainNode
+  readonly humOsc: OscillatorNode
+  readonly humTone: BiquadFilterNode
+  readonly humGain: GainNode
   readonly delaySend: GainNode
   readonly sfxBus: GainNode
   readonly pulseWaves: readonly PeriodicWave[]
@@ -31,12 +39,22 @@ export interface AudioRuntime {
 
   synced: number
   musicOn: number
-  section: number
-  pendingSection: number
+  theme: number
+  pendingTheme: number
+  level: number
+  pendingLevel: number
+  bar: number
+  themeSince: number
   row: number
   nextStepTime: number
   activeSynth: number
   ducked: number
+  tensionOn: number
+  tensionEnd: number
+
+  humOn: number
+  humFrames: number
+  readonly poiLast: Float32Array
 
   cursor: number
   lastTick: number
@@ -108,7 +126,16 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
   delayTone.connect(gain(ctx, 0.38, delay))
   const delaySend = gain(ctx, 0.25, delay)
 
+  const tensionBus = gain(ctx, 0, musicBus)
   const sfxBus = gain(ctx, SFX_LEVEL, rumbleCut)
+  const humGain = gain(ctx, 0, sfxBus)
+  const humTone = filter(ctx, 'lowpass', HUM_LOW_HZ * 3, humGain)
+  humTone.Q.value = 4
+  const humOsc = ctx.createOscillator()
+  humOsc.type = 'sawtooth'
+  humOsc.frequency.value = HUM_LOW_HZ
+  humOsc.connect(humTone)
+  humOsc.start()
 
   const sfxEnv: (GainNode | null)[] = []
   for (let i = 0; i < SFX_VOICES; i++) sfxEnv.push(null)
@@ -124,6 +151,10 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
     drumBus,
     synthBus,
     synthTone,
+    tensionBus,
+    humOsc,
+    humTone,
+    humGain,
     delaySend,
     sfxBus,
     pulseWaves: DUTY_STEPS.map(steps => periodicWave(ctx, steps)),
@@ -132,12 +163,21 @@ export function createRuntime(ctx: AudioContext): AudioRuntime {
     noiseShort: noiseBuffer(ctx, 7),
     synced: 0,
     musicOn: 0,
-    section: 0,
-    pendingSection: 0,
+    theme: 0,
+    pendingTheme: 0,
+    level: 0,
+    pendingLevel: 0,
+    bar: 0,
+    themeSince: -MIN_THEME_BARS,
     row: 0,
     nextStepTime: 0,
     activeSynth: 0,
     ducked: 0,
+    tensionOn: 0,
+    tensionEnd: 0,
+    humOn: 0,
+    humFrames: HUM_HOLD_FRAMES,
+    poiLast: new Float32Array(MAX_POIS),
     cursor: 0,
     lastTick: 0,
     lastPhase: PHASE_PLAYING,

@@ -1,24 +1,56 @@
-import { EV_PICKUP, EVENT_CAP, PHASE_DEAD, PHASE_LEVEL_UP, PHASE_WON } from '../sim/content.ts'
+import { EV_PICKUP, EVENT_CAP, PHASE_DEAD, PHASE_LEVEL_UP, PHASE_PLAYING, PHASE_WON, POI_BEACON } from '../sim/content.ts'
 import type { State } from '../sim/state.ts'
+import { HUM_HOLD_FRAMES, HUM_LEVEL, HUM_LOW_HZ, HUM_OCTAVES } from './runtime.ts'
 import type { AudioRuntime } from './runtime.ts'
 import { PICKUP_RATIOS, PICKUP_STREAK_SECONDS, SFX_TABLE, SFX_VARIANT_STRIDE, SFX_VOICES, sfxVariant } from './sfx.ts'
-import { DEFEAT_JINGLE, SECTION_TABLES, sectionForTick, STEP_SECONDS, VICTORY_JINGLE } from './song.ts'
+import { DEFEAT_JINGLE, intensityForTick, levelAllows, MIN_THEME_BARS, STEP_SECONDS, THEME_TABLES, themeForZone, VICTORY_JINGLE } from './song.ts'
 import { NOTE_EMPTY, NOTE_OFF, STEPS_PER_BAR, VOICE_COUNT } from './tracker.ts'
-import { crossfadeSynth, cutSfx, playJingle, playMusicNote, playSfx, setDuck, startMusic, stopMusic } from './voices.ts'
+import {
+  applyIntensity,
+  crossfadeSynth,
+  cutSfx,
+  playJingle,
+  playMusicNote,
+  playSfx,
+  playTension,
+  setDuck,
+  setTension,
+  silenceTension,
+  startMusic,
+  stopMusic,
+} from './voices.ts'
 
 const LOOKAHEAD_SECONDS = 0.12
 const RESYNC_SECONDS = 0.25
 const START_DELAY_SECONDS = 0.05
 const SFX_LEAD_SECONDS = 0.005
+const HUM_GLIDE_SECONDS = 0.03
+const HUM_RELEASE_SECONDS = 0.08
 
 function playRow(rt: AudioRuntime, row: number, time: number): void {
-  const table = SECTION_TABLES[rt.section]!
+  const table = THEME_TABLES[rt.theme]!
   const base = row * VOICE_COUNT
   for (let voice = 0; voice < VOICE_COUNT; voice++) {
     const index = base + voice
     const note = table.note[index]!
     if (note === NOTE_EMPTY || note === NOTE_OFF) continue
-    playMusicNote(rt, voice, note, table.instrument[index]!, table.effect[index]!, table.effectArg[index]!, table.length[index]! * STEP_SECONDS, time)
+    const instrument = table.instrument[index]!
+    if (!levelAllows(rt.level, voice, instrument)) continue
+    playMusicNote(rt, voice, note, instrument, table.effect[index]!, table.effectArg[index]!, table.length[index]! * STEP_SECONDS, time)
+  }
+  if (rt.tensionOn === 1 || time < rt.tensionEnd) playTension(rt, row, time)
+}
+
+function enterBar(rt: AudioRuntime, time: number): void {
+  rt.bar++
+  const levelChanged = rt.pendingLevel !== rt.level
+  rt.level = rt.pendingLevel
+  if (rt.pendingTheme !== rt.theme && rt.bar - rt.themeSince >= MIN_THEME_BARS) {
+    rt.theme = rt.pendingTheme
+    rt.themeSince = rt.bar
+    crossfadeSynth(rt, time)
+  } else if (levelChanged) {
+    applyIntensity(rt, time)
   }
 }
 
@@ -28,12 +60,9 @@ export function pumpMusic(rt: AudioRuntime): void {
   if (rt.nextStepTime < now - RESYNC_SECONDS) rt.nextStepTime = now + START_DELAY_SECONDS
   const horizon = now + LOOKAHEAD_SECONDS
   while (rt.nextStepTime < horizon) {
-    if (rt.row % STEPS_PER_BAR === 0 && rt.pendingSection !== rt.section) {
-      rt.section = rt.pendingSection
-      crossfadeSynth(rt, rt.section, rt.nextStepTime)
-    }
+    if (rt.row % STEPS_PER_BAR === 0) enterBar(rt, rt.nextStepTime)
     playRow(rt, rt.row, rt.nextStepTime)
-    rt.row = (rt.row + 1) % SECTION_TABLES[rt.section]!.steps
+    rt.row = (rt.row + 1) % THEME_TABLES[rt.theme]!.steps
     rt.nextStepTime += STEP_SECONDS
   }
 }
@@ -49,19 +78,26 @@ function beginRun(rt: AudioRuntime, s: State, cursor: number): void {
   rt.lastPhase = s.phase
   rt.pickupStreak = 0
   rt.lastPlayed.fill(-1000)
-  rt.section = sectionForTick(s.tick)
-  rt.pendingSection = rt.section
+  rt.theme = themeForZone(s.zone)
+  rt.pendingTheme = rt.theme
+  rt.level = intensityForTick(s.tick)
+  rt.pendingLevel = rt.level
+  rt.bar = 0
+  rt.themeSince = -MIN_THEME_BARS
   rt.row = 0
   rt.nextStepTime = now + START_DELAY_SECONDS
   rt.ducked = s.phase === PHASE_LEVEL_UP ? 1 : 0
   setDuck(rt, rt.ducked === 1, now)
+  silenceTension(rt, now)
+  for (let i = 0; i < rt.poiLast.length; i++) rt.poiLast[i] = s.poiProgress[i]!
+  rt.humFrames = HUM_HOLD_FRAMES
   if (isTerminal(s.phase)) {
     rt.musicOn = 0
     stopMusic(rt, now)
     return
   }
   rt.musicOn = 1
-  startMusic(rt, rt.section, now)
+  startMusic(rt, now)
 }
 
 function changePhase(rt: AudioRuntime, phase: number): void {
@@ -125,6 +161,28 @@ function consumeEvents(rt: AudioRuntime, s: State): void {
   }
 }
 
+function updateHum(rt: AudioRuntime, s: State): void {
+  let rising = -1
+  for (let i = 0; i < s.poiCount; i++) {
+    const progress = s.poiProgress[i]!
+    if (s.poiKind[i] === POI_BEACON && progress > 0 && progress < 1 && progress > rt.poiLast[i]! && progress > rising) rising = progress
+    rt.poiLast[i] = progress
+  }
+  const now = rt.ctx.currentTime
+  if (rising >= 0) {
+    rt.humFrames = 0
+    const hz = HUM_LOW_HZ * 2 ** (rising * HUM_OCTAVES)
+    rt.humOsc.frequency.setTargetAtTime(hz, now, HUM_GLIDE_SECONDS)
+    rt.humTone.frequency.setTargetAtTime(hz * 3, now, HUM_GLIDE_SECONDS)
+  } else if (rt.humFrames < HUM_HOLD_FRAMES) {
+    rt.humFrames++
+  }
+  const on = s.phase === PHASE_PLAYING && rt.humFrames < HUM_HOLD_FRAMES ? 1 : 0
+  if (on === rt.humOn) return
+  rt.humOn = on
+  rt.humGain.gain.setTargetAtTime(on === 1 ? HUM_LEVEL : 0, now, on === 1 ? HUM_GLIDE_SECONDS : HUM_RELEASE_SECONDS)
+}
+
 export function updateAudio(rt: AudioRuntime, s: State): void {
   if (rt.synced === 0) {
     rt.synced = 1
@@ -134,7 +192,13 @@ export function updateAudio(rt: AudioRuntime, s: State): void {
   }
   rt.lastTick = s.tick
   if (s.phase !== rt.lastPhase) changePhase(rt, s.phase)
-  if (rt.musicOn === 1) rt.pendingSection = sectionForTick(s.tick)
+  if (rt.musicOn === 1) {
+    rt.pendingTheme = themeForZone(s.zone)
+    rt.pendingLevel = intensityForTick(s.tick)
+  }
+  const boss = rt.musicOn === 1 && s.bossMaxHp > 0 ? 1 : 0
+  if (boss !== rt.tensionOn) setTension(rt, boss === 1, rt.ctx.currentTime)
   consumeEvents(rt, s)
+  updateHum(rt, s)
   pumpMusic(rt)
 }
