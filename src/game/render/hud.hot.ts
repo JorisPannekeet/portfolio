@@ -14,6 +14,7 @@ import {
   SPR_ICONS,
 } from './sheet.ts'
 import { blitAt, drawChar, drawNumber, frameId, numberWidth } from './sprite.hot.ts'
+import { drawNavigation } from './nav.hot.ts'
 import { AMBER, ARMOR, CORE, CORE_DEEP, CYAN, CYAN_DEEP, INK, LINE } from './colors.ts'
 
 const COLON = 58
@@ -61,6 +62,7 @@ function drawIconRow(v: View, s: State, unit: number): void {
   const split = owned + passives > perRow
   let x = 2
   let y = v.height - 2 - size - (split ? gap : 0)
+  v.hudBottom = owned + passives > 0 ? y - unit : v.height
   for (let w = 0; w < WEAPON_COUNT; w++) {
     if (s.weaponLevel[w]! === 0) continue
     const frame = s.weaponEvolved[w]! > 0 ? ICON_EVOLVED_FIRST + w : w
@@ -80,10 +82,10 @@ function drawIconRow(v: View, s: State, unit: number): void {
 
 export function drawPlayerArmor(v: View, s: State, x: number, y: number): void {
   const fraction = s.maxHp > 0 ? s.hp / s.maxHp : 0
-  bar(v, x - 7, y + 11, 14, 2, fraction, fraction < 0.3 ? CORE : ARMOR, LINE)
+  bar(v, x - 8, y + 14, 16, 2, fraction, fraction < 0.3 ? CORE : ARMOR, LINE)
 }
 
-export function drawHud(v: View, s: State): void {
+export function drawHud(v: View, s: State, t: number, playerX: number, playerY: number): void {
   const unit = v.scale === 1 ? 2 : 1
   const left = 2 * unit
   const right = v.width - v.clearRight - 2 * unit
@@ -121,5 +123,7 @@ export function drawHud(v: View, s: State): void {
     v.ctx.fillRect(bossX, bossRow + 2 * unit, bossWidth, unit)
   }
 
+  v.hudTop = stripHeight
   drawIconRow(v, s, unit)
+  drawNavigation(v, s, t, playerX, playerY)
 }

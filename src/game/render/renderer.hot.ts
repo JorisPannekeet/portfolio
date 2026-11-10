@@ -3,59 +3,31 @@ import { PHASE_DEAD, WEAPON_FIELD } from '../sim/content.ts'
 import type { View } from './view.ts'
 import { ROTATIONS, VARIANT_FLIP, VARIANT_NORMAL, VARIANT_WHITE } from './atlas.ts'
 import {
-  FLOOR_DECAL_COUNT,
-  FLOOR_DECAL_FIRST,
-  FLOOR_PLATE,
-  FLOOR_PLATE_WORN,
+  ENEMY_SPRITE,
   PLAYER_FRAME_IDLE,
+  PLAYER_FRAME_IDLE_COUNT,
   PLAYER_FRAME_WALK,
+  PLAYER_FRAME_WALK_COUNT,
   SPR_DRONE,
-  SPR_ENEMY_FIRST,
-  SPR_FLOOR,
   SPR_GEMS,
   SPR_PLAYER,
+  SPR_SCOUT,
   SPR_SHOTS,
+  SPR_THRUST,
+  THRUST_FRAME_COUNT,
 } from './sheet.ts'
 import { blitAt, blitCentered, frameId } from './sprite.hot.ts'
-import { consumeEvents, drawEffects, drawFlash, shakeOffset } from './effects.hot.ts'
+import { drawFloor, drawPois } from './world.hot.ts'
+import { consumeEvents, drawEffects, drawFlash, drawSweep, shakeOffset } from './effects.hot.ts'
 import { drawHud, drawPlayerArmor } from './hud.hot.ts'
 import { AMBER, CYAN } from './colors.ts'
 
-const TILE = 32
-const CULL = 32
+const CULL = 48
 const TAU = Math.PI * 2
-
-function hashTile(x: number, y: number): number {
-  let h = Math.imul(x, 0x27d4eb2d) ^ Math.imul(y, 0x165667b1)
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b)
-  h ^= h >>> 13
-  h = Math.imul(h, 0xc2b2ae35)
-  return (h ^ (h >>> 16)) >>> 0
-}
-
-function drawFloor(v: View): void {
-  const ox = v.originX
-  const oy = v.originY
-  const tx0 = Math.floor(ox / TILE)
-  const ty0 = Math.floor(oy / TILE)
-  const tx1 = Math.floor((ox + v.width) / TILE)
-  const ty1 = Math.floor((oy + v.height) / TILE)
-  const plate = frameId(v, SPR_FLOOR, FLOOR_PLATE, 0)
-  const worn = frameId(v, SPR_FLOOR, FLOOR_PLATE_WORN, 0)
-  for (let ty = ty0; ty <= ty1; ty++) {
-    for (let tx = tx0; tx <= tx1; tx++) {
-      const h = hashTile(tx, ty)
-      const x = tx * TILE - ox
-      const y = ty * TILE - oy
-      blitAt(v, (h & 7) === 0 ? worn : plate, x, y, 1)
-      if ((h >>> 3) % 7 !== 0) continue
-      const decal = frameId(v, SPR_FLOOR, FLOOR_DECAL_FIRST + ((h >>> 6) % FLOOR_DECAL_COUNT), 0)
-      const room = TILE - 4 - v.atlas.rw[decal]!
-      const roomY = TILE - 4 - v.atlas.rh[decal]!
-      blitAt(v, decal, x + 2 + ((h >>> 9) % (room + 1)), y + 2 + ((h >>> 14) % (roomY + 1)), 1)
-    }
-  }
-}
+const THRUST_LOW_X = -3
+const THRUST_LOW_Y = 16
+const THRUST_HIGH_X = -6
+const THRUST_HIGH_Y = 10
 
 function drawGems(v: View, s: State): void {
   const ox = v.originX
@@ -99,16 +71,35 @@ function drawEnemies(v: View, s: State, alpha: number, t: number): void {
     const type = s.eType[i]!
     const frame = (step + type + ((wx / 24) | 0)) & 1
     const variant = (s.px < wx ? VARIANT_FLIP : VARIANT_NORMAL) + (s.eFlash[i]! > 0 ? VARIANT_WHITE : 0)
-    blitCentered(v, frameId(v, SPR_ENEMY_FIRST + type, frame, variant), x, y)
+    blitCentered(v, frameId(v, ENEMY_SPRITE[type] ?? SPR_SCOUT, frame, variant), x, y)
   }
+}
+
+function drawThrust(v: View, frame: number, flip: boolean, left: number, top: number, relX: number, relY: number): void {
+  const a = v.atlas
+  const id = frameId(v, SPR_THRUST, frame, flip ? VARIANT_FLIP : VARIANT_NORMAL)
+  const bodyW = a.rw[a.base[SPR_PLAYER]!]!
+  const x = flip ? bodyW - relX - a.rw[id]! : relX
+  blitAt(v, id, left + x, top + relY - (a.rh[id]! >> 1), 1)
 }
 
 function drawPlayer(v: View, s: State, t: number, x: number, y: number): void {
   if (s.phase === PHASE_DEAD) return
   if (s.iframes > 0 && ((s.tick >> 2) & 1) === 1) return
   const moving = s.px !== s.ppx || s.py !== s.ppy
-  const frame = moving ? PLAYER_FRAME_WALK + (((t / 8) | 0) & 1) : PLAYER_FRAME_IDLE
-  blitCentered(v, frameId(v, SPR_PLAYER, frame, s.faceX < 0 ? VARIANT_FLIP : VARIANT_NORMAL), x, y)
+  const flip = s.faceX < 0
+  const frame = moving
+    ? PLAYER_FRAME_WALK + (((t / 7) | 0) % PLAYER_FRAME_WALK_COUNT)
+    : PLAYER_FRAME_IDLE + (((t / 30) | 0) % PLAYER_FRAME_IDLE_COUNT)
+  const id = frameId(v, SPR_PLAYER, frame, flip ? VARIANT_FLIP : VARIANT_NORMAL)
+  const left = x - (v.atlas.rw[id]! >> 1)
+  const top = y - (v.atlas.rh[id]! >> 1)
+  if (moving) {
+    const flare = ((t / 3) | 0) % THRUST_FRAME_COUNT
+    drawThrust(v, flare, flip, left, top, THRUST_HIGH_X, THRUST_HIGH_Y)
+    drawThrust(v, (flare + 1) % THRUST_FRAME_COUNT, flip, left, top, THRUST_LOW_X, THRUST_LOW_Y)
+  }
+  blitAt(v, id, left, top, 1)
 }
 
 function drawDrones(v: View, s: State, alpha: number): void {
@@ -146,6 +137,7 @@ export function drawFrame(v: View, s: State, alpha: number): void {
   const playerY = Math.round(camY) - v.originY
   v.ctx.globalAlpha = 1
   drawFloor(v)
+  drawPois(v, s, t, playerX, playerY)
   drawGems(v, s)
   drawAura(v, s, t, playerX, playerY)
   drawEnemies(v, s, a, t)
@@ -154,6 +146,7 @@ export function drawFrame(v: View, s: State, alpha: number): void {
   drawShots(v, s, a)
   drawEffects(v, t, playerX, playerY)
   drawFlash(v, t)
+  drawSweep(v, t)
   if (s.phase !== PHASE_DEAD) drawPlayerArmor(v, s, playerX, playerY)
-  drawHud(v, s)
+  drawHud(v, s, t, playerX, playerY)
 }

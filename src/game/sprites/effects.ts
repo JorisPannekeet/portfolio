@@ -6,6 +6,9 @@ export const debrisFrames = [
   ['HH.', 'Hhh', '.h.'],
   ['VV.', 'Vvv', '.v.'],
   ['55.', '544', '.4.'],
+  ['UU.', 'Uaa', '.a.'],
+  ['ff.', 'fTT', '.t.'],
+  ['EE.', 'ENN', '.F.'],
   ['WW.', 'Wss', '.s.'],
 ]
 
@@ -24,4 +27,6 @@ export const glintFrames = [
 export const hudMarkFrames = [
   ['.WWW.', 'WWWWW', 'W0W0W', 'WWWWW', '.W.W.'],
   ['..W..', '.WWW.', 'WW.WW', 'W...W', '.....'],
+  ['.RRR.', 'RRRRR', 'R0R0R', 'RRRRR', '.R.R.'],
+  ['RRR', 'R0R', 'R.R'],
 ]

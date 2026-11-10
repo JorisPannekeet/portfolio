@@ -1,4 +1,4 @@
-import { PALETTE_KEYS, TRANSPARENT_KEY, paletteIndex, paletteRgba } from './palette.ts'
+import { PALETTE_HEX, PALETTE_KEYS, TRANSPARENT_KEY, paletteIndex, paletteRgba } from './palette.ts'
 
 export const KIND_PLAIN = 0
 export const KIND_ACTOR = 1
@@ -161,7 +161,8 @@ function framesFor(def: SpriteDef, rgba: Uint8Array): Bitmap[] {
 
 export function buildAtlas(defs: readonly SpriteDef[], width = 512): Atlas {
   const rgba = paletteRgba()
-  if (PALETTE_KEYS.length > 32) throw new Error('palette exceeds 32 colours')
+  if (PALETTE_KEYS.length > 48) throw new Error('palette exceeds 48 colours')
+  if (PALETTE_KEYS.length !== PALETTE_HEX.length) throw new Error('palette keys and colours differ in length')
   const bitmaps: Bitmap[] = []
   const base = new Uint16Array(defs.length)
   const variants = new Uint8Array(defs.length)

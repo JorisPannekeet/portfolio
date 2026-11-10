@@ -1,7 +1,11 @@
 import type { State } from '../sim/state.ts'
 import {
-  ENEMY_DREADNOUGHT,
+  BEACON_REWARD_HEAL,
+  ENEMY_BOSS_FIRST,
   EVENT_CAP,
+  EV_BEACON,
+  EV_ZONE,
+  ZONE_COUNT,
   EV_BLAST,
   EV_BOSS,
   EV_DEAD,
@@ -17,6 +21,8 @@ import {
   EV_WON,
 } from '../sim/content.ts'
 import {
+  FX_BEACON_ICON,
+  FX_BEACON_RING,
   FX_BLAST,
   FX_CAP,
   FX_DEBRIS,
@@ -30,16 +36,18 @@ import {
   type View,
 } from './view.ts'
 import { GLYPH_AMBER, GLYPH_DARK, GLYPH_GREEN, GLYPH_LIGHT, GLYPH_RED } from './atlas.ts'
-import { SPR_DEBRIS, SPR_GLINT, SPR_SPARK } from './sheet.ts'
-import { blitCentered, drawNumber, frameId, numberWidth } from './sprite.hot.ts'
-import { AMBER, ARMOR, CORE, CYAN, CYAN_DEEP, PALE } from './colors.ts'
+import { DEBRIS_PLAYER_FRAME, ICON_PASSIVE_FIRST, ICON_REPAIR, ICON_SIZE, SPR_DEBRIS, SPR_GLINT, SPR_ICONS, SPR_SPARK } from './sheet.ts'
+import { ICON_FULL } from './atlas.ts'
+import { blitAt, blitCentered, drawNumber, frameId, numberWidth } from './sprite.hot.ts'
+import { AMBER, ARMOR, CORE, CYAN, CYAN_DEEP, INK, PALE, ZONE_COLOR } from './colors.ts'
 
 const TAU = Math.PI * 2
 const MAX_NUMBERS_PER_FRAME = 3
 const MAX_ACTIVE_NUMBERS = 28
 const MAX_SPARKS_PER_FRAME = 10
 const MAX_DEBRIS_KILLS_PER_FRAME = 14
-const DEBRIS_PLAYER_FRAME = 7
+const BEACON_ICON_LIFE = 72
+const SWEEP_LIFE = 26
 const HEAVY_HIT = 40
 
 export function random(v: View): number {
@@ -99,6 +107,7 @@ export function clearEffects(v: View): void {
   v.fxKind.fill(FX_NONE)
   v.shakeUntil = 0
   v.flashUntil = 0
+  v.sweepUntil = 0
   v.activeNumbers = 0
 }
 
@@ -131,7 +140,7 @@ export function consumeEvents(v: View, s: State): void {
         spawnNumber(v, x, y, a, a >= HEAVY_HIT ? GLYPH_AMBER : GLYPH_LIGHT, now)
       }
     } else if (type === EV_KILL) {
-      if (a === ENEMY_DREADNOUGHT) {
+      if (a >= ENEMY_BOSS_FIRST) {
         spawnDebris(v, x, y, a, 24, 2.4, now)
         const ring = spawn(v, FX_BLAST, x, y, now, 20)
         v.fxA[ring] = 48
@@ -176,6 +185,16 @@ export function consumeEvents(v: View, s: State): void {
       v.fxA[i] = 40
       startShake(v, now + 20)
       startFlash(v, CORE, now, 20)
+    } else if (type === EV_BEACON) {
+      const icon = spawn(v, FX_BEACON_ICON, x, y, now, BEACON_ICON_LIFE)
+      v.fxFrame[icon] = a === BEACON_REWARD_HEAL ? ICON_REPAIR : ICON_PASSIVE_FIRST + a
+      const ring = spawn(v, FX_BEACON_RING, x, y, now, 22)
+      v.fxA[ring] = 30
+      startFlash(v, CYAN, now, 12)
+    } else if (type === EV_ZONE) {
+      v.sweepColor = ZONE_COLOR[a >= 0 && a < ZONE_COUNT ? a : 0]!
+      v.sweepStart = now
+      v.sweepUntil = now + SWEEP_LIFE
     } else if (type === EV_WON) {
       startFlash(v, ARMOR, now, 30)
       spawn(v, FX_LEVEL_RING, x, y, now, 30)
@@ -283,11 +302,41 @@ export function drawEffects(v: View, t: number, playerX: number, playerY: number
     } else if (kind === FX_PULSE) {
       drawRing(v, x, y, v.fxA[i]! * (0.2 + 0.8 * p), CYAN, 2, stepAlpha(1 - p))
       drawRing(v, x, y, v.fxA[i]! * (0.1 + 0.8 * p), CYAN_DEEP, 1, stepAlpha(1 - p))
+    } else if (kind === FX_BEACON_RING) {
+      drawRing(v, x, y, 8 + v.fxA[i]! * p, CYAN, 2, stepAlpha(1 - p))
+    } else if (kind === FX_BEACON_ICON) {
+      drawBeaconIcon(v, x, y, v.fxFrame[i]!, age, p)
     } else if (kind === FX_LEVEL_RING) {
       drawRing(v, playerX, playerY, 6 + p * 44, ARMOR, 2, stepAlpha(1 - p))
     }
   }
   v.activeNumbers = numbers
+  ctx.globalAlpha = 1
+}
+
+function drawBeaconIcon(v: View, x: number, y: number, frame: number, age: number, p: number): void {
+  if (p > 0.75 && ((age >> 2) & 1) === 1) return
+  const rise = age < 24 ? age : 24
+  const id = frameId(v, SPR_ICONS, frame, ICON_FULL)
+  const left = Math.round(x) - (ICON_SIZE >> 1)
+  const top = Math.round(y) - 30 - rise
+  const ctx = v.ctx
+  ctx.globalAlpha = 1
+  ctx.fillStyle = age < 6 ? ARMOR : INK
+  ctx.fillRect(left - 1, top - 1, ICON_SIZE + 2, ICON_SIZE + 2)
+  blitAt(v, id, left, top, 1)
+}
+
+export function drawSweep(v: View, t: number): void {
+  if (t >= v.sweepUntil || t < v.sweepStart) return
+  const p = (t - v.sweepStart) / (v.sweepUntil - v.sweepStart)
+  const y = Math.round(v.height * p)
+  const ctx = v.ctx
+  ctx.fillStyle = v.sweepColor
+  ctx.globalAlpha = 0.18
+  ctx.fillRect(0, y - 12, v.width, 12)
+  ctx.globalAlpha = 0.9
+  ctx.fillRect(0, y, v.width, 2)
   ctx.globalAlpha = 1
 }
 

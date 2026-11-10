@@ -20,3 +20,6 @@ export const PALE = color('Y')
 export const CYAN = color('C')
 export const CYAN_DEEP = color('c')
 export const GREEN = color('G')
+export const ARMOR_SHADE = color('g')
+export const ZONE_COLOR: readonly string[] = [color('s'), color('U'), color('T'), color('E')]
+export const ZONE_MAP_COLOR: readonly string[] = [color('4'), color('h'), color('t'), color('p')]
