@@ -829,6 +829,52 @@ main {
   gap: clamp(48px, 7vw, 92px);
 }
 
+.play-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  padding: 12px 16px 12px 20px;
+  border: 1px solid var(--hangar-line);
+  border-left: 4px solid var(--core);
+  background: var(--frame-face);
+  color: var(--text-hi);
+  text-decoration: none;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  position: relative;
+}
+.play-banner::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -140px;
+  width: 140px;
+  background: linear-gradient(100deg, transparent, rgb(255 43 61 / 0.38) 45%, rgb(255 255 255 / 0.16) 50%, rgb(255 43 61 / 0.38) 55%, transparent);
+  pointer-events: none;
+  animation: play-banner-sweep 4.2s steps(26, end) infinite;
+}
+.play-banner .decal {
+  color: var(--core);
+  animation: play-banner-blink 1.4s steps(1, end) infinite;
+}
+@keyframes play-banner-sweep {
+  0% { left: -140px; }
+  45%, 100% { left: 100%; }
+}
+@keyframes play-banner-blink {
+  0%, 62% { opacity: 1; }
+  63%, 100% { opacity: 0.3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .play-banner::after { display: none; }
+  .play-banner .decal { animation: none; }
+}
+.play-banner__text { flex: 1 1 280px; font-size: 15px; line-height: 1.4; }
+@media (hover: hover) and (pointer: fine) {
+  .play-banner:hover { border-color: var(--core); }
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);

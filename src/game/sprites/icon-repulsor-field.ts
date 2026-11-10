@@ -1,0 +1,18 @@
+export const iconRepulsorField = [
+  '.00000000000000.',
+  '0gggggggggggggg0',
+  '0g222CCCCCC222g0',
+  '0g22C222222C22g0',
+  '0g2C22cccc22C2g0',
+  '0gC22c2222c22Cg0',
+  '0gC2c22RR22c2Cg0',
+  '0gC2c2RWWR2c2Cg0',
+  '0gC2c2RWWR2c2Cg0',
+  '0gC2c22RR22c2Cg0',
+  '0gC22c2222c22Cg0',
+  '0g2C22cccc22C2g0',
+  '0g22C222222C22g0',
+  '0g222CCCCCC222g0',
+  '0gggggggggggggg0',
+  '.00000000000000.',
+]

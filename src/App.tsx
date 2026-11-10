@@ -7,6 +7,7 @@ const CaseStudies = lazy(() => import('./pages/CaseStudies').then(m => ({ defaul
 const CaseStudyDetail = lazy(() => import('./pages/CaseStudyDetail').then(m => ({ default: m.CaseStudyDetail })))
 const HowIWork = lazy(() => import('./pages/HowIWork').then(m => ({ default: m.HowIWork })))
 const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
+const Play = lazy(() => import('./pages/Play').then(m => ({ default: m.Play })))
 
 function PageLoader() {
   return (
@@ -16,7 +17,7 @@ function PageLoader() {
   )
 }
 
-export default function App() {
+function Site() {
   return (
     <Layout>
       <Suspense fallback={<PageLoader />}>
@@ -30,5 +31,14 @@ export default function App() {
         </Routes>
       </Suspense>
     </Layout>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/play" element={<Suspense fallback={<PageLoader />}><Play /></Suspense>} />
+      <Route path="*" element={<Site />} />
+    </Routes>
   )
 }

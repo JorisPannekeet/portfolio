@@ -10,6 +10,11 @@ export const content = {
     email: 'jorispannekeet@gmail.com',
   },
 
+  playBanner: {
+    decal: 'SIM // MECH SURVIVORS',
+    text: 'Pilot Unit JP-12 through an eight-minute sortie. Built for this site, playable in your browser.',
+    cta: 'Play the game',
+  },
   hero: {
     greeting: "Hi, I'm Joris",
     role: 'Senior Fullstack Engineer',
