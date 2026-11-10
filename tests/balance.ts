@@ -6,8 +6,10 @@ import {
   INPUT_CHOICE,
   INPUT_IDLE,
   PHASE_LEVEL_UP,
+  PLAYER_RADIUS,
   POI_BEACON,
   POI_LAIR,
+  PROP_RADIUS,
   RUN_TICKS,
   TICK_HZ,
   WORLD_HALF,
@@ -21,6 +23,7 @@ import { isTerminal, minutes, runBot } from './harness.ts'
 const TICKS_PER_MINUTE = 60 * TICK_HZ
 const LATE_TICKS = RUN_TICKS - 2 * TICKS_PER_MINUTE
 const EDGE_BAND = 8
+const PRESS_TOLERANCE = 0.05
 const BEACON_TOTAL = ZONE_COUNT * BEACONS_PER_ZONE
 
 interface Job {
@@ -35,6 +38,8 @@ interface RunResult {
   readonly bossesReleased: number
   readonly bossesKilled: number
   readonly edgeShare: number
+  readonly propShare: number
+  readonly captureTicks: readonly number[]
   readonly won: boolean
   readonly endTick: number
   readonly level: number
@@ -63,8 +68,20 @@ function countDone(s: State, kind: number): number {
   return n
 }
 
+function pressedAgainstProp(s: State): boolean {
+  for (let k = 0; k < s.propCount; k++) {
+    const reach = PROP_RADIUS[s.propKind[k]!]! + PLAYER_RADIUS + PRESS_TOLERANCE
+    const dx = s.px - s.propX[k]!
+    const dy = s.py - s.propY[k]!
+    if (dx * dx + dy * dy <= reach * reach) return true
+  }
+  return false
+}
+
 function playSeed({ seed, takeBeacons }: Job): RunResult {
   let edgeTicks = 0
+  let propTicks = 0
+  const captureTicks: number[] = []
   let peak = 0
   let latePeak = 0
   let evolvedAt = -1
@@ -75,6 +92,8 @@ function playSeed({ seed, takeBeacons }: Job): RunResult {
     if (evolvedAt < 0 && s.weaponEvolved.some(v => v > 0)) evolvedAt = s.tick
     if (s.tick % TICKS_PER_MINUTE === 0) hpByMinute.push(Math.round(s.hp))
     if (Math.max(Math.abs(s.px), Math.abs(s.py)) >= WORLD_HALF - EDGE_BAND) edgeTicks++
+    if (pressedAgainstProp(s)) propTicks++
+    while (countDone(s, POI_BEACON) > captureTicks.length) captureTicks.push(s.tick)
   }, s => botInput(s, takeBeacons))
   return {
     seed,
@@ -83,6 +102,8 @@ function playSeed({ seed, takeBeacons }: Job): RunResult {
     bossesReleased: countDone(state, POI_LAIR),
     bossesKilled: state.bossKills,
     edgeShare: edgeTicks / Math.max(1, state.tick),
+    propShare: propTicks / Math.max(1, state.tick),
+    captureTicks,
     won: state.tick >= RUN_TICKS && state.hp > 0,
     endTick: state.tick,
     level: state.level,
@@ -122,6 +143,15 @@ function beaconSplit(results: readonly RunResult[]): [string, string][] {
   return rows
 }
 
+function captureMedian(results: readonly RunResult[], pick: (ticks: readonly number[]) => number | undefined): string {
+  const ticks = results.map(r => pick(r.captureTicks)).filter((t): t is number => t !== undefined)
+  return ticks.length === 0 ? 'none' : `${minutes(median(ticks))} (${ticks.length} runs)`
+}
+
+function captureMedians(results: readonly RunResult[]): string {
+  return [captureMedian(results, t => t[0]), captureMedian(results, t => t[3]), captureMedian(results, t => t[t.length - 1])].join(' / ')
+}
+
 function report(title: string, results: readonly RunResult[]): void {
   console.log(`\n${title}`)
   const wins = results.filter(r => r.won)
@@ -146,7 +176,9 @@ function report(title: string, results: readonly RunResult[]): void {
     ['mean bot hp at minute 1..8, runs alive', [0, 1, 2, 3, 4, 5, 6, 7].map(m => mean(results.filter(r => r.hpByMinute.length > m).map(r => r.hpByMinute[m]!)).toFixed(0)).join(' ')],
     ['mean beacons captured', mean(results.map(r => r.beacons)).toFixed(2)],
     ['mean bosses released / killed', `${mean(results.map(r => r.bossesReleased)).toFixed(2)} / ${mean(results.map(r => r.bossesKilled)).toFixed(2)}`],
-    ['mean share of time pinned to the world edge', `${(100 * mean(results.map(r => r.edgeShare))).toFixed(1)}%`],
+    ['median capture time of beacon 1 / 4 / last', captureMedians(results)],
+    ['mean share of time pinned to the world edge', `${(100 * mean(results.map(r => r.edgeShare))).toFixed(2)}%`],
+    ['mean share of time pressed against a prop', `${(100 * mean(results.map(r => r.propShare))).toFixed(2)}%`],
     ...beaconSplit(results),
   ]
   const width = Math.max(...rows.map(([label]) => label.length))

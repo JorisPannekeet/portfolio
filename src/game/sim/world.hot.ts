@@ -9,6 +9,8 @@ import {
   POI_EDGE_MARGIN,
   POI_LAIR,
   POI_PLACE_ATTEMPTS,
+  START_X,
+  START_Y,
   WORLD_HALF,
   ZONE_COUNT,
 } from './content.ts'
@@ -36,7 +38,9 @@ function farFromKind(s: State, x: number, y: number, kind: number, gap: number):
 }
 
 function candidateValid(s: State, x: number, y: number, kind: number): boolean {
-  const d2 = x * x + y * y
+  const sx = x - START_X
+  const sy = y - START_Y
+  const d2 = sx * sx + sy * sy
   if (kind === POI_LAIR) {
     return d2 >= LAIR_MIN_ORIGIN_DIST * LAIR_MIN_ORIGIN_DIST && farFromKind(s, x, y, POI_BEACON, LAIR_MIN_BEACON_DIST)
   }

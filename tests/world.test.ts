@@ -39,8 +39,11 @@ import {
   POI_LAIR,
   REPAIR_HEAL,
   SPAWN_RADIUS,
+  START_X,
+  START_Y,
   WORLD_HALF,
   ZONE_COUNT,
+  ZONE_HANGAR,
 } from '../src/game/sim/content.ts'
 import { spawnEnemy } from '../src/game/sim/enemies.hot.ts'
 import { createState, resetState, type State } from '../src/game/sim/state.ts'
@@ -141,13 +144,13 @@ test('every layout over 200 seeds obeys the placement rules', () => {
       assert.equal(s.poiProgress[i], 0)
     }
     for (const b of beacons) {
-      assert.ok(distance(s.poiX[b]!, s.poiY[b]!, 0, 0) >= BEACON_MIN_ORIGIN_DIST, `seed ${seed} beacon ${b} near the origin`)
+      assert.ok(distance(s.poiX[b]!, s.poiY[b]!, START_X, START_Y) >= BEACON_MIN_ORIGIN_DIST, `seed ${seed} beacon ${b} near the start`)
       for (const c of beacons) {
         if (c > b) assert.ok(distance(s.poiX[b]!, s.poiY[b]!, s.poiX[c]!, s.poiY[c]!) >= BEACON_MIN_SPACING, `seed ${seed} beacons ${b} and ${c} too close`)
       }
     }
     for (const l of lairs) {
-      assert.ok(distance(s.poiX[l]!, s.poiY[l]!, 0, 0) >= LAIR_MIN_ORIGIN_DIST, `seed ${seed} lair ${l} near the origin`)
+      assert.ok(distance(s.poiX[l]!, s.poiY[l]!, START_X, START_Y) >= LAIR_MIN_ORIGIN_DIST, `seed ${seed} lair ${l} near the start`)
       for (const b of beacons) {
         assert.ok(distance(s.poiX[l]!, s.poiY[l]!, s.poiX[b]!, s.poiY[b]!) >= LAIR_MIN_BEACON_DIST, `seed ${seed} lair ${l} near beacon ${b}`)
       }
@@ -299,7 +302,7 @@ test('killing a boss opens a level-up pick without gaining a level', () => {
   const s = freshState(31)
   s.xpNext = 5
   const type = ENEMY_BOSS_FIRST + 1
-  const boss = spawnEnemy(s, type, 120, 0)
+  const boss = spawnEnemy(s, type, s.px + 120, s.py)
   s.eHp[boss] = 1
   const head = s.evHead
   while (eventsSince(s, head, EV_KILL).every(e => e.a !== type)) {
@@ -317,13 +320,13 @@ test('killing a boss opens a level-up pick without gaining a level', () => {
 
 test('the boss bar follows the nearest of several bosses', () => {
   const s = freshState(32)
-  const far = spawnEnemy(s, ENEMY_BOSS_FIRST + 2, 250, 0)
-  const near = spawnEnemy(s, ENEMY_BOSS_FIRST + 1, -60, 0)
+  const far = spawnEnemy(s, ENEMY_BOSS_FIRST + 2, s.px + 250, s.py)
+  const near = spawnEnemy(s, ENEMY_BOSS_FIRST + 1, s.px - 60, s.py)
   step(s, INPUT_IDLE)
   assert.notEqual(s.eMaxHp[far], s.eMaxHp[near])
   assert.equal(s.bossMaxHp, s.eMaxHp[near])
-  s.ex[near] = -400
-  s.ey[near] = 0
+  s.ex[near] = s.px - 400
+  s.ey[near] = s.py
   step(s, INPUT_IDLE)
   assert.equal(s.bossMaxHp, s.eMaxHp[far])
 })
@@ -346,12 +349,21 @@ test('despawn and full-pool recycling never relocate a boss', () => {
   }
 })
 
+test('a fresh run starts in the Hangar Deck at the start position', () => {
+  const s = freshState(41)
+  assert.equal(s.px, START_X)
+  assert.equal(s.py, START_Y)
+  assert.equal(s.zone, ZONE_HANGAR)
+  assert.equal(zoneAt(START_X, START_Y), ZONE_HANGAR)
+})
+
 test('EV_ZONE fires on crossing a zone border and not on the first tick', () => {
   const s = freshState(40)
-  assert.equal(s.zone, zoneAt(0, 0))
+  assert.equal(s.zone, ZONE_HANGAR)
   const head = s.evHead
   step(s, INPUT_IDLE)
   assert.equal(eventsSince(s, head, EV_ZONE).length, 0)
+  placePlayer(s, 0.5, 0.5)
   const left = 1 + INPUT_DIRECTIONS / 2
   const up = 1 + (3 * INPUT_DIRECTIONS) / 4
   const down = 1 + INPUT_DIRECTIONS / 4

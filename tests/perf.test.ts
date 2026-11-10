@@ -40,7 +40,7 @@ test(`mean step time with about ${TARGET_HOSTILES} hostiles stays under ${BUDGET
   for (let i = 0; i < TARGET_HOSTILES; i++) {
     const turn = i * 7 * HEADING_TURNS
     const radius = 40 + (i % 25) * 10
-    spawnEnemy(s, HOSTILE_MIX[i % HOSTILE_MIX.length]!, cosTurn(turn) * radius, sinTurn(turn) * radius)
+    spawnEnemy(s, HOSTILE_MIX[i % HOSTILE_MIX.length]!, s.px + cosTurn(turn) * radius, s.py + sinTurn(turn) * radius)
   }
   let hostileTicks = 0
   let elapsed = 0

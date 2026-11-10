@@ -22,6 +22,7 @@ import {
   MAX_ENEMIES,
   PLAYER_IFRAMES,
   PLAYER_RADIUS,
+  PROP_SLIDE_NUDGE,
   RECYCLE_MIN_RADIUS,
   REPAIR_DROP_CHANCE,
   SEPARATION_STRENGTH,
@@ -34,20 +35,22 @@ import { emit } from './events.hot.ts'
 import { gridQuery } from './grid.hot.ts'
 import { dropGem } from './pickups.hot.ts'
 import { rngFloat, rngInt } from './prng.hot.ts'
+import { pushHostileOutOfProps } from './props.hot.ts'
 import { enemyContactDamage, enemyMaxHp, enemySpeedScale, playerArmor } from './stats.hot.ts'
 import type { State } from './state.ts'
 import { TRIG_SIZE, cosTurn, sinTurn } from './trig.ts'
 
-export function spawnEnemy(s: State, type: number, x: number, y: number): number {
-  const limit = type >= ENEMY_BOSS_FIRST ? MAX_ENEMIES : MAX_ENEMIES - BOSS_SPAWN_RESERVE
-  if (s.enemyCount >= limit) return -1
-  const i = s.enemyCount++
+function settle(s: State, i: number): void {
+  pushHostileOutOfProps(s, i, ENEMY_RADIUS[s.eType[i]!]!, 0, 0, 0)
+  s.epx[i] = s.ex[i]!
+  s.epy[i] = s.ey[i]!
+}
+
+function initEnemy(s: State, i: number, type: number, x: number, y: number): void {
   const hp = enemyMaxHp(s, type)
   s.eType[i] = type
   s.ex[i] = x
   s.ey[i] = y
-  s.epx[i] = x
-  s.epy[i] = y
   s.eHp[i] = hp
   s.eMaxHp[i] = hp
   s.eFlash[i] = 0
@@ -55,6 +58,14 @@ export function spawnEnemy(s: State, type: number, x: number, y: number): number
   s.eKx[i] = 0
   s.eKy[i] = 0
   s.eDroneReady[i] = 0
+  settle(s, i)
+}
+
+export function spawnEnemy(s: State, type: number, x: number, y: number): number {
+  const limit = type >= ENEMY_BOSS_FIRST ? MAX_ENEMIES : MAX_ENEMIES - BOSS_SPAWN_RESERVE
+  if (s.enemyCount >= limit) return -1
+  const i = s.enemyCount++
+  initEnemy(s, i, type, x, y)
   return i
 }
 
@@ -63,7 +74,7 @@ function spawnOnRing(s: State, type: number): number {
   return spawnEnemy(s, type, s.px + cosTurn(turn) * SPAWN_RADIUS, s.py + sinTurn(turn) * SPAWN_RADIUS)
 }
 
-function recycleFarthest(s: State): void {
+function farthestRecyclable(s: State): number {
   let far = -1
   let farD2 = RECYCLE_MIN_RADIUS * RECYCLE_MIN_RADIUS
   for (let i = 0; i < s.enemyCount; i++) {
@@ -76,16 +87,32 @@ function recycleFarthest(s: State): void {
       farD2 = d2
     }
   }
+  return far
+}
+
+function recycleFarthest(s: State): void {
+  const far = farthestRecyclable(s)
   if (far < 0) return
   const turn = rngInt(s, TRIG_SIZE)
-  const x = s.px + cosTurn(turn) * SPAWN_RADIUS
-  const y = s.py + sinTurn(turn) * SPAWN_RADIUS
-  s.ex[far] = x
-  s.ey[far] = y
-  s.epx[far] = x
-  s.epy[far] = y
+  s.ex[far] = s.px + cosTurn(turn) * SPAWN_RADIUS
+  s.ey[far] = s.py + sinTurn(turn) * SPAWN_RADIUS
   s.eKx[far] = 0
   s.eKy[far] = 0
+  settle(s, far)
+}
+
+export function deployHostile(s: State, type: number, x: number, y: number): number {
+  const i = spawnEnemy(s, type, x, y)
+  if (i >= 0) return i
+  const far = farthestRecyclable(s)
+  if (far >= 0) initEnemy(s, far, type, x, y)
+  return far
+}
+
+export function waveSegment(s: State): number {
+  const last = WAVES.length - 1
+  const raw = Math.floor(s.tick / WAVE_TICKS)
+  return raw > last ? last : raw
 }
 
 function spawnFromWave(s: State, segment: number): number {
@@ -96,9 +123,7 @@ function spawnFromWave(s: State, segment: number): number {
 }
 
 export function runSpawns(s: State): void {
-  const last = WAVES.length - 1
-  const raw = Math.floor(s.tick / WAVE_TICKS)
-  const segment = raw > last ? last : raw
+  const segment = waveSegment(s)
   const wave = WAVES[segment]!
   s.spawnTimer--
   if (s.spawnTimer <= 0) {
@@ -197,15 +222,16 @@ export function moveEnemies(s: State): void {
     const rx = x - px
     const ry = y - py
     const r2 = rx * rx + ry * ry
-    if (r2 > despawn2 && type < ENEMY_BOSS_FIRST) {
-      const r = Math.sqrt(r2)
-      x = px - (rx / r) * SPAWN_RADIUS
-      y = py - (ry / r) * SPAWN_RADIUS
-      s.epx[i] = x
-      s.epy[i] = y
-    }
     ex[i] = x
     ey[i] = y
+    if (r2 > despawn2 && type < ENEMY_BOSS_FIRST) {
+      const r = Math.sqrt(r2)
+      ex[i] = px - (rx / r) * SPAWN_RADIUS
+      ey[i] = py - (ry / r) * SPAWN_RADIUS
+      settle(s, i)
+      continue
+    }
+    pushHostileOutOfProps(s, i, ENEMY_RADIUS[type]!, dx, dy, ENEMY_SPEED[type]! * speedScale * PROP_SLIDE_NUDGE)
   }
 }
 
