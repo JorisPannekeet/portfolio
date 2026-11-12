@@ -1,0 +1,71 @@
+import type { Palette } from '../../game/render/atlas.ts'
+
+const ENTRIES: readonly (readonly [string, string])[] = [
+  ['0', '#100C14'],
+  ['k', '#1B1A24'],
+  ['l', '#2B2B38'],
+  ['m', '#42455A'],
+  ['n', '#5F677A'],
+  ['o', '#8690A0'],
+  ['p', '#B3BCC5'],
+  ['q', '#DCDDD3'],
+  ['W', '#F7F4EA'],
+  ['b', '#22150E'],
+  ['c', '#3B2417'],
+  ['d', '#5C3A24'],
+  ['e', '#80542E'],
+  ['f', '#A6773F'],
+  ['h', '#CFA364'],
+  ['s', '#12241A'],
+  ['t', '#1C3A21'],
+  ['u', '#2B5629'],
+  ['v', '#457731'],
+  ['w', '#6FA03C'],
+  ['I', '#A9CC5C'],
+  ['J', '#111C3A'],
+  ['L', '#1C3866'],
+  ['M', '#2B6198'],
+  ['N', '#4A96C8'],
+  ['O', '#8CCBE6'],
+  ['P', '#D2EEF7'],
+  ['r', '#330B14'],
+  ['R', '#8E1C26'],
+  ['S', '#D43A2A'],
+  ['T', '#F2742A'],
+  ['A', '#F7B43C'],
+  ['U', '#FFE696'],
+  ['K', '#8C5A14'],
+  ['V', '#163F44'],
+  ['X', '#26706C'],
+  ['Y', '#4FB3A0'],
+  ['Z', '#A3ECD6'],
+  ['i', '#F2C6A0'],
+  ['j', '#C98C66'],
+  ['H', '#7E4A36'],
+  ['D', '#343F52'],
+  ['E', '#64748A'],
+  ['F', '#A7B7C8'],
+  ['B', '#1C0F2C'],
+  ['C', '#3A1C58'],
+  ['g', '#66308C'],
+  ['a', '#9C5CC8'],
+  ['Q', '#D6A8F0'],
+  ['G', '#6AD25A'],
+  ['x', '#0A0F1C'],
+  ['y', '#2A2140'],
+  ['z', '#E070FF'],
+  ['@', '#7A6A58'],
+  ['&', '#A8987C'],
+  ['%', '#3E5A46'],
+]
+
+export const RPG_PALETTE: Palette = {
+  keys: ENTRIES.map(entry => entry[0]).join(''),
+  hex: ENTRIES.map(entry => entry[1]),
+}
+
+export function color(key: string): string {
+  const index = RPG_PALETTE.keys.indexOf(key)
+  if (index < 0) throw new Error(`no palette key ${key}`)
+  return RPG_PALETTE.hex[index]!
+}

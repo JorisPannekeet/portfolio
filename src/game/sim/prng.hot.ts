@@ -1,9 +1,15 @@
-import type { State } from './state.ts'
+export interface RngState {
+  seed: number
+  rngA: number
+  rngB: number
+  rngC: number
+  rngD: number
+}
 
 const UINT32_RANGE = 4294967296
 const WARMUP_ROUNDS = 15
 
-export function rngNext(s: State): number {
+export function rngNext(s: RngState): number {
   const a = s.rngA
   const b = s.rngB
   const c = s.rngC
@@ -16,15 +22,15 @@ export function rngNext(s: State): number {
   return t >>> 0
 }
 
-export function rngFloat(s: State): number {
+export function rngFloat(s: RngState): number {
   return rngNext(s) / UINT32_RANGE
 }
 
-export function rngInt(s: State, n: number): number {
+export function rngInt(s: RngState, n: number): number {
   return Math.floor(rngFloat(s) * n)
 }
 
-export function seedRng(s: State): void {
+export function seedRng(s: RngState): void {
   s.rngA = 0x9e3779b9 | 0
   s.rngB = 0x243f6a88 | 0
   s.rngC = 0xb7e15162 | 0

@@ -78,7 +78,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/game/**/*.{ts,tsx}', 'src/pages/Play.tsx', 'tests/**/*.ts'],
+    files: ['src/{game,rpg}/**/*.{ts,tsx}', 'src/pages/{Play,Rpg}.tsx', 'tests/**/*.ts'],
     plugins: { game },
     rules: {
       'game/no-comments': 'error',
@@ -86,7 +86,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/game/sim/**/*.ts'],
+    files: ['src/{game,rpg}/sim/**/*.ts'],
     rules: {
       'no-restricted-syntax': ['error', ...simBans],
       'no-restricted-properties': ['error', ...simProperties],
@@ -94,7 +94,7 @@ export default tseslint.config(
       'no-restricted-imports': ['error', {
         patterns: [
           assetImports,
-          { regex: '^(?!\\./)', message: 'Sim imports only sibling sim modules: no renderer, DOM, audio or UI.' },
+          { regex: '^(?!\\./|\\.\\./\\.\\./game/sim/(prng\\.hot|trig)\\.ts$)', message: 'Sim imports only sibling sim modules and the shared PRNG and trig table: no renderer, DOM, audio or UI.' },
         ],
       }],
     },
@@ -104,21 +104,21 @@ export default tseslint.config(
     rules: { 'no-restricted-properties': 'off' },
   },
   {
-    files: ['src/game/**/*.hot.ts'],
+    files: ['src/{game,rpg}/**/*.hot.ts'],
     rules: { 'no-restricted-syntax': ['error', ...hotBans] },
   },
   {
-    files: ['src/game/sim/**/*.hot.ts'],
+    files: ['src/{game,rpg}/sim/**/*.hot.ts'],
     rules: { 'no-restricted-syntax': ['error', ...simBans, ...hotBans] },
   },
   {
-    files: ['src/game/sprites/**/*.ts'],
+    files: ['src/{game,rpg}/sprites/**/*.ts'],
     rules: {
       'no-restricted-syntax': ['error', ban('Literal[value=/#[0-9a-fA-F]{3,8}\\b|rgba?\\(|hsla?\\(/]', 'Sprites reference palette indices only.')],
     },
   },
   {
-    files: ['src/game/ui/**/*.tsx', 'src/pages/Play.tsx'],
+    files: ['src/{game,rpg}/ui/**/*.tsx', 'src/pages/{Play,Rpg}.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',

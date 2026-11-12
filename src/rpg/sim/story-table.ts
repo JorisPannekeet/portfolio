@@ -1,0 +1,180 @@
+import {
+  AREA_ASHFORGE,
+  AREA_BARROW,
+  AREA_BRENNHOLD,
+  AREA_CITADEL,
+  AREA_COUNT,
+  AREA_SALTREACH,
+  AREA_VALDMERE,
+  AREA_VELLIN,
+  BOSS_VAREK,
+  CH_BARROW,
+  CH_CHOICE,
+  CH_CITADEL,
+  CH_COUNT,
+  CH_EMBER,
+  CH_ENDED,
+  CH_FLEE,
+  CH_GALE,
+  CH_RAID,
+  CH_REVEAL,
+  CH_TIDE,
+  CH_VIGIL,
+  ELEMENT_EMBER,
+  ELEMENT_GALE,
+  ELEMENT_STONE,
+  ELEMENT_TIDE,
+  ENDING_REFORGE,
+  ENDING_SHATTER,
+  GOAL_ASHFORGE,
+  GOAL_BARROW,
+  GOAL_CHOICE,
+  GOAL_CITADEL,
+  GOAL_COUNT,
+  GOAL_REACH_CHILD,
+  GOAL_RETURN_MAREN,
+  GOAL_SALTREACH,
+  GOAL_TALK_MAREN,
+  GOAL_VELLIN,
+  NPC_MAREN,
+  NPC_SMITH,
+  SCRIPT_ASHFORGE,
+  SCRIPT_BARROW_KING,
+  SCRIPT_CHOICE,
+  SCRIPT_CORRUPTED,
+  SCRIPT_EMBER_SHARD,
+  SCRIPT_END_REFORGE,
+  SCRIPT_END_SHATTER,
+  SCRIPT_GALE_SHARD,
+  SCRIPT_MAREN_HINT,
+  SCRIPT_MAREN_ROAD,
+  SCRIPT_NONE,
+  SCRIPT_REVEAL,
+  SCRIPT_SALTREACH,
+  SCRIPT_SMITH,
+  SCRIPT_STONE_SHARD,
+  SCRIPT_TIDE_SHARD,
+  SCRIPT_TWIST,
+  SCRIPT_VAREK_DUEL,
+  SCRIPT_VELLIN,
+  SCRIPT_VIGIL,
+  SCRIPT_WAKING,
+} from './content.ts'
+import {
+  flagId,
+  FLAG_STORY_ASHFORGE,
+  FLAG_STORY_BARROW_KING,
+  FLAG_STORY_CORRUPTED,
+  FLAG_STORY_SALTREACH,
+  FLAG_STORY_VAREK,
+  FLAG_STORY_VELLIN,
+} from './flags.ts'
+
+export const TRG_ZONE = 0
+export const TRG_TALK = 1
+export const TRG_BOSS = 2
+export const TRG_SHARD = 3
+export const TRG_SCRIPT = 4
+export const TRG_CHOICE = 5
+
+export const ZONE_CHILD = 0
+export const ZONE_BARROW = 1
+export const ZONE_BARROW_BOSS = 2
+export const ZONE_SALTREACH = 3
+export const ZONE_ASHFORGE = 4
+export const ZONE_VELLIN = 5
+export const ZONE_VAREK = 6
+export const ZONE_CORRUPTED = 7
+export const ZONE_SHRINE_ARENA = 8
+export const ZONE_COUNT = 9
+
+export const EFF_STANCE_STONE = 1
+export const EFF_HORN = 2
+export const EFF_SEALS = 4
+export const EFF_VIGIL = 8
+export const EFF_REFORGE = 16
+export const EFF_SHATTER = 32
+export const EFF_END = 64
+
+export const ANY_CHAPTER = -1
+
+export interface StoryRow {
+  readonly chapter: number
+  readonly trigger: number
+  readonly arg: number
+  readonly script: number
+  readonly nextChapter: number
+  readonly effects: number
+  readonly once: number
+}
+
+function row(chapter: number, trigger: number, arg: number, script: number, nextChapter: number, effects = 0, once = -1): StoryRow {
+  return { chapter, trigger, arg, script, nextChapter: nextChapter === ANY_CHAPTER ? chapter : nextChapter, effects, once }
+}
+
+export const STORY_ROWS: readonly StoryRow[] = [
+  row(CH_RAID, TRG_ZONE, ZONE_CHILD, SCRIPT_WAKING, CH_FLEE, EFF_STANCE_STONE),
+  row(CH_FLEE, TRG_TALK, NPC_MAREN, SCRIPT_MAREN_ROAD, CH_BARROW, EFF_HORN),
+  row(CH_BARROW, TRG_ZONE, ZONE_BARROW_BOSS, SCRIPT_BARROW_KING, CH_BARROW, 0, FLAG_STORY_BARROW_KING),
+  row(CH_BARROW, TRG_SHARD, ELEMENT_STONE, SCRIPT_STONE_SHARD, CH_BARROW),
+  row(CH_BARROW, TRG_SCRIPT, SCRIPT_STONE_SHARD, SCRIPT_TWIST, CH_TIDE),
+  row(CH_TIDE, TRG_ZONE, ZONE_SALTREACH, SCRIPT_SALTREACH, CH_TIDE, 0, FLAG_STORY_SALTREACH),
+  row(CH_TIDE, TRG_SHARD, ELEMENT_TIDE, SCRIPT_TIDE_SHARD, CH_VIGIL),
+  row(CH_VIGIL, TRG_SCRIPT, SCRIPT_TIDE_SHARD, SCRIPT_VIGIL, CH_VIGIL),
+  row(CH_VIGIL, TRG_SCRIPT, SCRIPT_VIGIL, SCRIPT_NONE, CH_EMBER, EFF_VIGIL),
+  row(CH_EMBER, TRG_ZONE, ZONE_ASHFORGE, SCRIPT_ASHFORGE, CH_EMBER, 0, FLAG_STORY_ASHFORGE),
+  row(CH_EMBER, TRG_SHARD, ELEMENT_EMBER, SCRIPT_EMBER_SHARD, CH_GALE),
+  row(CH_GALE, TRG_ZONE, ZONE_VELLIN, SCRIPT_VELLIN, CH_GALE, 0, FLAG_STORY_VELLIN),
+  row(CH_GALE, TRG_SHARD, ELEMENT_GALE, SCRIPT_GALE_SHARD, CH_REVEAL, EFF_SEALS),
+  row(CH_REVEAL, TRG_TALK, NPC_MAREN, SCRIPT_REVEAL, CH_CITADEL),
+  row(CH_CITADEL, TRG_ZONE, ZONE_VAREK, SCRIPT_VAREK_DUEL, CH_CITADEL, 0, FLAG_STORY_VAREK),
+  row(CH_CITADEL, TRG_BOSS, BOSS_VAREK, SCRIPT_CHOICE, CH_CHOICE),
+  row(CH_CHOICE, TRG_CHOICE, 0, SCRIPT_END_REFORGE, CH_ENDED, EFF_REFORGE),
+  row(CH_CHOICE, TRG_CHOICE, 1, SCRIPT_END_SHATTER, CH_ENDED, EFF_SHATTER),
+  row(CH_ENDED, TRG_SCRIPT, SCRIPT_END_REFORGE, SCRIPT_NONE, CH_ENDED, EFF_END),
+  row(CH_ENDED, TRG_SCRIPT, SCRIPT_END_SHATTER, SCRIPT_NONE, CH_ENDED, EFF_END),
+  row(ANY_CHAPTER, TRG_ZONE, ZONE_CORRUPTED, SCRIPT_CORRUPTED, ANY_CHAPTER, 0, FLAG_STORY_CORRUPTED),
+  row(ANY_CHAPTER, TRG_TALK, NPC_SMITH, SCRIPT_SMITH, ANY_CHAPTER),
+  row(ANY_CHAPTER, TRG_TALK, NPC_MAREN, SCRIPT_MAREN_HINT, ANY_CHAPTER),
+]
+
+function column(pick: (r: StoryRow) => number): Int16Array {
+  const out = new Int16Array(STORY_ROWS.length)
+  for (let i = 0; i < STORY_ROWS.length; i++) out[i] = pick(STORY_ROWS[i]!)
+  return out
+}
+
+export const STORY_ROW_COUNT = STORY_ROWS.length
+export const STORY_CHAPTER = column(r => r.chapter)
+export const STORY_TRIGGER = column(r => r.trigger)
+export const STORY_ARG = column(r => r.arg)
+export const STORY_SCRIPT = column(r => r.script)
+export const STORY_NEXT = column(r => r.nextChapter)
+export const STORY_EFFECTS = column(r => r.effects)
+export const STORY_ONCE = column(r => r.once)
+
+export const RESUME_CHAPTER: readonly number[] = [CH_BARROW, CH_VIGIL, CH_CHOICE, CH_ENDED, CH_ENDED]
+export const RESUME_SHARD: readonly number[] = [ELEMENT_STONE, -1, -1, -1, -1]
+export const RESUME_ENDING: readonly number[] = [0, 0, 0, ENDING_REFORGE, ENDING_SHATTER]
+export const RESUME_SCRIPT: readonly number[] = [SCRIPT_STONE_SHARD, SCRIPT_VIGIL, SCRIPT_CHOICE, SCRIPT_END_REFORGE, SCRIPT_END_SHATTER]
+export const RESUME_COUNT = RESUME_SCRIPT.length
+
+export const CHAPTER_GOAL = Int8Array.from([
+  GOAL_REACH_CHILD, GOAL_TALK_MAREN, GOAL_BARROW, GOAL_SALTREACH, GOAL_SALTREACH, GOAL_ASHFORGE, GOAL_VELLIN,
+  GOAL_RETURN_MAREN, GOAL_CITADEL, GOAL_CHOICE, GOAL_CHOICE,
+])
+export const CHAPTER_DUNGEON = Int8Array.from([-1, -1, AREA_BARROW, AREA_SALTREACH, AREA_SALTREACH, AREA_ASHFORGE, AREA_VELLIN, -1, -1, -1, -1])
+export const GOAL_AREA = Int8Array.from([
+  AREA_BRENNHOLD, AREA_BRENNHOLD, AREA_BARROW, -1, AREA_SALTREACH, AREA_ASHFORGE, AREA_VELLIN, AREA_VALDMERE, AREA_CITADEL, -1,
+])
+export const PEDESTAL_CHAPTER = Int8Array.from([CH_BARROW, CH_TIDE, CH_EMBER, CH_GALE])
+
+export const GUIDE_STEPS_PER_AREA = 2
+export const GUIDE_STEP_FLAG = new Int16Array(AREA_COUNT * GUIDE_STEPS_PER_AREA).fill(-1)
+GUIDE_STEP_FLAG.set([flagId('BARROW_KEY'), flagId('BARROW_ITEM_CHEST')], AREA_BARROW * GUIDE_STEPS_PER_AREA)
+GUIDE_STEP_FLAG.set([flagId('SALT_KEY'), flagId('SALT_ITEM_CHEST')], AREA_SALTREACH * GUIDE_STEPS_PER_AREA)
+GUIDE_STEP_FLAG.set([flagId('ASH_KEY'), flagId('ASH_ITEM_CHEST')], AREA_ASHFORGE * GUIDE_STEPS_PER_AREA)
+GUIDE_STEP_FLAG.set([flagId('VELLIN_KEY'), flagId('VELLIN_ITEM_CHEST')], AREA_VELLIN * GUIDE_STEPS_PER_AREA)
+
+if (CHAPTER_GOAL.length !== CH_COUNT || CHAPTER_DUNGEON.length !== CH_COUNT) throw new Error('chapter tables must cover every chapter')
+if (GOAL_AREA.length !== GOAL_COUNT) throw new Error('goal table must cover every goal')
