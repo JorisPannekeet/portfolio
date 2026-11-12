@@ -7,6 +7,7 @@ const CaseStudies = lazy(() => import('./pages/CaseStudies').then(m => ({ defaul
 const CaseStudyDetail = lazy(() => import('./pages/CaseStudyDetail').then(m => ({ default: m.CaseStudyDetail })))
 const HowIWork = lazy(() => import('./pages/HowIWork').then(m => ({ default: m.HowIWork })))
 const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
+const Games = lazy(() => import('./pages/Games').then(m => ({ default: m.Games })))
 const Play = lazy(() => import('./pages/Play').then(m => ({ default: m.Play })))
 const Rpg = lazy(() => import('./pages/Rpg').then(m => ({ default: m.Rpg })))
 
@@ -28,6 +29,7 @@ function Site() {
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
           <Route path="/how-i-work" element={<HowIWork />} />
           <Route path="/about" element={<About />} />
+          <Route path="/games" element={<Games />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </Suspense>

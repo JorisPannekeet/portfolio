@@ -10,11 +10,6 @@ export const content = {
     email: 'jorispannekeet@gmail.com',
   },
 
-  playBanner: {
-    decal: 'SIM // MECH SURVIVORS',
-    text: 'Pilot Unit JP-12 through an eight-minute sortie. Built for this site, playable in your browser.',
-    cta: 'Play the game',
-  },
   hero: {
     greeting: "Hi, I'm Joris",
     role: 'Senior Fullstack Engineer',
@@ -84,6 +79,30 @@ export const content = {
       tags: ['Scroll Animation', 'Motion', 'Frontend'],
       url: 'https://oth-gold.vercel.app',
       image: '/projects/oth.jpg',
+    },
+  ],
+
+  games: [
+    {
+      title: 'Mech Survivors',
+      pitch: 'Pilot Unit JP-12 through an eight-minute sortie against endless waves. Pick upgrades, capture beacons, survive.',
+      tags: ['Survivors-like', 'Canvas', 'Chiptune'],
+      href: '/play',
+      image: '/games/mech-survivors.jpg',
+    },
+    {
+      title: 'Shards of the Fourfold Crown',
+      pitch: 'An action-RPG across the land of Valdmere. Gather four Shards, forge the Crown and make a choice at the end.',
+      tags: ['Action RPG', 'Canvas', 'Story'],
+      href: '/rpg',
+      image: '/games/shards-fourfold-crown.jpg',
+    },
+    {
+      title: 'Downfall',
+      pitch: 'A dungeon crawler card game. Fight your way down through the dungeon one card at a time.',
+      tags: ['Card Game', 'Dungeon Crawler'],
+      href: 'https://hellstar.vercel.app/',
+      image: '/games/downfall.jpg',
     },
   ],
 
