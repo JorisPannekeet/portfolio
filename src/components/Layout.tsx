@@ -8,6 +8,7 @@ const navItems = [
   { to: '/case-studies', label: 'Work' },
   { to: '/how-i-work', label: 'Approach' },
   { to: '/about', label: 'About' },
+  { to: '/games', label: 'Games' },
 ] as const
 
 function Header() {

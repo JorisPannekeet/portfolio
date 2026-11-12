@@ -33,11 +33,6 @@ export function Home() {
   return (
     <div className="container stack" ref={scope}>
       <section className="hero" aria-label="Introduction">
-        <Link to="/play" className="play-banner press">
-          <span className="decal">{content.playBanner.decal}</span>
-          <span className="play-banner__text">{content.playBanner.text}</span>
-          <span className="btn btn--primary">{content.playBanner.cta}</span>
-        </Link>
         <Module as="div" entry="left" decal="JP-12 // PROFILE" vent className="hero__chest">
           <h1 className="hero__title">
             {content.hero.greeting}
