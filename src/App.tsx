@@ -8,6 +8,7 @@ const CaseStudyDetail = lazy(() => import('./pages/CaseStudyDetail').then(m => (
 const HowIWork = lazy(() => import('./pages/HowIWork').then(m => ({ default: m.HowIWork })))
 const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
 const Play = lazy(() => import('./pages/Play').then(m => ({ default: m.Play })))
+const Rpg = lazy(() => import('./pages/Rpg').then(m => ({ default: m.Rpg })))
 
 function PageLoader() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/play" element={<Suspense fallback={<PageLoader />}><Play /></Suspense>} />
+      <Route path="/rpg" element={<Suspense fallback={<PageLoader />}><Rpg /></Suspense>} />
       <Route path="*" element={<Site />} />
     </Routes>
   )

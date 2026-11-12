@@ -1,0 +1,67 @@
+import {
+  AREA_BARROW,
+  AREA_SALTREACH,
+  MAX_TILES,
+  NODE_EMBER_KINDLE,
+  NODE_EMBER_STOKE,
+  NODE_GALE_TAILWIND,
+  NODE_GALE_UPDRAFT,
+  NODE_STEEL_EDGE,
+  NODE_STEEL_FINISHER,
+  NODE_STEEL_MASTERY,
+  NODE_STEEL_POISE,
+  NODE_STONE_AFTERSHOCK,
+  NODE_STONE_BULWARK,
+  NODE_STONE_ROOTED,
+  NODE_TIDE_FLOW,
+  NODE_TIDE_RIPTIDE,
+  NODE_TIDE_STILLWATER,
+  NODE_TIDE_UNDERTOW,
+  NODE_EMBER_FLASHFIRE,
+  NODE_EMBER_INFERNO,
+  NODE_GALE_SLIPSTREAM,
+  NODE_GALE_EYE,
+  NODE_STONE_ANSWER,
+} from './content.ts'
+import { flagId } from './flags.ts'
+
+export const BOT_SHATTER = 1
+export const BOT_SLOPPY = 2
+export const BOT_OPTIONAL = 4
+
+export const BOT_SLOT_WALK = 0
+export const BOT_SLOT_SOLVE = 1
+export const BOT_SLOT_NEAR = 2
+export const BOT_SLOT_STEP = 3
+export const BOT_FIELDS: readonly Int32Array[] = [new Int32Array(MAX_TILES), new Int32Array(MAX_TILES), new Int32Array(MAX_TILES), new Int32Array(MAX_TILES)]
+export const BOT_FIELD_SOLVES = Uint8Array.from([0, 1, 0, 0])
+export const BOT_KEY_AREA = new Int32Array(BOT_FIELDS.length)
+export const BOT_KEY_FROM = new Int32Array(BOT_FIELDS.length)
+export const BOT_KEY_TICK = new Int32Array(BOT_FIELDS.length).fill(-1)
+
+export const BOT_FIELD_REFRESH = 30
+export const BOT_ENGAGE_TILES = 8
+export const BOT_WAKE_PX = 64
+export const BOT_LOOT_TILES = 6
+export const BOT_FREE_SLOTS = 4
+export const BOT_CENTER_PX = 4
+export const BOT_HOLD_PX = 8
+export const BOT_LANE_PX = 3
+export const BOT_ARRIVE_PX = 3
+export const BOT_SHOT_MAX = 8
+export const BOT_SLOPPY_PERIOD = 60
+export const BOT_SLOPPY_WINDOW = 10
+export const BOT_HORN_PX = 64
+
+export const DIR8_X = Int8Array.from([1, 1, 0, -1, -1, -1, 0, 1])
+export const DIR8_Y = Int8Array.from([0, 1, 1, 1, 0, -1, -1, -1])
+
+export const BOT_LEARN_ORDER = Int8Array.from([
+  NODE_STEEL_EDGE, NODE_STEEL_POISE, NODE_TIDE_FLOW, NODE_STONE_BULWARK, NODE_STEEL_FINISHER, NODE_STEEL_MASTERY,
+  NODE_TIDE_RIPTIDE, NODE_TIDE_STILLWATER, NODE_EMBER_KINDLE, NODE_EMBER_STOKE, NODE_STONE_AFTERSHOCK, NODE_STONE_ROOTED,
+  NODE_GALE_TAILWIND, NODE_GALE_UPDRAFT, NODE_TIDE_UNDERTOW, NODE_EMBER_FLASHFIRE, NODE_EMBER_INFERNO, NODE_STONE_ANSWER,
+  NODE_GALE_SLIPSTREAM, NODE_GALE_EYE,
+])
+
+export const BOT_CORRUPT_AREA = Int8Array.from([AREA_BARROW, AREA_SALTREACH])
+export const BOT_CORRUPT_CHEST = Int16Array.from([flagId('BARROW_CORRUPT_CHEST'), flagId('SALT_CORRUPT_CHEST')])

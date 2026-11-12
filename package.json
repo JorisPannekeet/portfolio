@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "node --test \"tests/**/*.test.ts\"",
     "balance": "node tests/balance.ts",
+    "balance:rpg": "node tests/rpg/balance.ts",
     "budget": "node scripts/budget.mjs"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import { PALETTE_HEX, PALETTE_KEYS, TRANSPARENT_KEY, paletteIndex, paletteRgba } from './palette.ts'
+import { PALETTE_HEX, PALETTE_KEYS, TRANSPARENT_KEY } from './palette.ts'
 
 export const KIND_PLAIN = 0
 export const KIND_ACTOR = 1
@@ -41,6 +41,25 @@ export interface Atlas {
   readonly rh: Uint16Array
 }
 
+export interface Palette {
+  readonly keys: string
+  readonly hex: readonly string[]
+}
+
+const MECH_PALETTE: Palette = { keys: PALETTE_KEYS, hex: PALETTE_HEX }
+
+function paletteBytes(hex: readonly string[]): Uint8Array {
+  const out = new Uint8Array(hex.length * 4)
+  for (let i = 0; i < hex.length; i++) {
+    const value = parseInt(hex[i]!.slice(1, 7), 16)
+    out[i * 4] = (value >> 16) & 255
+    out[i * 4 + 1] = (value >> 8) & 255
+    out[i * 4 + 2] = value & 255
+    out[i * 4 + 3] = 255
+  }
+  return out
+}
+
 interface Bitmap {
   readonly w: number
   readonly h: number
@@ -59,11 +78,11 @@ export function variantCount(kind: number): number {
   return 1
 }
 
-export function rasterise(name: string, rows: readonly string[], rgba: Uint8Array, tintKey: string, flip: boolean): Bitmap {
+export function rasterise(name: string, rows: readonly string[], rgba: Uint8Array, tintKey: string, flip: boolean, keys = PALETTE_KEYS): Bitmap {
   const h = rows.length
   const w = rows[0]?.length ?? 0
   if (w === 0) throw new Error(`${name}: empty sprite`)
-  const tint = tintKey === '' ? -1 : paletteIndex(tintKey)
+  const tint = tintKey === '' ? -1 : keys.indexOf(tintKey)
   const data = new Uint8Array(w * h * 4)
   for (let y = 0; y < h; y++) {
     const row = rows[y]!
@@ -71,7 +90,7 @@ export function rasterise(name: string, rows: readonly string[], rgba: Uint8Arra
     for (let x = 0; x < w; x++) {
       const key = row[flip ? w - 1 - x : x]!
       if (key === TRANSPARENT_KEY) continue
-      const index = paletteIndex(key)
+      const index = keys.indexOf(key)
       if (index < 0) throw new Error(`${name}: unknown palette key '${key}' at ${x},${y}`)
       const source = (tint < 0 ? index : tint) * 4
       const target = (y * w + x) * 4
@@ -154,10 +173,10 @@ export function closeGaps(source: Bitmap): Bitmap {
   return { w, h, data }
 }
 
-export function outline(source: Bitmap, rgba: Uint8Array): Bitmap {
+export function outline(source: Bitmap, rgba: Uint8Array, keys = PALETTE_KEYS): Bitmap {
   const { w, h } = source
   const data = source.data.slice()
-  const ink = paletteIndex(OUTLINE_KEY) * 4
+  const ink = keys.indexOf(OUTLINE_KEY) * 4
   const opaque = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && source.data[(y * w + x) * 4 + 3]! > 0
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -172,36 +191,37 @@ export function outline(source: Bitmap, rgba: Uint8Array): Bitmap {
   return { w, h, data }
 }
 
-function framesFor(def: SpriteDef, rgba: Uint8Array): Bitmap[] {
+function framesFor(def: SpriteDef, rgba: Uint8Array, keys: string): Bitmap[] {
   const out: Bitmap[] = []
   for (const rows of def.frames) {
     if (def.kind === KIND_ACTOR) {
-      out.push(rasterise(def.name, rows, rgba, '', false))
-      out.push(rasterise(def.name, rows, rgba, '', true))
-      out.push(rasterise(def.name, rows, rgba, FLASH_KEY, false))
-      out.push(rasterise(def.name, rows, rgba, FLASH_KEY, true))
+      out.push(rasterise(def.name, rows, rgba, '', false, keys))
+      out.push(rasterise(def.name, rows, rgba, '', true, keys))
+      out.push(rasterise(def.name, rows, rgba, FLASH_KEY, false, keys))
+      out.push(rasterise(def.name, rows, rgba, FLASH_KEY, true, keys))
     } else if (def.kind === KIND_GLYPH) {
-      for (const tint of GLYPH_TINT_KEYS) out.push(rasterise(def.name, rows, rgba, tint, false))
+      for (const tint of GLYPH_TINT_KEYS) out.push(rasterise(def.name, rows, rgba, tint, false, keys))
     } else if (def.kind === KIND_ICON) {
-      out.push(rasterise(def.name, rows, rgba, '', false))
-      out.push(rasterise(def.name, miniRows(rows), rgba, '', false))
+      out.push(rasterise(def.name, rows, rgba, '', false, keys))
+      out.push(rasterise(def.name, miniRows(rows), rgba, '', false, keys))
     } else if (def.kind === KIND_ROTATED_OUTLINED) {
-      const upright = rasterise(def.name, rows, rgba, '', false)
-      for (let r = 0; r < ROTATIONS; r++) out.push(outline(closeGaps(rotate(upright, (r * Math.PI * 2) / ROTATIONS, 1)), rgba))
+      const upright = rasterise(def.name, rows, rgba, '', false, keys)
+      for (let r = 0; r < ROTATIONS; r++) out.push(outline(closeGaps(rotate(upright, (r * Math.PI * 2) / ROTATIONS, 1)), rgba, keys))
     } else if (def.kind === KIND_ROTATED) {
-      const upright = rasterise(def.name, rows, rgba, '', false)
+      const upright = rasterise(def.name, rows, rgba, '', false, keys)
       for (let r = 0; r < ROTATIONS; r++) out.push(rotate(upright, (r * Math.PI * 2) / ROTATIONS))
     } else {
-      out.push(rasterise(def.name, rows, rgba, '', false))
+      out.push(rasterise(def.name, rows, rgba, '', false, keys))
     }
   }
   return out
 }
 
-export function buildAtlas(defs: readonly SpriteDef[], width = 512): Atlas {
-  const rgba = paletteRgba()
-  if (PALETTE_KEYS.length > 64) throw new Error('palette exceeds 64 colours')
-  if (PALETTE_KEYS.length !== PALETTE_HEX.length) throw new Error('palette keys and colours differ in length')
+export function buildAtlas(defs: readonly SpriteDef[], width = 512, palette = MECH_PALETTE): Atlas {
+  const keys = palette.keys
+  const rgba = paletteBytes(palette.hex)
+  if (keys.length > 64) throw new Error('palette exceeds 64 colours')
+  if (keys.length !== palette.hex.length) throw new Error('palette keys and colours differ in length')
   const bitmaps: Bitmap[] = []
   const base = new Uint16Array(defs.length)
   const variants = new Uint8Array(defs.length)
@@ -209,7 +229,7 @@ export function buildAtlas(defs: readonly SpriteDef[], width = 512): Atlas {
     const def = defs[i]!
     base[i] = bitmaps.length
     variants[i] = variantCount(def.kind)
-    bitmaps.push(...framesFor(def, rgba))
+    bitmaps.push(...framesFor(def, rgba, keys))
   }
   const count = bitmaps.length
   const rx = new Uint16Array(count)
