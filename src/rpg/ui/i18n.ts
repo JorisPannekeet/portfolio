@@ -11,6 +11,8 @@ const SMITH = 'The Smith'
 
 const en = {
   title: 'Shards of the Fourfold Crown',
+  titleLead: 'Shards of the',
+  titleMain: 'Fourfold Crown',
   decal: 'A tale of Valdmere',
   premise: 'The Iron Covenant burns your village. The ground wakes under your feet. Four Shards, one Crown, and a choice at the end.',
   heroLabel: 'Hero name',
@@ -18,6 +20,9 @@ const en = {
   newGame: 'New game',
   continueGame: 'Continue',
   saveBroken: 'The save could not be loaded. Start a new game.',
+  artLoading: 'Loading the art…',
+  artFailed: 'The game art did not load. Check your connection and try again.',
+  retry: 'Try again',
   mute: 'Sound off',
   unmute: 'Sound on',
   controlsDesktop: 'WASD move. Left click or J attack, right click or K guard, L dodge, I skill, E interact, Tab lock, 1-4 stance, H horn, C gear, Esc pause.',
@@ -81,8 +86,10 @@ const en = {
   reforgeEffect: 'Rerolls {0} bonuses',
   reforgeCommon: 'Common gear has no bonuses to reroll',
   socketFull: 'This piece already holds a rune',
-  costLine: '{0} gold, {1} ore',
   costGold: '{0} gold',
+  costOre: '{0} ore',
+  compareAttack: '+{0} → +{1} attack',
+  compareArmor: '+{0} → +{1} armor',
   runesHeld: '{0} held',
   arrow: '→',
   forgeRefused: 'The smith shakes his head: not enough gold or ore.',
@@ -132,7 +139,7 @@ const en = {
   interactKey: 'E',
 
   areaName: ['Brennhold', 'Valdmere', 'Hollow Barrow', 'Saltreach', 'Ashforge', 'Vellin', 'Citadel of Chains', 'Shrine of Trial'],
-  shrineName: ['Shrine of the Oak', 'Shrine of the Mere', 'Shrine of the Cairn'],
+  shrineName: ['Shrine of the Oak', 'Shrine of the Mere', 'Shrine of the Cairn', 'Shrine of the Winds'],
   enemyName: [
     'Covenant Footman', 'Covenant Archer', 'Covenant Knight', 'Barrow Wight', 'Drowned Monk', 'Ash Hound', 'Gale Wisp', 'Chained Brute',
     'The Barrow King', 'The Drowned Abbot', 'The Forgemaster', 'The Storm Abbess', VAREK,

@@ -77,7 +77,7 @@ export const AREA_SHRINE = 7
 export const AREA_COUNT = 8
 export const AREA_ELEMENT: readonly number[] = [ELEMENT_NONE, ELEMENT_NONE, ELEMENT_STONE, ELEMENT_TIDE, ELEMENT_EMBER, ELEMENT_GALE, ELEMENT_NONE, ELEMENT_NONE]
 
-export const SHRINE_COUNT = 3
+export const SHRINE_COUNT = 4
 
 export const TILE_VOID = 0
 export const TILE_FLOOR = 1

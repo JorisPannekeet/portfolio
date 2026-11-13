@@ -81,6 +81,7 @@ import {
   BOT_LOOT_TILES,
   BOT_OPTIONAL,
   BOT_SHATTER,
+  BOT_SHRINE_NEEDS,
   BOT_SHOT_MAX,
   BOT_SLOPPY,
   BOT_SLOPPY_PERIOD,
@@ -94,7 +95,7 @@ import {
   DIR8_Y,
 } from './bot-tuning.ts'
 import { SKILL_COST } from './combat-tuning.ts'
-import { FLAG_SHRINE_CHEST_FIRST, FLAG_SHRINE_CLEAR_FIRST } from './flags.ts'
+import { FLAG_SHRINE_CHEST, FLAG_SHRINE_CLEAR } from './flags.ts'
 import { HINT_KEY_ITEM, HINT_MELODY, NAV_FAR, fillField, puzzleHint } from './nav.ts'
 import { ZONE_SHRINE_ARENA } from './story-table.ts'
 import { GRAPPLE_RANGE, INTERACT_RANGE } from './world-tuning.ts'
@@ -466,7 +467,7 @@ function leaveFor(s: State, area: number): boolean {
 
 function shrineGoal(s: State, v: number): boolean {
   if (s.area === AREA_SHRINE && s.areaVariant === v) {
-    if (s.flags[FLAG_SHRINE_CLEAR_FIRST + v] !== 0) return aimAt(s, OBJ_CHEST, NONE, FLAG_SHRINE_CHEST_FIRST + v)
+    if (s.flags[FLAG_SHRINE_CLEAR[v]!] !== 0) return aimAt(s, OBJ_CHEST, NONE, FLAG_SHRINE_CHEST[v]!)
     return aimAt(s, OBJ_TRIGGER, ZONE_SHRINE_ARENA, NONE)
   }
   if (s.area === AREA_VALDMERE) return aimAt(s, OBJ_SHRINE, v, NONE)
@@ -475,7 +476,7 @@ function shrineGoal(s: State, v: number): boolean {
 
 function optionalGoal(s: State): boolean {
   if (s.chapter < CH_GALE || s.chapter > CH_CITADEL) return false
-  for (let v = 0; v < SHRINE_COUNT; v++) if (s.flags[FLAG_SHRINE_CHEST_FIRST + v] === 0) return shrineGoal(s, v)
+  for (let v = 0; v < SHRINE_COUNT; v++) if (s.flags[FLAG_SHRINE_CHEST[v]!] === 0 && (BOT_SHRINE_NEEDS[v]! & ~s.stancesUnlocked) === 0) return shrineGoal(s, v)
   for (let k = 0; k < BOT_CORRUPT_AREA.length; k++) {
     const flag = BOT_CORRUPT_CHEST[k]!
     if (s.flags[flag] !== 0) continue

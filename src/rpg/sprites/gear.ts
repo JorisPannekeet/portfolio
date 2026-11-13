@@ -1,183 +1,194 @@
-import { outlined, pad, type Rows } from './paint.ts'
+import { mirror, outlined, pad, type Rows } from './paint.ts'
 
 function box(rows: Rows): string[] {
   return outlined(pad(rows, 1, 1, rows[0]!.length + 2, rows.length + 2))
 }
 
-export const bladeSword = box([
-  '..A........',
-  'dKApppppppW',
-  '..A........',
-])
+function reachOf(rows: Rows, grip: number): number {
+  return Math.round(rows[0]!.length / 2 - grip - 0.5)
+}
 
-export const bladeGreatsword = box([
-  '...A............',
-  '...A..pppppppppW',
-  'ddKAAppppppppppW',
-  '...A..oooooooooo',
-  '...A............',
-])
+const sword = [
+  '.......K.................',
+  '.......A.................',
+  '.Kccccdpqqqqqqqqqqqqqqqq.',
+  'KUdcdcdUommmmmmmmmmmmmqqW',
+  'AKcbcbcAnoooooooooooooop.',
+  '.......A.................',
+  '.......K.................',
+]
+export const bladeSword = box(sword)
+export const SWORD_REACH = reachOf(sword, 4)
+
+const greatsword = [
+  '..........KA.........................',
+  '..........AU.........................',
+  '..........AA.........................',
+  '.KcdcdcdcdApnqqqqqqqqqqqqqqqqqqqqqp..',
+  'AUdcdcdcdcAUoppppppppppppppppppppqqW.',
+  'KUcdcdcdcdAUommmmmmmmmmmmmmmmmmmmoqqW',
+  'AKcbcbcbcbAnmnooooooooooooooooooopp..',
+  '.Kbbbbbbbb.Kmlnnnnnnnnnnnnnnnnnnnn...',
+  '..........AA.........................',
+  '..........AU.........................',
+  '..........KA.........................',
+]
+export const bladeGreatsword = box(greatsword)
+export const GREATSWORD_REACH = reachOf(greatsword, 5)
 
 export const bladeHammer = box([
-  '.........nn',
-  '.........pn',
-  'ddddddddeoo',
-  '.........on',
-  '.........nn',
+  '...................mnoonm',
+  '...................noqqpn',
+  'bcdcdcdcdcdcdcdcdKAopWqpn',
+  '...................noppom',
+  '...................mnoonm',
 ])
 
 export const shieldSide = box([
-  'NM',
-  'NA',
-  'AA',
-  'NA',
-  'MA',
-  'ML',
-  'L.',
+  '.Ao.',
+  'AUqo',
+  'AMNo',
+  'AMNo',
+  'AUNn',
+  'AUAn',
+  'AUNn',
+  'AMNn',
+  'AMNn',
+  'AMLn',
+  'AMLm',
+  'AMLm',
+  '.ALm',
+  '.AJm',
+  '..Am',
+  '..m.',
 ])
 
 export const shieldFront = box([
-  'NNNNNM',
-  'NMAAML',
-  'NAAAAL',
-  'NMAAML',
-  '.MAAL.',
-  '..ML..',
+  'AUUUUUUUUUUUUUUA',
+  'UqNNNNNUANMMMMMK',
+  'UNOONNNUAMMMMMLA',
+  'UNONNNNUAMMMMLLA',
+  'UUUUUUUnoAAAAAAK',
+  'AAAAAAnqpnKKKKKK',
+  'UNNNNNmpomMMMLLA',
+  'UNNNNMMUAMMMLLLK',
+  'AMMMMMMUAMMMLLLA',
+  '.AMMMMMUAMMLLLK.',
+  '.AMMMMMUAMLLLLK.',
+  '..AMMMMUALLLLK..',
+  '..AAMMMUALLLKK..',
+  '...AAMMUALLKK...',
+  '....AAMUALKK....',
+  '......AUAK......',
+  '.......KK.......',
 ])
 
-export const bowHeld = box([
-  '.e.',
-  'e.W',
-  'e.W',
-  'f.W',
-  'e.W',
-  'e.W',
-  '.e.',
+export const shieldBack = box([
+  'noooooooooooooom',
+  'oeddeeddeddeddcm',
+  'odccccdcdccccbcm',
+  'obbbbbbbbbbbbbbm',
+  'oeddeAUAeddeddcm',
+  'odccdKAKdccccbcl',
+  'oeddeAdAeddeddcl',
+  'obbbbKAKbbbbbbbl',
+  'oeddeAUAeddedcbl',
+  '.odccdcdcdcccbl.',
+  '.obbbbbbbbbbbbl.',
+  '..oeddeddeddcl..',
+  '..nndccdccdcll..',
+  '...nnedddecll...',
+  '....nndcdcll....',
+  '......nnll......',
+  '.......ll.......',
 ])
 
-export const arrowEnemy = box([
-  'S.......n.',
-  '.SSeeeeeon',
-  'S.......n.',
+export const bowHeld = box(mirror([
+  '.fe..',
+  '.hfe.',
+  '..fdW',
+  '..fe.W',
+  '...fdW',
+  '...fdW',
+  '...ed.W',
+  '...ed.W',
+  '...Ad.W',
+  '...KAcW',
+  '...Ad.W',
+  '...ed.W',
+  '...ed.W',
+  '...fdW',
+  '...fdW',
+  '..fe.W',
+  '..fdW',
+  '.hfe.',
+  '.fe..',
+].map(row => (row + '.......').slice(0, 7))))
+
+export const heldFist = box(['cde', 'bdd', 'bcc'])
+
+export const warhammer = box([
+  'lmnnnnnnml',
+  'mopqqqppon',
+  'npqWWqqpon',
+  'mopqqqppom',
+  'lmnooooonl',
+  'klmmAAmmlk',
+  '....AU....',
+  '....ed....',
+  '....fd....',
+  '....ed....',
+  '....dc....',
+  '....ed....',
+  '....fd....',
+  '....ed....',
+  '....dc....',
+  '....AU....',
+  '....KA....',
 ])
 
-export const arrowPlayer = box([
-  'W.......p.',
-  '.WWfffffWp',
-  'W.......p.',
+export const grappleChain = box([
+  '.p...p.',
+  'pq...qo',
+  'oqp.poo',
+  '.oqpoo.',
+  '..oqo..',
+  '..mpm..',
+  '..non..',
+  '.on.no.',
+  '.n...n.',
+  '.on.no.',
+  '..nom..',
+  '..mpm..',
+  '.om.mo.',
+  '.n...n.',
+  '.om.mo.',
+  '..nom..',
+  '..mpm..',
+  '.on.no.',
+  '.n...n.',
+  '.on.no.',
+  '..nnm..',
 ])
 
-export const boltSpark = box([
-  '...ZZ...',
-  'YZZWWWZ.',
-  '...ZZYWW',
-])
-
-export const waveCrescent = box([
-  '.P...',
-  '..PO.',
-  '...OP',
-  '...NO',
-  '...NO',
-  '...NO',
-  '...OP',
-  '..PO.',
-  '.P...',
-])
-
-export const emberOrbA = box([
-  '..T..',
-  '.TAT.',
-  'TAUAT',
-  '.SAT.',
-  '..S..',
-])
-
-export const emberOrbB = box([
-  '.T.T.',
-  'TAAAT',
-  'TAUAS',
-  'SAAAT',
-  '.S.S.',
-])
-
-export const tideOrbA = box([
-  '.NNN.',
-  'NOPON',
-  'NPWON',
-  'NOONM',
-  '.MMM.',
-])
-
-export const tideOrbB = box([
-  '.NNN.',
-  'NOONN',
-  'NOPWN',
-  'MNOON',
-  '.MMM.',
-])
-
-export const sparkFrames = [
-  ['..W..', '.WUW.', 'WUWUW', '.WUW.', '..W..'],
-  ['.....', '..U..', '.UWU.', '..U..', '.....'],
-  ['.....', '.....', '..A..', '.....', '.....'],
-]
-
-export const puffFrames = [
-  ['.....', '.ppo.', 'pqqpo', '.ppo.', '.....'],
-  ['.oo.o', 'oppno', 'opppn', 'nopnn', '.nn..'],
-  ['n...n', '.n.o.', '..n..', '.o.n.', 'n...n'],
-]
-
-export const glintFrames = [
-  ['...W...', '...W...', '..WUW..', 'WWUWUWW', '..WUW..', '...W...', '...W...'],
-  ['.......', '...U...', '...W...', '.UWWWU.', '...W...', '...U...', '.......'],
-  ['.......', '.......', '...A...', '..AUA..', '...A...', '.......', '.......'],
-]
-
-export const questArrow = box([
-  '...U...',
-  '...AU..',
-  'AAAAAU.',
-  'KKKKKAU',
-  'AAAAAU.',
-  '...AU..',
-  '...U...',
-])
-
-export const exitChevron = box([
-  'W...W....',
-  'qW..qW...',
-  '.qW..qW..',
-  '..qW..qW.',
-  '.qW..qW..',
-  'qW..qW...',
-  'W...W....',
-])
-
-export const questMarker = box([
-  '..U..',
-  '.UAU.',
-  'UAAAK',
-  '.AAK.',
-  '..K..',
-])
-
-export const interactPip = box([
-  '.WWWWW.',
-  'WWW0WWW',
-  'WWW0WWW',
-  'WWW0WWW',
-  'WWWWWWW',
-  'WWW0WWW',
-  '.WWWWW.',
-  '...W...',
-])
-
-export const hudHeart = box([
-  'SS.SS',
-  'SUSSS',
-  'SSSSS',
-  '.SSR.',
-  '..R..',
-])
+export const longbow = box(mirror([
+  '....hf....',
+  '...hfe.W..',
+  '..hfe..W..',
+  '..fe...W..',
+  '.fe....W..',
+  '.fe....W..',
+  '.ed....W..',
+  '.ed....W..',
+  'AK.....W..',
+  'UA.....W..',
+  'AK.....W..',
+  '.ed....W..',
+  '.ed....W..',
+  '.fe....W..',
+  '.fe....W..',
+  '..fe...W..',
+  '..hfe..W..',
+  '...hfe.W..',
+  '....hf....',
+]))

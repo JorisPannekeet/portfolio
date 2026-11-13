@@ -35,6 +35,7 @@ import {
   SET_BARROWGUARD,
   SET_NONE,
   SET_SKYWEAVE,
+  SHRINE_COUNT,
   SET_TIDEWARDEN,
   SLOT_GREAVES,
   SLOT_HELM,
@@ -169,6 +170,7 @@ const CHESTS: readonly ChestDef[] = [
   { gold: 100, ore: 10, base: ITEM_GREATSWORD, tier: TIER_EPIC, rune: ELEMENT_STONE },
   { gold: 120, ore: 12, base: armorBase(SET_SKYWEAVE, SLOT_GREAVES), tier: TIER_EPIC, rune: ELEMENT_TIDE },
   { gold: 150, ore: 14, base: ITEM_SWORD, tier: TIER_LEGENDARY, rune: ELEMENT_GALE },
+  { gold: 200, ore: 16, base: armorBase(SET_SKYWEAVE, SLOT_PLATE), tier: TIER_LEGENDARY, rune: ELEMENT_EMBER },
 ]
 const CHEST_COUNT = CHESTS.length
 export const CHEST_GOLD = Int16Array.from(CHESTS, c => c.gold)
@@ -177,13 +179,15 @@ export const CHEST_KEY = Int8Array.from(CHESTS, c => c.key ?? 0)
 export const CHEST_BASE = Int8Array.from(CHESTS, c => c.base ?? -1)
 export const CHEST_TIER = Int8Array.from(CHESTS, c => c.tier ?? TIER_COMMON)
 export const CHEST_RUNE = Int8Array.from(CHESTS, c => c.rune ?? -1)
-if (CHEST_COUNT !== CHEST_SHRINE_FIRST + 3) throw new Error('chest table out of order')
+if (CHEST_COUNT !== CHEST_SHRINE_FIRST + SHRINE_COUNT) throw new Error('chest table out of order')
 
 const SHRINE_WAVES: readonly (readonly (readonly [number, number])[])[] = [
   [[ENEMY_FOOTMAN, 4], [ENEMY_WIGHT, 4], [ENEMY_KNIGHT, 3]],
   [[ENEMY_DROWNED, 4], [ENEMY_ARCHER, 3], [ENEMY_KNIGHT, 2], [ENEMY_DROWNED, 4]],
   [[ENEMY_ASH_HOUND, 5], [ENEMY_GALE_WISP, 4], [ENEMY_KNIGHT, 3], [ENEMY_CHAINED, 2]],
+  [[ENEMY_GALE_WISP, 6], [ENEMY_ARCHER, 5], [ENEMY_CHAINED, 3], [ENEMY_KNIGHT, 4]],
 ]
+if (SHRINE_WAVES.length !== SHRINE_COUNT) throw new Error('every shrine needs its waves')
 export const SHRINE_WAVE_COUNT = Uint8Array.from(SHRINE_WAVES, w => w.length)
 export const SHRINE_WAVE_STRIDE = 4
 export const SHRINE_WAVE_KIND = new Int8Array(SHRINE_WAVES.length * SHRINE_WAVE_STRIDE).fill(-1)

@@ -9,8 +9,10 @@ import {
   FX_ARC, FX_CAP, FX_DISC, FX_GLINT, FX_NONE, FX_NUMBER, FX_PARTICLE, FX_PROP, FX_PUFF, FX_RING, FX_SPARK, type View,
 } from './view.ts'
 import { GLYPH_AMBER, GLYPH_DARK, GLYPH_GREEN, GLYPH_LIGHT, GLYPH_RED } from '../../game/render/atlas.ts'
-import { FX_GLINT as GLINT_FRAME, FX_PUFF as PUFF_FRAME, FX_SPARK as SPARK_FRAME, PROP_KEY_ITEMS, SPR_FX, SPR_PROPS } from './sheet.ts'
-import { blitCentered, disc, drawNumber, frameId, numberWidth, ring } from './sprite.hot.ts'
+import { FX_GLINT as GLINT_FRAME, FX_PUFF as PUFF_FRAME, FX_SPARK as SPARK_FRAME } from './sheet-world.ts'
+import { CAST_KEY_ITEMS } from './sheet-hero.ts'
+import { SPR_CAST, SPR_FX } from './sheet-ids.ts'
+import { blitCentered, disc, drawNumber, frameId, numberWidth, ring, snap } from './sprite.hot.ts'
 import {
   C_CORRUPT_GLOW, C_DUST, C_EMBER, C_GOLD, C_GOLD_PALE, C_PALE, C_RED, C_STEEL, C_TEAL, C_WHITE, HEX, STANCE_COLOR, STANCE_DEEP,
   STANCE_LIGHT, TIER_COLOR,
@@ -103,6 +105,8 @@ function skillEffect(v: View, e: number, x: number, y: number, now: number, scal
   const light = STANCE_LIGHT[e]!
   const deep = STANCE_DEEP[e]!
   const r = SKILL_RADIUS * scale
+  burst(v, x, y + 4, now, 10, C_DUST, 1.6 * scale, 0.06)
+  spawnFx(v, FX_SPARK, x + (random(v) * 10 - 5), y - BODY_LIFT, now, 9, light, 0, 0)
   if (e === ELEMENT_STONE) {
     spawnRing(v, x, y, now, 18, deep, r, 3)
     spawnRing(v, x, y, now + 2, 16, color, r * 0.75, 2)
@@ -238,7 +242,7 @@ export function consumeEvents(v: View, s: State): void {
       burst(v, x, y - 4, now, 14, C_GOLD, 1.8, 0.02)
       if (type === EV_KEY_ITEM && a > 0) {
         const held = spawnFx(v, FX_PROP, s.playerX, s.playerY - 22, now, 70, C_GOLD_PALE, 0, 0)
-        v.fxA[held] = PROP_KEY_ITEMS + 31 - Math.clz32(a)
+        v.fxA[held] = CAST_KEY_ITEMS + 31 - Math.clz32(a)
         flash(v, C_GOLD_PALE, now, 16, 0.3)
       }
     } else if (type === EV_SHARD) {
@@ -275,16 +279,22 @@ function drawArc(v: View, x: number, y: number, facing: number, side: number, co
   const span = 3.2 * sweep
   const a0 = side > 0 ? start : start + 3.2 - span
   const a1 = a0 + span
-  ctx.globalAlpha = p < 0.5 ? 1 : stepAlpha((1 - p) / 0.5)
+  const alpha = p < 0.5 ? 1 : stepAlpha((1 - p) / 0.5)
+  ctx.globalAlpha = alpha * 0.3
   ctx.beginPath()
   ctx.ellipse(x, y, 15, 11, 0, a0, a1)
   ctx.strokeStyle = HEX[color]!
-  ctx.lineWidth = 3
+  ctx.lineWidth = 3.5
+  ctx.stroke()
+  ctx.globalAlpha = alpha
+  ctx.beginPath()
+  ctx.ellipse(x, y, 15.5, 11.5, 0, a0, a1)
+  ctx.lineWidth = 1.5
   ctx.stroke()
   ctx.beginPath()
-  ctx.ellipse(x, y, 15, 11, 0, a0, a1)
+  ctx.ellipse(x, y, 16, 12, 0, a0 + span * 0.25, a1)
   ctx.strokeStyle = HEX[C_WHITE]!
-  ctx.lineWidth = 1
+  ctx.lineWidth = 0.5
   ctx.stroke()
 }
 
@@ -308,36 +318,44 @@ export function drawEffects(v: View, t: number): void {
     let y = v.fxY[i]! - oy
     if (x < -64 || y < -64 || x > right || y > bottom) continue
     const color = v.fxColor[i]!
-    if (kind === FX_ARC) drawArc(v, Math.round(x), Math.round(y - BODY_LIFT), v.fxA[i]!, v.fxB[i]!, color, p)
+    if (kind === FX_ARC) drawArc(v, snap(x), snap(y - BODY_LIFT), v.fxA[i]!, v.fxB[i]!, color, p)
     else if (kind === FX_RING) {
       const r = v.fxA[i]! * (0.25 + 0.75 * (1 - (1 - p) * (1 - p)))
-      ring(v, x, y, r, r * 0.6, color, p < 0.5 ? v.fxB[i]! : 1, stepAlpha(1 - p))
+      const width = v.fxB[i]!
+      ring(v, x, y, r, r * 0.6, color, p < 0.5 ? width * 0.75 : 0.5, stepAlpha(1 - p))
+      if (width >= 2 && p < 0.7) ring(v, x, y, r - width * 0.5, (r - width * 0.5) * 0.6, C_WHITE, 0.5, stepAlpha(1 - p) * 0.55)
     } else if (kind === FX_DISC) disc(v, x, y, v.fxA[i]! * (0.5 + p * 0.5), v.fxA[i]! * (0.4 + p * 0.4), color, stepAlpha(1 - p) * 0.6)
-    else if (kind === FX_SPARK) blitCentered(v, frameId(v, SPR_FX, SPARK_FRAME + ((p * 3) | 0), 0), Math.round(x), Math.round(y))
-    else if (kind === FX_PUFF) blitCentered(v, frameId(v, SPR_FX, PUFF_FRAME + ((p * 3) | 0), 0), Math.round(x), Math.round(y - age * 0.3))
+    else if (kind === FX_SPARK) blitCentered(v, frameId(v, SPR_FX, SPARK_FRAME + ((p * 3) | 0), 0), snap(x), snap(y))
+    else if (kind === FX_PUFF) blitCentered(v, frameId(v, SPR_FX, PUFF_FRAME + ((p * 3) | 0), 0), snap(x), snap(y - age * 0.3))
     else if (kind === FX_GLINT) {
-      blitCentered(v, frameId(v, SPR_FX, GLINT_FRAME + ((p * 3) | 0), 0), Math.round(x), Math.round(y))
+      blitCentered(v, frameId(v, SPR_FX, GLINT_FRAME + ((p * 3) | 0), 0), snap(x), snap(y))
       if (color !== C_WHITE && p < 0.6) disc(v, x, y, 4, 4, color, 0.35)
     } else if (kind === FX_NUMBER) {
       const value = v.fxA[i]!
       const rise = age < 14 ? age * 0.7 : 10
       const w = numberWidth(value, 1)
-      const left = Math.round(x) - (w >> 1)
-      const top = Math.round(y - rise)
+      const left = snap(x) - (w >> 1)
+      const top = snap(y - rise)
       if (p < 0.8 || ((age | 0) & 2) === 0) {
-        drawNumber(v, value, GLYPH_DARK, left + 1, top + 1, 1)
+        drawNumber(v, value, GLYPH_DARK, left + 0.5, top + 0.5, 1)
+        drawNumber(v, value, GLYPH_DARK, left, top + 0.5, 1)
         drawNumber(v, value, color, left, top, 1)
       }
     } else if (kind === FX_PROP) {
       const lift = age < 10 ? age : 10
-      blitCentered(v, frameId(v, SPR_PROPS, v.fxA[i]!, 0), Math.round(x), Math.round(y - lift))
+      blitCentered(v, frameId(v, SPR_CAST, v.fxA[i]!, 0), snap(x), snap(y - lift))
     } else if (kind === FX_PARTICLE) {
       x += v.fxVx[i]! * age
       y += v.fxVy[i]! * age + v.fxB[i]! * age * age * 0.5
-      v.ctx.globalAlpha = p < 0.6 ? 1 : stepAlpha((1 - p) / 0.4)
+      const alpha = p < 0.6 ? 1 : stepAlpha((1 - p) / 0.4)
       v.ctx.fillStyle = HEX[color]!
-      const size = v.fxA[i]! > 0 ? 2 : 1
-      v.ctx.fillRect(Math.round(x), Math.round(y), size, size)
+      const size = v.fxA[i]! > 0 ? 1 : 0.5
+      if (p < 0.5) {
+        v.ctx.globalAlpha = alpha * 0.45
+        v.ctx.fillRect(snap(x - v.fxVx[i]! * 1.5), snap(y - (v.fxVy[i]! + v.fxB[i]! * age) * 1.5), 0.5, 0.5)
+      }
+      v.ctx.globalAlpha = alpha
+      v.ctx.fillRect(snap(x), snap(y), size, size)
     }
     v.ctx.globalAlpha = 1
   }

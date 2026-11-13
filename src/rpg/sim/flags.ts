@@ -13,6 +13,7 @@ export const FLAG_NAMES = [
   'VELLIN_KEY', 'VELLIN_DOOR', 'VELLIN_ITEM_CHEST', 'VELLIN_ALCOVE_CHEST', 'VELLIN_VAULT_CHEST', 'VELLIN_P1', 'VELLIN_B1',
   'VELLIN_SWITCH', 'VELLIN_P4', 'VELLIN_P5', 'VELLIN_MILL_A', 'VELLIN_MILL_B',
   'CIT_BARRICADE', 'CIT_GATE', 'CIT_MILL', 'CIT_CHEST',
+  'SHRINE_CLEAR_3', 'SHRINE_CHEST_3', 'VAL_SHRINE3_GATE', 'VAL_SHRINE3_MILL',
 ] as const
 
 export type FlagName = (typeof FLAG_NAMES)[number]
@@ -32,8 +33,7 @@ export const FLAG_STORY_ASHFORGE = flagId('STORY_ASHFORGE')
 export const FLAG_STORY_VELLIN = flagId('STORY_VELLIN')
 export const FLAG_STORY_VAREK = flagId('STORY_VAREK')
 export const FLAG_STORY_CORRUPTED = flagId('STORY_CORRUPTED')
-export const FLAG_SHRINE_CLEAR_FIRST = flagId('SHRINE_CLEAR_0')
-export const FLAG_SHRINE_CHEST_FIRST = flagId('SHRINE_CHEST_0')
+export const FLAG_SHRINE_CLEAR = Int16Array.from([flagId('SHRINE_CLEAR_0'), flagId('SHRINE_CLEAR_1'), flagId('SHRINE_CLEAR_2'), flagId('SHRINE_CLEAR_3')])
+export const FLAG_SHRINE_CHEST = Int16Array.from([flagId('SHRINE_CHEST_0'), flagId('SHRINE_CHEST_1'), flagId('SHRINE_CHEST_2'), flagId('SHRINE_CHEST_3')])
 
-if (flagId('SHRINE_CLEAR_2') !== FLAG_SHRINE_CLEAR_FIRST + SHRINE_COUNT - 1) throw new Error('shrine clear flags must be contiguous')
-if (flagId('SHRINE_CHEST_2') !== FLAG_SHRINE_CHEST_FIRST + SHRINE_COUNT - 1) throw new Error('shrine chest flags must be contiguous')
+if (FLAG_SHRINE_CLEAR.length !== SHRINE_COUNT || FLAG_SHRINE_CHEST.length !== SHRINE_COUNT) throw new Error('every shrine needs a clear flag and a chest flag')

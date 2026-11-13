@@ -13,7 +13,7 @@ import { loadArea } from '../../src/rpg/sim/world.hot.ts'
 import { recomputeStats } from '../../src/rpg/sim/stats.hot.ts'
 import { command, step } from '../../src/rpg/sim/step.hot.ts'
 import { strings } from '../../src/rpg/ui/i18n.ts'
-import { dialogLine, itemName, packIndices, readHud, readItem } from '../../src/rpg/ui/describe.ts'
+import { dialogLine, itemName, packIndices, powerCompare, readHud, readItem } from '../../src/rpg/ui/describe.ts'
 
 const ROOT = new URL('../../', import.meta.url).pathname
 const ENTRY = `
@@ -104,12 +104,22 @@ const ref = (u: Ui) => u.createRef()
 
 test('the title renders with and without a save, and with a broken save', async () => {
   const u = await loadUi()
-  const base = { primaryRef: ref(u), coarsePointer: false, muted: false, heroName: 'Aldric', saveError: false, onNewGame: noop, onContinue: noop, onToggleSound: noop }
+  const base = { primaryRef: ref(u), coarsePointer: false, muted: false, heroName: 'Aldric', saveError: false, art: 'ready', onRetryArt: noop, onNewGame: noop, onContinue: noop, onToggleSound: noop }
   const fresh = render(u, 'TitleOverlay', { ...base, canContinue: false })
-  has(fresh, strings.title, strings.newGame, strings.controlsDesktop)
+  assert.equal(`${strings.titleLead} ${strings.titleMain}`, strings.title, 'the wordmark reads as the game title')
+  has(fresh, strings.titleLead, strings.titleMain, strings.newGame, strings.controlsDesktop)
   assert.ok(!fresh.includes(`>${strings.continueGame}<`))
   has(render(u, 'TitleOverlay', { ...base, canContinue: true, coarsePointer: true }), strings.continueGame, strings.controlsTouch)
   has(render(u, 'TitleOverlay', { ...base, canContinue: false, saveError: true }), strings.saveBroken)
+  const loading = render(u, 'TitleOverlay', { ...base, canContinue: false, art: 'loading' })
+  has(loading, strings.artLoading, strings.titleMain)
+  assert.ok(loading.includes('disabled=""'), 'New game waits for the art')
+  const resuming = render(u, 'TitleOverlay', { ...base, canContinue: true, art: 'loading' })
+  has(resuming, strings.artLoading, strings.newGame)
+  assert.equal(resuming.split('disabled=""').length - 1, 2, 'Continue and New game both wait for the art')
+  const failed = render(u, 'TitleOverlay', { ...base, canContinue: false, art: 'failed' })
+  has(failed, strings.artFailed, strings.retry, strings.newGame)
+  assert.ok(!failed.includes(strings.artLoading), 'a failed load no longer claims to be loading')
 })
 
 test('dialog renders a normal line from a real new game and the final choice', async () => {
@@ -124,6 +134,10 @@ test('dialog renders a normal line from a real new game and the final choice', a
   const last = dialogLine(strings, SCRIPT_CHOICE, SCRIPT_LENGTH[SCRIPT_CHOICE]! - 1, 'Wren', strings.keysTouch)!
   const choice = render(u, 'StoryDialog', { primaryRef: ref(u), speaker: last.speaker, text: last.text, choice: true, onAdvance: noop, onChoose: noop })
   has(choice, last.text, strings.choice[0]!, strings.choice[1]!, strings.choiceHint[0]!)
+  assert.equal(choice.split('class="rpg-choice"').length - 1, 2, 'two engraved choice buttons')
+  assert.ok(choice.includes('data-choice="0"') && choice.includes('data-choice="1"'))
+  assert.ok(!choice.includes(strings.advance), 'the final choice has no continue button')
+  assert.ok(normal.includes(`class="rpg-sr" aria-live="polite">${line.text}<`), 'screen readers get the whole line at once')
   for (let script = 0; script < SCRIPT_LENGTH.length; script++) {
     for (let n = 0; n < SCRIPT_LENGTH[script]!; n++) {
       for (const keys of [strings.keysDesktop, strings.keysTouch]) {
@@ -172,9 +186,23 @@ test('every menu tab renders a mid-game inventory with the forge near and away',
     assert.equal(pack.length, INV_CAP - worn.length)
     for (const index of worn) assert.ok(!pack.includes(index), `equipped item ${index} must not show in the pack`)
     assert.equal(gear.split('class="rpg-slot"').length - 1, SLOT_COUNT + pack.length, 'four equipment slots plus the unequipped pack cells')
-    has(render(u, 'SkillsTab', { s, send: noop }), `${strings.skillPoints}: 3`, strings.learn, strings.nodeName[0]!)
+    assert.ok(gear.includes(`data-tier="${TIER_EPIC}"`) && gear.includes(`data-tier="${TIER_LEGENDARY}"`), 'pack slots carry their tier')
+    assert.equal(gear.split('class="rpg-slot-level"').length - 1, 1, 'one levelled item wears a level badge')
+    has(gear, '+3')
+    assert.ok(gear.includes(`class="rpg-slot-rune" data-el="${ELEMENT_STONE}"`), 'the socketed rune shows as a pip')
+    assert.ok(gear.includes('data-slot="1"') && gear.includes(`aria-label="${strings.slotName[SLOT_HELM]}: ${strings.emptySlot}"`), 'an empty helm slot keeps its silhouette and name')
+    const compare = powerCompare(strings, s, 2)!
+    assert.ok(compare.delta > 0, 'the epic greatsword beats the starting sword')
+    has(gear, compare.text)
+    assert.ok(gear.includes('data-delta="1"'))
+    has(render(u, 'SkillsTab', { s, renderer: null, send: noop }), `${strings.skillPoints}: 3`, strings.learn, strings.nodeName[0]!)
     const forge = render(u, 'ForgeTab', { s, selected: 2, renderer: null, onSelect: noop, send: noop })
-    has(forge, strings.upgrade, strings.reforge, strings.socketFull)
+    has(forge, strings.upgrade, strings.reforge, strings.socketFull, strings.arrow)
+    assert.ok(forge.includes('data-coin="gold"'), 'forge costs show as coin pips')
+    if (near === 1) assert.ok(!forge.includes('data-short'), 'a rich hero sees no red costs')
+    s.gold = 0
+    assert.ok(render(u, 'ForgeTab', { s, selected: 2, renderer: null, onSelect: noop, send: noop }).includes('data-coin="gold" data-short="true"'), 'a broke hero sees the gold cost in red')
+    s.gold = 1234
     has(render(u, 'ForgeTab', { s, selected: 0, renderer: null, onSelect: noop, send: noop }), strings.reforgeCommon)
     has(render(u, 'HornTab', { s, onHorn: noop }), strings.melodyName[0]!, strings.melodyName[2]!, strings.areaName[AREA_BARROW]!)
   }
@@ -198,7 +226,7 @@ test('the whole page renders its title screen on the server with minimal globals
   g.document = {}
   g.localStorage = undefined
   try {
-    has(render(u, 'Rpg', {}), strings.title, strings.newGame)
+    has(render(u, 'Rpg', {}), strings.title, strings.artLoading)
   } finally {
     Object.assign(g, saved)
   }

@@ -1,6 +1,7 @@
 import {
   AREA_BARROW,
   AREA_SALTREACH,
+  ELEMENT_GALE,
   MAX_TILES,
   NODE_EMBER_KINDLE,
   NODE_EMBER_STOKE,
@@ -65,3 +66,4 @@ export const BOT_LEARN_ORDER = Int8Array.from([
 
 export const BOT_CORRUPT_AREA = Int8Array.from([AREA_BARROW, AREA_SALTREACH])
 export const BOT_CORRUPT_CHEST = Int16Array.from([flagId('BARROW_CORRUPT_CHEST'), flagId('SALT_CORRUPT_CHEST')])
+export const BOT_SHRINE_NEEDS = Uint8Array.from([0, 0, 0, 1 << ELEMENT_GALE])

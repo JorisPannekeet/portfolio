@@ -2,10 +2,13 @@ import type { State } from '../sim/state.ts'
 import { ELEMENT_COUNT, ITEM_BASE_COUNT, TIER_COUNT } from '../sim/content.ts'
 import { buildAtlas, type Atlas } from '../../game/render/atlas.ts'
 import { RPG_PALETTE } from './palette.ts'
-import { ELEMENT_ICON_FIRST, ITEM_ICON, SPR_ICONS, SPRITE_DEFS } from './sheet.ts'
+import { ELEMENT_ICON_FIRST, ITEM_ICON, SPRITE_DEFS } from './sheet.ts'
+import { SPR_ICONS } from './sheet-ids.ts'
 import { createView, type View } from './view.ts'
 import { drawFrame } from './renderer.hot.ts'
-import { HEX, C_INK, TIER_COLOR } from './colors.ts'
+import { HEX, C_WHITE, TIER_COLOR } from './colors.ts'
+import { ITEM_ICON_PX } from './icons.ts'
+import { ART } from './art.ts'
 
 export interface Renderer {
   resize(cssWidth: number, cssHeight: number): void
@@ -14,13 +17,14 @@ export interface Renderer {
   drawElementIcon(target: CanvasRenderingContext2D, element: number, x: number, y: number, scale: number): void
 }
 
-export const ATLAS_WIDTH = 1024
+export const ATLAS_WIDTH = 2048
 const TARGET_VIEW_AREA = 352 * 224
 const SMALL_FIELD = 300
-const MAX_SCALE = 5
+const MAX_SCALE = 6
 const BAND_EDGE = 8
 const BOSS_BAR_BELOW_TOP = 26
 const TEXT_STRIP = 40
+const GLINT_TIER = 2
 
 let shared: { atlas: Atlas; image: HTMLCanvasElement } | null = null
 
@@ -42,8 +46,11 @@ function sharedAtlas(): { atlas: Atlas; image: HTMLCanvasElement } {
   return shared
 }
 
-export function pickScale(cssWidth: number, cssHeight: number): number {
-  return Math.min(MAX_SCALE, Math.max(1, Math.round(Math.sqrt((cssWidth * cssHeight) / TARGET_VIEW_AREA))))
+export function pickScale(cssWidth: number, cssHeight: number, pixelRatio = 1): number {
+  const ideal = Math.sqrt((cssWidth * cssHeight) / TARGET_VIEW_AREA)
+  const whole = Math.min(MAX_SCALE, Math.max(1, Math.round(ideal)))
+  if (whole === 1 || (whole * pixelRatio) % ART === 0) return whole
+  return Math.min(MAX_SCALE, Math.max(ART, Math.round(ideal / ART) * ART))
 }
 
 export function itemIconFrame(base: number): number {
@@ -61,7 +68,7 @@ function clamp(value: number, low: number, high: number): number {
 export function layoutView(v: View, cssWidth: number, cssHeight: number, scale: number, touch: boolean): void {
   const small = cssWidth <= SMALL_FIELD || cssHeight <= SMALL_FIELD
   const short = Math.min(cssWidth, cssHeight)
-  const top = small ? 40 : clamp(short * 0.12, 56, 80)
+  const top = small ? 40 : clamp(short * 0.12, 56, 96)
   const button = small ? 32 : 44
   const gap = small ? 4 : 6
   v.scale = scale
@@ -96,18 +103,19 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   if (!ctx) throw new Error('2D canvas unavailable')
   const { atlas, image } = sharedAtlas()
   const view = createView(ctx, atlas, image)
-  canvas.style.imageRendering = 'pixelated'
 
   return {
     resize(cssWidth, cssHeight) {
       const w = Math.max(1, cssWidth)
       const h = Math.max(1, cssHeight)
-      const scale = pickScale(w, h)
-      canvas.width = Math.ceil(w / scale)
-      canvas.height = Math.ceil(h / scale)
+      const scale = pickScale(w, h, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1)
+      view.width = Math.ceil(w / scale)
+      view.height = Math.ceil(h / scale)
+      canvas.width = view.width * ART
+      canvas.height = view.height * ART
+      canvas.style.imageRendering = scale < ART ? 'auto' : 'pixelated'
+      ctx.setTransform(ART, 0, 0, ART, 0, 0)
       ctx.imageSmoothingEnabled = false
-      view.width = canvas.width
-      view.height = canvas.height
       layoutView(view, w, h, scale, coarsePointer())
       view.reducedMotion = prefersReducedMotion()
     },
@@ -117,15 +125,16 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     drawItemIcon(target, base, tier, x, y, scale) {
       const frame = itemIconFrame(base)
       if (frame < 0) return
-      const size = atlas.rw[atlas.base[SPR_ICONS]! + frame]!
+      blitIcon(target, atlas, image, frame, x, y, scale)
       const t = tier < 0 ? 0 : tier >= TIER_COUNT ? TIER_COUNT - 1 : tier
-      target.fillStyle = HEX[C_INK]!
-      target.fillRect(x, y, (size + 2) * scale, (size + 2) * scale)
+      if (t < GLINT_TIER) return
+      const gx = x + (ITEM_ICON_PX - 5) * scale
+      const gy = y + 2 * scale
       target.fillStyle = HEX[TIER_COLOR[t]!]!
-      target.fillRect(x + scale, y + scale, size * scale, size * scale)
-      target.fillStyle = HEX[C_INK]!
-      target.fillRect(x + 2 * scale, y + 2 * scale, (size - 2) * scale, (size - 2) * scale)
-      blitIcon(target, atlas, image, frame, x + scale, y + scale, scale)
+      target.fillRect(gx - scale, gy, 3 * scale, scale)
+      target.fillRect(gx, gy - scale, scale, 3 * scale)
+      target.fillStyle = HEX[C_WHITE]!
+      target.fillRect(gx, gy, scale, scale)
     },
     drawElementIcon(target, element, x, y, scale) {
       const frame = elementIconFrame(element)

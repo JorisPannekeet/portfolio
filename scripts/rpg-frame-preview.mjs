@@ -10,6 +10,12 @@ import { step, command } from '../src/rpg/sim/step.hot.ts'
 import { AREAS } from '../src/rpg/sim/areas.ts'
 import { emit } from '../src/rpg/sim/events.hot.ts'
 import * as C from '../src/rpg/sim/content.ts'
+import { WEATHER_FADE, WEATHER_SPAN, weatherFor } from '../src/rpg/render/ambient.ts'
+import { ART } from '../src/rpg/render/art.ts'
+import { HERO_DEFS } from '../src/rpg/render/sheet-hero.ts'
+import { FOES_DEFS } from '../src/rpg/render/sheet-foes.ts'
+import { WORLD_DEFS } from '../src/rpg/render/sheet-world.ts'
+import { fontFrames, fontGlyphs } from '../src/game/sprites/font.ts'
 
 const [out, scene = 'tiles:0', widthArg = '320', heightArg = '208', upscaleArg = '3'] = process.argv.slice(2)
 if (!out) {
@@ -17,6 +23,10 @@ if (!out) {
   console.error('       node scripts/rpg-frame-preview.mjs tour <outDir> [filter]')
   console.error('scenes: tiles:<tileset 0-6> combat elite bosses varek:<phase> stance:<element> night vigil corrupted hud')
   console.error('env: FX_AGE=<ticks after the events> CLOCK=<ticks> CHAPTER=<n> REDUCED=1 TOUCH=1 FOCUS=<n>')
+  console.error('     PRIMS=sim rasterises ellipses, arcs and lines on the sim grid, as the 1x renderer did (for equivalence checks)')
+  console.error('tour env: WEATHER=<0 clear 1 breezy 2 rain 3 mist> WARM=<frames to settle ambience> ZONES=0')
+  console.error('       node scripts/rpg-frame-preview.mjs atlas <out.png> [top] [rows]')
+  console.error('       node scripts/rpg-frame-preview.mjs sheet <out.png> <hero|foes|world> [upscale=3]   every frame of one owner, labelled sprite name and frame index, L = still legacy 1x art')
   process.exit(1)
 }
 const atlas = rpgAtlas()
@@ -27,6 +37,8 @@ let width = 1
 let height = 1
 let frame = new Uint8Array(4)
 let clip = [0, 0, 1, 1]
+
+const SIM_PRIMS = process.env.PRIMS === 'sim'
 
 function blend(x, y, r, g, b, a) {
   if (x < clip[0] || y < clip[1] || x >= clip[2] || y >= clip[3] || a <= 0) return
@@ -50,7 +62,12 @@ function inSweep(angle, a0, a1) {
   return ((at - from + tau) % tau) <= a1 - a0
 }
 
+function blendCell(x, y, r, g, b, a, k) {
+  for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) blend(x * k + i, y * k + j, r, g, b, a)
+}
+
 const softwareContext = {
+  k: 1,
   fillStyle: '#000000',
   strokeStyle: '#000000',
   globalAlpha: 1,
@@ -58,6 +75,10 @@ const softwareContext = {
   imageSmoothingEnabled: false,
   path: [],
   stack: [],
+  setTransform(a, b, c, d, e, f) {
+    if (a !== d || b || c || e || f) throw new Error('software canvas only supports a uniform scale')
+    this.k = a
+  },
   save() {
     this.stack.push({ clip, fillStyle: this.fillStyle, strokeStyle: this.strokeStyle, globalAlpha: this.globalAlpha, lineWidth: this.lineWidth })
   },
@@ -71,7 +92,8 @@ const softwareContext = {
     this.lineWidth = top.lineWidth
   },
   rect(x, y, w, h) {
-    this.path.push({ rect: [Math.round(x), Math.round(y), Math.round(x + w), Math.round(y + h)] })
+    const k = this.k
+    this.path.push({ rect: [Math.round(x * k), Math.round(y * k), Math.round((x + w) * k), Math.round((y + h) * k)] })
   },
   clip() {
     for (const e of this.path) {
@@ -82,6 +104,11 @@ const softwareContext = {
   draws: 0,
   drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh) {
     this.draws++
+    const k = this.k
+    dx *= k
+    dy *= k
+    dw = Math.round(dw * k)
+    dh = Math.round(dh * k)
     const kx = dw / sw
     const ky = dh / sh
     for (let y = 0; y < dh; y++) {
@@ -93,29 +120,36 @@ const softwareContext = {
   },
   fillRect(x, y, w, h) {
     const [r, g, b] = rgb(this.fillStyle)
-    for (let py = Math.round(y); py < Math.round(y + h); py++) {
-      for (let px = Math.round(x); px < Math.round(x + w); px++) blend(px, py, r, g, b, this.globalAlpha)
+    const k = this.k
+    for (let py = Math.round(y * k); py < Math.round((y + h) * k); py++) {
+      for (let px = Math.round(x * k); px < Math.round((x + w) * k); px++) blend(px, py, r, g, b, this.globalAlpha)
     }
   },
   beginPath() {
     this.path = []
   },
   moveTo(x, y) {
-    this.path.push({ move: [x, y] })
+    const k = SIM_PRIMS ? 1 : this.k
+    this.path.push({ move: [x * k, y * k] })
   },
   lineTo(x, y) {
+    const k = SIM_PRIMS ? 1 : this.k
     const last = this.path[this.path.length - 1]
     const from = last?.move ?? last?.line?.slice(2)
-    if (from) this.path.push({ line: [from[0], from[1], x, y] })
+    if (from) this.path.push({ line: [from[0], from[1], x * k, y * k] })
   },
   arc(x, y, radius, a0, a1) {
-    this.path.push({ x, y, rx: radius, ry: radius, a0, a1 })
+    const k = SIM_PRIMS ? 1 : this.k
+    this.path.push({ x: x * k, y: y * k, rx: radius * k, ry: radius * k, a0, a1 })
   },
   ellipse(x, y, rx, ry, rotation, a0, a1) {
-    this.path.push({ x, y, rx, ry, a0, a1 })
+    const k = SIM_PRIMS ? 1 : this.k
+    this.path.push({ x: x * k, y: y * k, rx: rx * k, ry: ry * k, a0, a1 })
   },
   stroke() {
     const [r, g, b] = rgb(this.strokeStyle)
+    const cell = SIM_PRIMS ? this.k : 1
+    const lineWidth = SIM_PRIMS ? this.lineWidth : this.lineWidth * this.k
     const seen = new Set()
     for (const e of this.path) {
       if (e.line) {
@@ -126,13 +160,13 @@ const softwareContext = {
           const py = Math.floor(y0 + ((y1 - y0) * i) / steps)
           if (seen.has(py * 100000 + px)) continue
           seen.add(py * 100000 + px)
-          blend(px, py, r, g, b, this.globalAlpha)
+          blendCell(px, py, r, g, b, this.globalAlpha, cell)
         }
         continue
       }
       if (e.rect || e.move) continue
-      for (let w = 0; w < Math.max(1, Math.round(this.lineWidth)); w++) {
-        const grow = w - (Math.max(1, Math.round(this.lineWidth)) - 1) / 2
+      for (let w = 0; w < Math.max(1, Math.round(lineWidth)); w++) {
+        const grow = w - (Math.max(1, Math.round(lineWidth)) - 1) / 2
         const rx = e.rx + grow
         const ry = e.ry + grow
         const steps = Math.max(8, Math.ceil(Math.max(rx, ry) * Math.abs(e.a1 - e.a0) * 1.5))
@@ -142,20 +176,21 @@ const softwareContext = {
           const py = Math.round(e.y + Math.sin(angle) * ry)
           if (seen.has(py * 100000 + px)) continue
           seen.add(py * 100000 + px)
-          blend(px, py, r, g, b, this.globalAlpha)
+          blendCell(px, py, r, g, b, this.globalAlpha, cell)
         }
       }
     }
   },
   fill() {
     const [r, g, b] = rgb(this.fillStyle)
+    const cell = SIM_PRIMS ? this.k : 1
     for (const e of this.path) {
       if (e.rect || e.move || e.line) continue
       for (let py = Math.floor(e.y - e.ry); py <= Math.ceil(e.y + e.ry); py++) {
         for (let px = Math.floor(e.x - e.rx); px <= Math.ceil(e.x + e.rx); px++) {
           const nx = (px - e.x) / e.rx
           const ny = (py - e.y) / e.ry
-          if (nx * nx + ny * ny <= 1 && inSweep(Math.atan2(ny, nx), e.a0, e.a1)) blend(px, py, r, g, b, this.globalAlpha)
+          if (nx * nx + ny * ny <= 1 && inSweep(Math.atan2(ny, nx), e.a0, e.a1)) blendCell(px, py, r, g, b, this.globalAlpha, cell)
         }
       }
     }
@@ -169,12 +204,13 @@ function configure(w, h, touch) {
   cssWidth = w
   cssHeight = h
   scale = pickScale(w, h)
-  width = Math.ceil(w / scale)
-  height = Math.ceil(h / scale)
+  view.width = Math.ceil(w / scale)
+  view.height = Math.ceil(h / scale)
+  width = view.width * ART
+  height = view.height * ART
   frame = new Uint8Array(width * height * 4)
   clip = [0, 0, width, height]
-  view.width = width
-  view.height = height
+  softwareContext.setTransform(ART, 0, 0, ART, 0, 0)
   layoutView(view, w, h, scale, touch)
   view.reducedMotion = process.env.REDUCED === '1'
 }
@@ -421,10 +457,13 @@ const STANCES_BY_CHAPTER = [0, 1, 1, 1, 3, 3, 7, 15, 15, 15, 15]
 const KEYS_BY_CHAPTER = [0, 0, 0, 1, 3, 3, 7, 7, 7, 7, 7]
 const TOUR = [
   { name: 'brennhold', area: C.AREA_BRENNHOLD, chapter: C.CH_RAID },
+  { name: 'brennhold-night', area: C.AREA_BRENNHOLD, chapter: C.CH_BARROW, clock: C.NIGHT_START_TICKS + 4000, focus: ['spawn', 'forge'] },
   { name: 'brennhold-vigil', area: C.AREA_BRENNHOLD, chapter: C.CH_EMBER, focus: ['spawn', 'forge'] },
   { name: 'valdmere', area: C.AREA_VALDMERE, chapter: C.CH_BARROW },
   { name: 'valdmere-night', area: C.AREA_VALDMERE, chapter: C.CH_BARROW, clock: C.NIGHT_START_TICKS + 4000, focus: ['spawn', 'waystone', 'shrine'] },
   { name: 'valdmere-vigil', area: C.AREA_VALDMERE, chapter: C.CH_GALE, focus: ['spawn', 'seal', 'gate', 'chasm'] },
+  { name: 'valdmere-landmark', area: C.AREA_VALDMERE, chapter: C.CH_GALE, landmarks: true },
+  { name: 'valdmere-landmark-night', area: C.AREA_VALDMERE, chapter: C.CH_GALE, clock: C.NIGHT_START_TICKS + 4000, landmarks: true, focus: ['near4', 'near5'] },
   { name: 'barrow', area: C.AREA_BARROW, chapter: C.CH_BARROW },
   { name: 'barrow-corrupt', area: C.AREA_BARROW, chapter: C.CH_EMBER, focus: ['spawn', 'boss'] },
   { name: 'saltreach', area: C.AREA_SALTREACH, chapter: C.CH_TIDE },
@@ -438,6 +477,7 @@ const TOUR = [
   { name: 'shrine0', area: C.AREA_SHRINE, spawn: 0, chapter: C.CH_GALE, waves: true },
   { name: 'shrine1', area: C.AREA_SHRINE, spawn: 1, chapter: C.CH_GALE, waves: true, focus: ['arena'] },
   { name: 'shrine2', area: C.AREA_SHRINE, spawn: 2, chapter: C.CH_GALE, waves: true, focus: ['arena'] },
+  { name: 'shrine3', area: C.AREA_SHRINE, spawn: 3, chapter: C.CH_CITADEL, waves: true, focus: ['arena'] },
 ]
 const OBJECT_FOCUS = [
   ['waystone', C.OBJ_WAYSTONE], ['pedestal', C.OBJ_PEDESTAL], ['key', C.OBJ_KEY], ['chest', C.OBJ_CHEST], ['grapple', C.OBJ_GRAPPLE],
@@ -463,6 +503,23 @@ function focusPoints(a) {
   }
   const out = []
   for (const p of points) if (!out.some(q => q[0] === p[0] || (Math.abs(q[1] - p[1]) < 6 * T && Math.abs(q[2] - p[2]) < 4 * T))) out.push(p)
+  return out
+}
+
+function landmarkPoints(a) {
+  const out = []
+  const T2 = T / 2
+  const tileOf = (x, y) => a.tiles[Math.floor(y / T) * a.w + Math.floor(x / T)]
+  for (let k = 0; k < a.objCount; k++) {
+    if (a.oKind[k] !== C.OBJ_EXIT || a.oArg[k] < C.AREA_BARROW || a.oArg[k] > C.AREA_VELLIN) continue
+    if (tileOf(a.oX[k] - T, a.oY[k]) === C.TILE_STAIRS) continue
+    const x = a.oX[k] + T2
+    const foot = a.oY[k] + T2
+    out.push(['near' + a.oArg[k], x, foot + 24, 0])
+    const far = [128, 112, 144, 96, 160].find(d => !C.TILE_BLOCKS_WALK[tileOf(x, foot + d)] && !C.TILE_BLOCKS_WALK[tileOf(x - T, foot + d)])
+    if (far !== undefined) out.push(['far' + a.oArg[k], x, foot + far, 0])
+    out.push(['side' + a.oArg[k], x, foot - 40, 0])
+  }
   return out
 }
 
@@ -504,6 +561,13 @@ function prepare(stop) {
   }
   s.hp = Math.round(s.statMaxHp * 0.8)
   s.focus = 40
+  if (process.env.WEATHER) {
+    const want = Number(process.env.WEATHER)
+    for (let cycle = 1; cycle < 500; cycle++) {
+      s.tick = cycle * WEATHER_SPAN + WEATHER_FADE + 60
+      if (weatherFor(s) === want) break
+    }
+  }
 }
 
 function outline(x0, y0, x1, y1, rgb) {
@@ -518,12 +582,12 @@ function outline(x0, y0, x1, y1, rgb) {
 }
 
 function drawZones(touch) {
-  outline(width - view.clearRight, 0, width, view.clearTop, [255, 0, 255])
-  outline(0, 0, width, view.hudTop, [0, 255, 255])
-  outline(0, view.hudTop, width, view.textBottom, [255, 255, 0])
+  outline(width - view.clearRight * ART, 0, width, view.clearTop * ART, [255, 0, 255])
+  outline(0, 0, width, view.hudTop * ART, [0, 255, 255])
+  outline(0, view.hudTop * ART, width, view.textBottom * ART, [255, 255, 0])
   if (touch) {
-    outline(0, height - view.clearBottom, width >> 1, height, [255, 0, 255])
-    outline(width >> 1, height - view.clearBottom, width, height, [255, 0, 255])
+    outline(0, height - view.clearBottom * ART, width >> 1, height, [255, 0, 255])
+    outline(width >> 1, height - view.clearBottom * ART, width, height, [255, 0, 255])
   }
 }
 
@@ -533,18 +597,22 @@ async function tour(dir, filter) {
   for (const stop of TOUR) {
     if (filter && !stop.name.startsWith(filter)) continue
     prepare(stop)
-    const points = focusPoints(AREAS[stop.area]).filter(p => !stop.focus || stop.focus.includes(p[0]))
+    const points = (stop.landmarks ? landmarkPoints(AREAS[stop.area]) : focusPoints(AREAS[stop.area])).filter(p => !stop.focus || stop.focus.includes(p[0]))
     for (const [label, x, y] of points) {
       for (const [w, h, tag, touch] of sizes) {
         if (tag !== 'desk' && label !== 'spawn' && label !== 'boss' && label !== 'arena') continue
         configure(w, h, touch)
         const keepX = s.playerX
         const keepY = s.playerY
-        const near = label === 'spawn' || label === 'arena' ? 0 : [40, -40, 28, -28].find(d => !blocksWalk(s, x, y + d)) ?? 0
+        const near = label === 'spawn' || label === 'arena' || stop.landmarks ? 0 : [40, -40, 28, -28].find(d => !blocksWalk(s, x, y + d)) ?? 0
         s.playerX = s.playerPrevX = x
         s.playerY = s.playerPrevY = y + near
         view.eventCursor = s.evHead
-        for (let n = 0; n < 3; n++) drawFrame(view, s, 1)
+        const warm = Number(process.env.WARM ?? 3)
+        for (let n = 0; n < warm; n++) {
+          if (n > 2) s.tick++
+          drawFrame(view, s, 1)
+        }
         if (process.env.ZONES !== '0') drawZones(touch)
         const file = `${dir}/${stop.name}-${label}-${tag}.png`
         writePng(file, tag === 'desk' ? 3 : 2)
@@ -556,5 +624,75 @@ async function tour(dir, filter) {
   }
 }
 
+function atlasSheet(file, top = 0, rows = atlas.height) {
+  width = atlas.width
+  height = Math.min(rows, atlas.height - top)
+  frame = new Uint8Array(width * height * 4)
+  for (let i = 0; i < width * height; i++) {
+    const from = (top * width + i) * 4
+    const a = atlas.pixels[from + 3] / 255
+    const bg = ((i % width) >> 3) + ((i / width) >> 3) & 1 ? 70 : 90
+    for (let c = 0; c < 3; c++) frame[i * 4 + c] = atlas.pixels[from + c] * a + bg * (1 - a)
+  }
+  writePng(file, Number(process.env.UPSCALE ?? 3))
+  console.log(`${file}: atlas ${atlas.width}x${atlas.height}`)
+}
+
+const OWNERS = { hero: HERO_DEFS, foes: FOES_DEFS, world: WORLD_DEFS }
+const SHEET_WIDTH = 720
+const GAP = 6
+
+function label(text, x, y) {
+  let cursor = x
+  for (const ch of text.toUpperCase()) {
+    const glyph = fontFrames[fontGlyphs.indexOf(ch)]
+    if (glyph) glyph.forEach((row, gy) => [...row].forEach((key, gx) => { if (key !== '.') blend(cursor + gx, y + gy, 235, 230, 215, 1) }))
+    cursor += 4
+  }
+}
+
+function ownerSheet(file, owner, upscale) {
+  const defs = OWNERS[owner]
+  if (!defs) throw new Error(`owner must be one of ${Object.keys(OWNERS).join(', ')}`)
+  const cells = []
+  let x = GAP
+  let y = GAP
+  let row = 0
+  for (const [sprite, def] of defs) {
+    if (x > GAP) { x = GAP; y += row + GAP; row = 0 }
+    cells.push({ text: `${def.name} (sprite ${sprite})`, x, y })
+    y += 5 + GAP
+    for (let f = 0; f < def.frames.length; f++) {
+      const id = atlas.base[sprite] + f * atlas.variants[sprite]
+      const text = `${f}${atlas.scale[id] > 1 ? 'L' : ''}`
+      const w = Math.max(atlas.rw[id], text.length * 4)
+      if (x + w > SHEET_WIDTH - GAP) { x = GAP; y += row + GAP; row = 0 }
+      cells.push({ id, text, x, y })
+      row = Math.max(row, atlas.rh[id] + 7)
+      x += w + GAP
+    }
+  }
+  width = SHEET_WIDTH
+  height = y + row + GAP
+  frame = new Uint8Array(width * height * 4)
+  clip = [0, 0, width, height]
+  for (let i = 0; i < width * height; i++) frame.fill(((i % width) >> 3) + ((i / width) >> 3) & 1 ? 92 : 104, i * 4, i * 4 + 3)
+  for (const cell of cells) {
+    if (cell.id === undefined) { label(cell.text, cell.x, cell.y); continue }
+    const { id } = cell
+    for (let py = 0; py < atlas.rh[id]; py++) {
+      for (let px = 0; px < atlas.rw[id]; px++) {
+        const from = ((atlas.ry[id] + py) * atlas.width + atlas.rx[id] + px) * 4
+        blend(cell.x + px, cell.y + py, atlas.pixels[from], atlas.pixels[from + 1], atlas.pixels[from + 2], atlas.pixels[from + 3] / 255)
+      }
+    }
+    label(cell.text, cell.x, cell.y + atlas.rh[id] + 2)
+  }
+  writePng(file, upscale)
+  console.log(`${file}: ${owner}, ${cells.filter(c => c.id !== undefined).length} frames, ${width}x${height} art px at ${upscale}x`)
+}
+
 if (out === 'tour') await tour(scene, process.argv[4] ?? '')
+else if (out === 'sheet') ownerSheet(scene, widthArg, Number(process.argv[5] ?? 3))
+else if (out === 'atlas') atlasSheet(scene, Number(widthArg === '320' ? 0 : widthArg), Number(heightArg === '208' ? atlas.height : heightArg))
 else legacyScene()

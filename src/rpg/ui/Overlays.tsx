@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type MutableRefObject, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { Renderer } from '../render/renderer.ts'
-import { IN_ATTACK, IN_DODGE, IN_GUARD, IN_INTERACT, IN_LOCK, IN_SKILL, OBJ_FORGE } from '../sim/content.ts'
+import { ELEMENT_ICON_PX, ITEM_ICON_PX } from '../render/icons.ts'
+import { ENDING_SHATTER, IN_ATTACK, IN_DODGE, IN_GUARD, IN_INTERACT, IN_LOCK, IN_SKILL, OBJ_FORGE } from '../sim/content.ts'
 import { HERO_NAME_MAX } from './save.ts'
 import { strings } from './i18n.ts'
 import { SKILL_CHARGE_STEPS, bossTitle, interactPrompt, type Hud, type ToastText } from './describe.ts'
@@ -20,7 +21,7 @@ export function Modal({ labelId, primaryRef, variant, children }: {
     return () => previous?.focus()
   }, [primaryRef])
   return (
-    <div className="play-overlay" role="dialog" aria-modal="true" aria-labelledby={labelId}>
+    <div className={`play-overlay rpg-overlay--${variant}`} role="dialog" aria-modal="true" aria-labelledby={labelId}>
       <div className={`play-panel rpg-panel rpg-panel--${variant}`}>{children}</div>
     </div>
   )
@@ -47,10 +48,10 @@ export function ItemIcon({ renderer, base, tier, className }: { renderer: Render
   useEffect(() => {
     const ctx = ref.current?.getContext('2d')
     if (!ctx || !renderer) return
-    ctx.clearRect(0, 0, 16, 16)
+    ctx.clearRect(0, 0, ITEM_ICON_PX, ITEM_ICON_PX)
     if (base >= 0) renderer.drawItemIcon(ctx, base, tier, 0, 0, 1)
   }, [renderer, base, tier])
-  return <canvas ref={ref} className={className} width={16} height={16} aria-hidden="true" />
+  return <canvas ref={ref} className={className} width={ITEM_ICON_PX} height={ITEM_ICON_PX} style={{ '--n': ITEM_ICON_PX } as CSSProperties} aria-hidden="true" />
 }
 
 export function ElementIcon({ renderer, element, className }: { renderer: Renderer | null; element: number; className: string }) {
@@ -58,33 +59,45 @@ export function ElementIcon({ renderer, element, className }: { renderer: Render
   useEffect(() => {
     const ctx = ref.current?.getContext('2d')
     if (!ctx || !renderer) return
-    ctx.clearRect(0, 0, 16, 16)
+    ctx.clearRect(0, 0, ELEMENT_ICON_PX, ELEMENT_ICON_PX)
     if (element >= 0) renderer.drawElementIcon(ctx, element, 0, 0, 1)
   }, [renderer, element])
-  return <canvas ref={ref} className={className} width={16} height={16} aria-hidden="true" />
+  return <canvas ref={ref} className={className} width={ELEMENT_ICON_PX} height={ELEMENT_ICON_PX} style={{ '--n': ELEMENT_ICON_PX } as CSSProperties} aria-hidden="true" />
 }
 
-export function TitleOverlay({ primaryRef, coarsePointer, muted, heroName, canContinue, saveError, onNewGame, onContinue, onToggleSound }: {
+export type ArtState = 'loading' | 'ready' | 'failed'
+
+export function TitleOverlay({ primaryRef, coarsePointer, muted, heroName, canContinue, saveError, art, onRetryArt, onNewGame, onContinue, onToggleSound }: {
   primaryRef: PrimaryRef
   coarsePointer: boolean
   muted: boolean
   heroName: string
   canContinue: boolean
   saveError: boolean
+  art: ArtState
+  onRetryArt: () => void
   onNewGame: (name: string) => void
   onContinue: () => void
   onToggleSound: () => void
 }) {
   const [name, setName] = useState(heroName)
   const newGameRef = useRef<HTMLButtonElement | null>(null)
+  const ready = art === 'ready'
+  useEffect(() => {
+    if (!ready || document.activeElement instanceof HTMLInputElement) return
+    const target = canContinue ? primaryRef.current : newGameRef.current
+    target?.focus()
+  }, [ready, canContinue, primaryRef])
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    onNewGame(name)
+    if (ready) onNewGame(name)
   }
   return (
     <Modal labelId="rpg-title-heading" primaryRef={canContinue ? primaryRef : newGameRef} variant="title">
-      <span className="play-decal">{strings.decal}</span>
-      <h1 id="rpg-title-heading" className="play-title rpg-title">{strings.title}</h1>
+      <span className="play-decal rpg-plaque">{strings.decal}</span>
+      <h1 id="rpg-title-heading" className="play-title rpg-title">
+        <span className="rpg-title-lead">{strings.titleLead}</span> <span className="rpg-title-main">{strings.titleMain}</span>
+      </h1>
       <p className="play-tagline">{strings.premise}</p>
       <form className="rpg-form" onSubmit={submit}>
         <label className="rpg-field">
@@ -101,15 +114,21 @@ export function TitleOverlay({ primaryRef, coarsePointer, muted, heroName, canCo
           />
         </label>
         {saveError && <p className="rpg-error" role="alert">{strings.saveBroken}</p>}
+        {art === 'failed' && (
+          <p className="rpg-error" role="alert">
+            {strings.artFailed}{' '}
+            <button type="button" className="rpg-retry" onClick={onRetryArt}>{strings.retry}</button>
+          </p>
+        )}
         <p className="play-hint">{coarsePointer ? strings.controlsTouch : strings.controlsDesktop}</p>
         <div className="play-actions">
           {canContinue && (
-            <button ref={primaryRef} type="button" className="btn btn--primary play-btn" onClick={onContinue}>
-              {strings.continueGame}
+            <button ref={primaryRef} type="button" className="btn btn--primary play-btn" disabled={!ready} onClick={onContinue}>
+              {art === 'loading' ? strings.artLoading : strings.continueGame}
             </button>
           )}
-          <button ref={newGameRef} type="submit" className={`btn ${canContinue ? 'btn--frame' : 'btn--primary'} play-btn`}>
-            {strings.newGame}
+          <button ref={newGameRef} type="submit" className="btn btn--primary play-btn" disabled={!ready}>
+            {art === 'loading' && !canContinue ? strings.artLoading : strings.newGame}
           </button>
           <SoundToggle muted={muted} onToggle={onToggleSound} />
           <ExitLink />
@@ -128,7 +147,7 @@ export function PauseOverlay({ primaryRef, muted, onResume, onToggleSound, onTit
 }) {
   return (
     <Modal labelId="rpg-pause-heading" primaryRef={primaryRef} variant="pause">
-      <h2 id="rpg-pause-heading" className="play-heading">{strings.paused}</h2>
+      <h2 id="rpg-pause-heading" className="play-heading rpg-plaque">{strings.paused}</h2>
       <div className="play-actions">
         <button ref={primaryRef} type="button" className="btn btn--primary play-btn" onClick={onResume}>
           {strings.resume}
@@ -146,7 +165,7 @@ export function PauseOverlay({ primaryRef, muted, onResume, onToggleSound, onTit
 export function DeadOverlay({ primaryRef, onRespawn, onTitle }: { primaryRef: PrimaryRef; onRespawn: () => void; onTitle: () => void }) {
   return (
     <Modal labelId="rpg-dead-heading" primaryRef={primaryRef} variant="dead">
-      <h2 id="rpg-dead-heading" className="play-heading">{strings.dead}</h2>
+      <h2 id="rpg-dead-heading" className="play-heading rpg-plaque">{strings.dead}</h2>
       <p className="play-tagline">{strings.deadHint}</p>
       <div className="play-actions">
         <button ref={primaryRef} type="button" className="btn btn--primary play-btn" onClick={onRespawn}>
@@ -168,8 +187,8 @@ export interface EndStats {
 
 export function EndedOverlay({ primaryRef, stats, onNewGame }: { primaryRef: PrimaryRef; stats: EndStats; onNewGame: () => void }) {
   return (
-    <Modal labelId="rpg-end-heading" primaryRef={primaryRef} variant="ended">
-      <span className="play-decal">{strings.ended}</span>
+    <Modal labelId="rpg-end-heading" primaryRef={primaryRef} variant={stats.ending === ENDING_SHATTER ? 'shatter' : 'reforge'}>
+      <span className="play-decal rpg-plaque">{strings.ended}</span>
       <h2 id="rpg-end-heading" className="play-heading">{strings.endingName[stats.ending] ?? strings.ended}</h2>
       <dl className="play-stats">
         <div><dt>{strings.statTime}</dt><dd>{stats.time}</dd></div>
@@ -186,6 +205,22 @@ export function EndedOverlay({ primaryRef, stats, onNewGame }: { primaryRef: Pri
 }
 
 const CHOICE_ARM_MS = 600
+const TYPE_STEP_MS = 22
+const TYPE_STEP_CHARS = 2
+
+function reducedMotion(): boolean {
+  return typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function useTyping(text: string): [number, () => void] {
+  const [shown, setShown] = useState(() => (reducedMotion() ? text.length : 0))
+  useEffect(() => {
+    if (shown >= text.length) return
+    const timer = window.setTimeout(() => setShown(n => Math.min(text.length, n + TYPE_STEP_CHARS)), TYPE_STEP_MS)
+    return () => window.clearTimeout(timer)
+  }, [shown, text.length])
+  return [shown, () => setShown(text.length)]
+}
 
 export function StoryDialog({ primaryRef, speaker, text, choice, onAdvance, onChoose }: {
   primaryRef: PrimaryRef
@@ -206,11 +241,19 @@ export function StoryDialog({ primaryRef, speaker, text, choice, onAdvance, onCh
     if (choice) textRef.current?.focus()
     else primaryRef.current?.focus()
   }, [primaryRef, choice])
+  const [shown, finish] = useTyping(text)
+  const typed = shown >= text.length
+  const next = () => (typed ? onAdvance() : finish())
   return (
     <div className="rpg-dialog" role="dialog" aria-modal="true" aria-labelledby="rpg-dialog-speaker" aria-describedby="rpg-dialog-text">
-      <div className="rpg-dialog-panel" onClick={choice ? undefined : onAdvance}>
+      <div className="rpg-dialog-panel" onClick={choice ? finish : next}>
         <p id="rpg-dialog-speaker" className="rpg-dialog-speaker">{speaker}</p>
-        <p id="rpg-dialog-text" ref={textRef} tabIndex={-1} className="rpg-dialog-text" aria-live="polite">{text}</p>
+        <p id="rpg-dialog-text" ref={textRef} tabIndex={-1} className="rpg-sr" aria-live="polite">{text}</p>
+        <p className="rpg-dialog-text" aria-hidden="true">
+          {text.slice(0, shown)}
+          <span className="rpg-untyped">{text.slice(shown)}</span>
+          {typed && !choice && <span className="rpg-cue" />}
+        </p>
         {choice ? (
           <div className="rpg-choices">
             {strings.choice.map((label, index) => (
@@ -218,6 +261,7 @@ export function StoryDialog({ primaryRef, speaker, text, choice, onAdvance, onCh
                 key={label}
                 type="button"
                 className="rpg-choice"
+                data-choice={index}
                 disabled={!armed}
                 onClick={() => onChoose(index)}
               >
@@ -233,7 +277,7 @@ export function StoryDialog({ primaryRef, speaker, text, choice, onAdvance, onCh
             className="btn btn--primary play-btn rpg-advance"
             onClick={e => {
               e.stopPropagation()
-              onAdvance()
+              next()
             }}
           >
             {strings.advance}
@@ -246,11 +290,14 @@ export function StoryDialog({ primaryRef, speaker, text, choice, onAdvance, onCh
 
 export interface Toast extends ToastText {
   id: number
+  born: number
 }
+
+export const TOAST_HOLD_MS = 3200
 
 export function Toasts({ toasts, renderer }: { toasts: readonly Toast[]; renderer: Renderer | null }) {
   return (
-    <div className="rpg-toasts" role="status" aria-live="polite">
+    <div className="rpg-toasts" role="status" aria-live="polite" style={{ '--hold': `${TOAST_HOLD_MS}ms` } as CSSProperties}>
       {toasts.map(toast => (
         <div key={toast.id} className="play-toast rpg-toast" data-kind={toast.kind} data-tier={toast.tier >= 0 ? toast.tier : undefined}>
           {toast.base >= 0 && <ItemIcon renderer={renderer} base={toast.base} tier={toast.tier} className="play-toast-icon rpg-toast-icon" />}

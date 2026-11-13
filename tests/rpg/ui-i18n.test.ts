@@ -12,6 +12,7 @@ import {
   forgeOptions,
   formatClock,
   nodeStatus,
+  powerCompare,
   readHud,
   toastFor,
 } from '../../src/rpg/ui/describe.ts'
@@ -70,6 +71,12 @@ import {
   TIER_COUNT,
   TREE_COUNT,
   VAREK_PHASE_COLOSSUS,
+  ITEM_GREATSWORD,
+  ITEM_SWORD,
+  SLOT_WEAPON,
+  forgeGold,
+  forgeOre,
+  itemPower,
 } from '../../src/rpg/sim/content.ts'
 
 const nonEmpty = (value: string | undefined, label: string) => assert.ok(typeof value === 'string' && value.trim().length > 0, label)
@@ -143,12 +150,16 @@ test('area titles mark corrupted dungeons and name shrines', () => {
   assert.equal(areaTitle(strings, AREA_SHRINE, 2), strings.shrineName[2])
 })
 
+const effectFirst = /^[+-]\d/
+
 test('every item base, tier and level describes without holes', () => {
   for (let base = 0; base < ITEM_BASE_COUNT; base++) {
     for (let tier = 0; tier < TIER_COUNT; tier++) {
       for (let level = 0; level <= ITEM_MAX_LEVEL; level++) {
         const item = describeItem(strings, { base, tier, level, rune: tier % ELEMENT_COUNT, affixes: [tier % AFFIX_COUNT, AFFIX_PARRY], values: [7, 3] })
-        for (const text of [item.name, item.tier, item.slot, ...item.lines]) {
+        assert.match(item.power, /^\+\d+ (attack|armor)$/)
+        for (const line of item.lines) assert.ok(effectFirst.test(line), line)
+        for (const text of [item.name, item.tier, item.slot, item.power, ...item.lines]) {
           nonEmpty(text, `item ${base}/${tier}/${level}`)
           clean(text, `item ${base}/${tier}/${level}`)
         }
@@ -158,7 +169,6 @@ test('every item base, tier and level describes without holes', () => {
   }
 })
 
-const effectFirst = /^[+-]\d/
 const NON_NUMERIC_EXCEPTIONS: readonly string[] = []
 
 test('every node, set and affix states a signed number first', () => {
@@ -207,7 +217,11 @@ test('forge options show cost, before and after, and refuse what you cannot affo
   assert.match(upgrade.before, /^\+\d+ attack$/)
   assert.match(upgrade.after, /^\+\d+ attack$/)
   assert.notEqual(upgrade.before, upgrade.after)
-  for (const option of options) clean(option.label + option.cost + option.before + option.after, 'forge')
+  assert.equal(upgrade.gold, forgeGold(CMD_UPGRADE, 1, 2))
+  assert.equal(upgrade.ore, forgeOre(CMD_UPGRADE, 1, 2))
+  assert.equal(upgrade.note, '')
+  assert.equal(options[2]!.note, '1 held')
+  for (const option of options) clean(option.label + option.note + option.before + option.after, 'forge')
   s.nearForge = 1
   s.gold = 100000
   s.ore = 1000
@@ -215,10 +229,28 @@ test('forge options show cost, before and after, and refuse what you cannot affo
   assert.ok(options.every(o => o.enabled))
   options = forgeOptions(strings, s, { ...item, level: ITEM_MAX_LEVEL })
   assert.equal(options[0]!.enabled, false)
+  assert.equal(options[0]!.gold, 0, 'a maxed item shows no price')
+  assert.match(options[0]!.note, new RegExp(`\\+${ITEM_MAX_LEVEL}`))
   options = forgeOptions(strings, s, { ...item, tier: 0 })
   assert.equal(options[1]!.enabled, false, 'the sim refuses to reforge common gear')
   options = forgeOptions(strings, s, { ...item, rune: 1 })
   assert.equal(options[2]!.enabled, false, 'the sim refuses to socket a filled item')
+})
+
+test('a pack item compares its power with the piece worn in its slot, number first', () => {
+  const s = createState()
+  assert.equal(powerCompare(strings, s, 0), null, 'an empty cell has nothing to compare')
+  s.invBase[0] = ITEM_SWORD
+  s.invTier[0] = 0
+  s.invBase[1] = ITEM_GREATSWORD
+  s.invTier[1] = 3
+  assert.equal(powerCompare(strings, s, 1), null, 'nothing worn in the slot')
+  s.equipped[SLOT_WEAPON] = 0
+  const worn = itemPower(ITEM_SWORD, 0, 0)
+  const better = itemPower(ITEM_GREATSWORD, 3, 0)
+  assert.deepEqual(powerCompare(strings, s, 1), { text: `+${worn} → +${better} attack`, delta: better - worn })
+  assert.ok(effectFirst.test(powerCompare(strings, s, 1)!.text))
+  assert.equal(powerCompare(strings, s, 0), null, 'the worn piece does not compare with itself')
 })
 
 test('play time formats as mm:ss and h:mm:ss', () => {

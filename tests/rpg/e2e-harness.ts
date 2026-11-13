@@ -31,6 +31,7 @@ export const RUN_BUDGET = 45 * TICKS_PER_MINUTE
 export interface BossFight {
   readonly kind: number
   readonly ticks: number
+  readonly awake: number
   readonly hpLeft: number
   readonly tries: number
 }
@@ -110,6 +111,7 @@ export function playthrough(seed: number, options: PlayOptions = {}): Playthroug
       chapters[chapters.length - 1]!.deaths++
       if (bossStart >= 0) bossTries++
       bossStart = -1
+      firstHit.fill(-1)
     }
     const now = offset + s.tick
     if (s.phase === PHASE_PLAYING && s.playerState !== PL_GRAPPLE && blockedCircle(s, s.playerX, s.playerY, PLAYER_RADIUS, 0) === 1) wallOverlaps++
@@ -125,15 +127,17 @@ export function playthrough(seed: number, options: PlayOptions = {}): Playthroug
         if (firstHit[enemy]! < 0) firstHit[enemy] = now
       } else if (type === EV_ENEMY_DIE) {
         const kind = s.evA[slot]!
-        if (kind >= ENEMY_BOSS_FIRST) {
-          bosses.push({ kind, ticks: now - Math.max(0, bossStart), hpLeft: Math.round(s.hp), tries: bossTries + 1 })
-          bossStart = -1
-          bossTries = 0
-        }
+        let struck = -1
         for (let i = 0; i < MAX_ENEMIES; i++) {
           if (wasAlive[i] !== 1 || s.eAlive[i] !== 0 || s.eX[i] !== s.evX[slot] || s.eY[i] !== s.evY[slot]) continue
+          if (firstHit[i]! >= 0) struck = firstHit[i]!
           if (kind < ENEMY_BOSS_FIRST && firstHit[i]! >= 0) kills.push({ chapter: s.chapter, ticks: now - firstHit[i]! })
           firstHit[i] = -1
+        }
+        if (kind >= ENEMY_BOSS_FIRST) {
+          bosses.push({ kind, ticks: now - Math.max(0, struck), awake: now - Math.max(0, bossStart), hpLeft: Math.round(s.hp), tries: bossTries + 1 })
+          bossStart = -1
+          bossTries = 0
         }
       } else if (type === EV_DIALOG) {
         scripts.push(s.evA[slot]!)

@@ -307,8 +307,10 @@ function switchStance(s: State, input: number): void {
   if (s.playerState === PL_ATTACK && s.playerChain !== FINISHER_CHAIN) s.playerChain = ARMED_CHAIN
 }
 
-function startAttack(s: State): void {
+function startAttack(s: State, input: number): void {
   if (s.stamina <= 0) return
+  const h = input & INPUT_HEADING_MASK
+  if (h >= 1 && h <= INPUT_DIRECTIONS) s.playerFace = (h - 1) * HEADING_TURNS
   const row = moveRow(s)
   const length = comboLength(s, row)
   let step = s.playerCombo < length ? s.playerCombo : 0
@@ -473,7 +475,7 @@ function idle(s: State, input: number): void {
     s.playerCombo = 0
     s.playerChain = 0
   }
-  if (pressed(s, input, IN_ATTACK)) startAttack(s)
+  if (pressed(s, input, IN_ATTACK)) startAttack(s, input)
   else if (pressed(s, input, IN_DODGE)) startDodge(s, input)
   else if (pressed(s, input, IN_SKILL)) startSkill(s)
   else if (pressed(s, input, IN_INTERACT) && s.interactUsed === 0 && (s.keyItems & KEY_LONGBOW) !== 0) startBow(s)
@@ -504,7 +506,7 @@ function attack(s: State, input: number): void {
     return
   }
   if ((s.playerBuffer & BUF_ATTACK) !== 0 && s.playerTimer >= cancel + Math.floor(recovery * COMBO_CHAIN_FRACTION)) {
-    startAttack(s)
+    startAttack(s, input)
     if (s.playerState === PL_ATTACK && s.playerTimer === 0) return
   }
   if (s.playerTimer >= cancel + recovery) enter(s, PL_IDLE)
@@ -520,7 +522,7 @@ function guard(s: State, input: number): void {
     return
   }
   if (pressed(s, input, IN_ATTACK)) {
-    startAttack(s)
+    startAttack(s, input)
     if (s.playerState === PL_ATTACK) return
   }
   walk(s, input, GUARD_SPEED, true)

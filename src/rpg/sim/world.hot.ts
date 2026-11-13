@@ -55,7 +55,7 @@ import type { State } from './state.ts'
 import { AREAS, DOOR_KEY_FLAG, EXIT_CHAPTER_SHIFT, EXIT_SPAWN_MASK, type ParsedArea } from './areas.ts'
 import { clearActors, spawnEnemy } from './enemies.hot.ts'
 import { emit, pressed } from './events.hot.ts'
-import { FLAG_SHRINE_CHEST_FIRST, FLAG_SHRINE_CLEAR_FIRST } from './flags.ts'
+import { FLAG_SHRINE_CHEST, FLAG_SHRINE_CLEAR } from './flags.ts'
 import {
   CHEST_BASE,
   CHEST_GOLD,
@@ -138,8 +138,8 @@ export function placeObject(s: State, kind: number, x: number, y: number, arg: n
 
 function placeShrineChest(s: State, x: number, y: number): void {
   const v = s.areaVariant
-  const i = placeObject(s, OBJ_CHEST, x, y + SHRINE_CHEST_DY, CHEST_SHRINE_FIRST + v, 0, FLAG_SHRINE_CHEST_FIRST + v)
-  if (i >= 0 && s.flags[FLAG_SHRINE_CHEST_FIRST + v] !== 0) s.objState[i] = OBJ_USED
+  const i = placeObject(s, OBJ_CHEST, x, y + SHRINE_CHEST_DY, CHEST_SHRINE_FIRST + v, 0, FLAG_SHRINE_CHEST[v]!)
+  if (i >= 0 && s.flags[FLAG_SHRINE_CHEST[v]!] !== 0) s.objState[i] = OBJ_USED
 }
 
 function findObject(s: State, kind: number, arg: number): number {
@@ -197,7 +197,7 @@ export function loadArea(s: State, area: number, spawn: number): void {
       shrineY = a.oY[k]!
     }
   }
-  if (area === AREA_SHRINE && s.flags[FLAG_SHRINE_CLEAR_FIRST + variant] !== 0) placeShrineChest(s, shrineX, shrineY)
+  if (area === AREA_SHRINE && s.flags[FLAG_SHRINE_CLEAR[variant]!] !== 0) placeShrineChest(s, shrineX, shrineY)
   s.playerX = a.spawnX[spawnId]!
   s.playerY = a.spawnY[spawnId]!
   s.playerPrevX = s.playerX
@@ -368,7 +368,7 @@ function touchWaystone(s: State, i: number): void {
 
 function startShrine(s: State): void {
   const i = findObject(s, OBJ_TRIGGER, ZONE_SHRINE_ARENA)
-  if (i < 0 || s.objData[i] !== 0 || s.flags[FLAG_SHRINE_CLEAR_FIRST + s.areaVariant] !== 0) return
+  if (i < 0 || s.objData[i] !== 0 || s.flags[FLAG_SHRINE_CLEAR[s.areaVariant]!] !== 0) return
   s.objData[i] = 1
   startScript(s, SCRIPT_SHRINE)
 }
@@ -381,7 +381,7 @@ function updateShrine(s: State): void {
   const v = s.areaVariant
   if (wave > SHRINE_WAVE_COUNT[v]!) {
     s.objData[i] = 0
-    s.flags[FLAG_SHRINE_CLEAR_FIRST + v] = 1
+    s.flags[FLAG_SHRINE_CLEAR[v]!] = 1
     placeShrineChest(s, s.objX[i]!, s.objY[i]!)
     startScript(s, SCRIPT_SHRINE_DONE)
     return

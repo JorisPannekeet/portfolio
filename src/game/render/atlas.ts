@@ -22,11 +22,13 @@ export const GLYPH_AMBER = 3
 export const GLYPH_GREEN = 4
 
 export const ROTATIONS = 16
+export const MAX_PALETTE = 96
 
 export interface SpriteDef {
   readonly name: string
   readonly kind: number
   readonly frames: readonly (readonly string[])[]
+  readonly scale?: number | readonly number[]
 }
 
 export interface Atlas {
@@ -39,6 +41,7 @@ export interface Atlas {
   readonly ry: Uint16Array
   readonly rw: Uint16Array
   readonly rh: Uint16Array
+  readonly scale: Uint8Array
 }
 
 export interface Palette {
@@ -191,28 +194,60 @@ export function outline(source: Bitmap, rgba: Uint8Array, keys = PALETTE_KEYS): 
   return { w, h, data }
 }
 
-function framesFor(def: SpriteDef, rgba: Uint8Array, keys: string): Bitmap[] {
+function enlarge(source: Bitmap, k: number): Bitmap {
+  if (k === 1) return source
+  const w = source.w * k
+  const h = source.h * k
+  const data = new Uint8Array(w * h * 4)
+  const from = new Uint32Array(source.data.buffer, source.data.byteOffset, source.w * source.h)
+  const to = new Uint32Array(data.buffer)
+  for (let y = 0; y < h; y++) {
+    const row = ((y / k) | 0) * source.w
+    for (let x = 0; x < w; x++) to[y * w + x] = from[row + ((x / k) | 0)]!
+  }
+  return { w, h, data }
+}
+
+export function frameScale(def: SpriteDef, frame: number): number {
+  const scale = def.scale ?? 1
+  const k = typeof scale === 'number' ? scale : scale[frame] ?? 1
+  if (!Number.isInteger(k) || k < 1) throw new Error(`${def.name}[${frame}]: scale ${k} is not a positive integer`)
+  return k
+}
+
+function framesFor(def: SpriteDef, rgba: Uint8Array, keys: string, scales: number[]): Bitmap[] {
+  if (typeof def.scale === 'object' && def.scale.length !== def.frames.length) throw new Error(`${def.name}: ${def.scale.length} scales for ${def.frames.length} frames`)
   const out: Bitmap[] = []
-  for (const rows of def.frames) {
-    if (def.kind === KIND_ACTOR) {
-      out.push(rasterise(def.name, rows, rgba, '', false, keys))
-      out.push(rasterise(def.name, rows, rgba, '', true, keys))
-      out.push(rasterise(def.name, rows, rgba, FLASH_KEY, false, keys))
-      out.push(rasterise(def.name, rows, rgba, FLASH_KEY, true, keys))
-    } else if (def.kind === KIND_GLYPH) {
-      for (const tint of GLYPH_TINT_KEYS) out.push(rasterise(def.name, rows, rgba, tint, false, keys))
-    } else if (def.kind === KIND_ICON) {
-      out.push(rasterise(def.name, rows, rgba, '', false, keys))
-      out.push(rasterise(def.name, miniRows(rows), rgba, '', false, keys))
-    } else if (def.kind === KIND_ROTATED_OUTLINED) {
-      const upright = rasterise(def.name, rows, rgba, '', false, keys)
-      for (let r = 0; r < ROTATIONS; r++) out.push(outline(closeGaps(rotate(upright, (r * Math.PI * 2) / ROTATIONS, 1)), rgba, keys))
-    } else if (def.kind === KIND_ROTATED) {
-      const upright = rasterise(def.name, rows, rgba, '', false, keys)
-      for (let r = 0; r < ROTATIONS; r++) out.push(rotate(upright, (r * Math.PI * 2) / ROTATIONS))
-    } else {
-      out.push(rasterise(def.name, rows, rgba, '', false, keys))
+  for (let f = 0; f < def.frames.length; f++) {
+    const k = frameScale(def, f)
+    for (const bitmap of variantsOf(def, def.frames[f]!, rgba, keys)) {
+      out.push(enlarge(bitmap, k))
+      scales.push(k)
     }
+  }
+  return out
+}
+
+function variantsOf(def: SpriteDef, rows: readonly string[], rgba: Uint8Array, keys: string): Bitmap[] {
+  const out: Bitmap[] = []
+  if (def.kind === KIND_ACTOR) {
+    out.push(rasterise(def.name, rows, rgba, '', false, keys))
+    out.push(rasterise(def.name, rows, rgba, '', true, keys))
+    out.push(rasterise(def.name, rows, rgba, FLASH_KEY, false, keys))
+    out.push(rasterise(def.name, rows, rgba, FLASH_KEY, true, keys))
+  } else if (def.kind === KIND_GLYPH) {
+    for (const tint of GLYPH_TINT_KEYS) out.push(rasterise(def.name, rows, rgba, tint, false, keys))
+  } else if (def.kind === KIND_ICON) {
+    out.push(rasterise(def.name, rows, rgba, '', false, keys))
+    out.push(rasterise(def.name, miniRows(rows), rgba, '', false, keys))
+  } else if (def.kind === KIND_ROTATED_OUTLINED) {
+    const upright = rasterise(def.name, rows, rgba, '', false, keys)
+    for (let r = 0; r < ROTATIONS; r++) out.push(outline(closeGaps(rotate(upright, (r * Math.PI * 2) / ROTATIONS, 1)), rgba, keys))
+  } else if (def.kind === KIND_ROTATED) {
+    const upright = rasterise(def.name, rows, rgba, '', false, keys)
+    for (let r = 0; r < ROTATIONS; r++) out.push(rotate(upright, (r * Math.PI * 2) / ROTATIONS))
+  } else {
+    out.push(rasterise(def.name, rows, rgba, '', false, keys))
   }
   return out
 }
@@ -220,16 +255,17 @@ function framesFor(def: SpriteDef, rgba: Uint8Array, keys: string): Bitmap[] {
 export function buildAtlas(defs: readonly SpriteDef[], width = 512, palette = MECH_PALETTE): Atlas {
   const keys = palette.keys
   const rgba = paletteBytes(palette.hex)
-  if (keys.length > 64) throw new Error('palette exceeds 64 colours')
+  if (keys.length > MAX_PALETTE) throw new Error(`palette exceeds ${MAX_PALETTE} colours`)
   if (keys.length !== palette.hex.length) throw new Error('palette keys and colours differ in length')
   const bitmaps: Bitmap[] = []
+  const scales: number[] = []
   const base = new Uint16Array(defs.length)
   const variants = new Uint8Array(defs.length)
   for (let i = 0; i < defs.length; i++) {
     const def = defs[i]!
     base[i] = bitmaps.length
     variants[i] = variantCount(def.kind)
-    bitmaps.push(...framesFor(def, rgba, keys))
+    bitmaps.push(...framesFor(def, rgba, keys, scales))
   }
   const count = bitmaps.length
   const rx = new Uint16Array(count)
@@ -263,5 +299,5 @@ export function buildAtlas(defs: readonly SpriteDef[], width = 512, palette = ME
       pixels.set(bitmap.data.subarray(row * bitmap.w * 4, (row + 1) * bitmap.w * 4), ((ry[i]! + row) * width + rx[i]!) * 4)
     }
   }
-  return { width, height, pixels, base, variants, rx, ry, rw, rh }
+  return { width, height, pixels, base, variants, rx, ry, rw, rh, scale: Uint8Array.from(scales) }
 }

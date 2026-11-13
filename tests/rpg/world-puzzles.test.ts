@@ -54,7 +54,7 @@ import {
 import { applyCommand } from '../../src/rpg/sim/commands.hot.ts'
 import { damageEnemy } from '../../src/rpg/sim/enemies.hot.ts'
 import { arrowWorldEffect, elementWorldEffect, strikeWorldEffect } from '../../src/rpg/sim/puzzles.hot.ts'
-import { FLAG_SHRINE_CHEST_FIRST, FLAG_SHRINE_CLEAR_FIRST, flagId } from '../../src/rpg/sim/flags.ts'
+import { FLAG_SHRINE_CHEST, FLAG_SHRINE_CLEAR, flagId } from '../../src/rpg/sim/flags.ts'
 import { loadArea } from '../../src/rpg/sim/world.hot.ts'
 import { charCenter, charTiles, finishDialog, freshGame, objectsOf, standAt, tileIndexAt, worldTick } from './world-helpers.ts'
 
@@ -301,17 +301,17 @@ test('a shrine runs its waves, then places a reward chest that stays after a rel
   worldTick(s, 0)
   assert.equal(s.phase, PHASE_DIALOG)
   finishDialog(s)
-  for (let i = 0; i < 10 && s.flags[FLAG_SHRINE_CLEAR_FIRST + 2] === 0; i++) {
+  for (let i = 0; i < 10 && s.flags[FLAG_SHRINE_CLEAR[2]!] === 0; i++) {
     worldTick(s, 0)
     for (let e = 0; e < MAX_ENEMIES; e++) if (s.eAlive[e] === 1) damageEnemy(s, e, 1e6, -1, s.playerX, s.playerY)
   }
-  assert.equal(s.flags[FLAG_SHRINE_CLEAR_FIRST + 2], 1)
+  assert.equal(s.flags[FLAG_SHRINE_CLEAR[2]!], 1)
   finishDialog(s)
   const chest = objectsOf(s, OBJ_CHEST)[0]!
   standAt(s, s.objX[chest]!, s.objY[chest]! + 10)
   worldTick(s, 0)
   worldTick(s, IN_INTERACT)
-  assert.equal(s.flags[FLAG_SHRINE_CHEST_FIRST + 2], 1)
+  assert.equal(s.flags[FLAG_SHRINE_CHEST[2]!], 1)
   loadArea(s, AREA_SHRINE, 2)
   assert.equal(s.objState[objectsOf(s, OBJ_CHEST)[0]!], OBJ_USED)
   const [ex, ey] = charCenter(AREA_SHRINE, 'E')
