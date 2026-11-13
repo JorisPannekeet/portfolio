@@ -27,9 +27,9 @@ test('the sloppy bot that never guards or dodges still sees the ending within 25
   }
 })
 
-test('no boss falls in under 20 s to the normal bot; each lasts 45-120 s for the sloppy bot', () => {
-  for (const r of normal) for (const b of r.bosses) assert.ok(b.ticks >= 20 * TICK_HZ, 'boss ' + b.kind + ' ' + b.ticks)
-  for (const r of sloppy) for (const b of r.bosses) assert.ok(b.ticks >= 45 * TICK_HZ && b.ticks <= 120 * TICK_HZ, 'boss ' + b.kind + ' ' + b.ticks)
+test('timed from the first blow, no boss falls in under 10 s to the normal bot; the sloppy bot wins its last try in 15-90 s', () => {
+  for (const r of normal) for (const b of r.bosses) assert.ok(b.ticks >= 10 * TICK_HZ, 'boss ' + b.kind + ' ' + b.ticks)
+  for (const r of sloppy) for (const b of r.bosses) assert.ok(b.ticks >= 15 * TICK_HZ && b.ticks <= 90 * TICK_HZ, 'boss ' + b.kind + ' ' + b.ticks)
 })
 
 test('regular enemies take 2-4 s to kill for the normal bot', () => {

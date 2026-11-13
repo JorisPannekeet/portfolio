@@ -20,7 +20,7 @@ import {
   VAREK_PHASE_ELEMENTS,
 } from '../../src/rpg/sim/content.ts'
 import { BOT_CORRUPT_CHEST, BOT_OPTIONAL, BOT_SHATTER } from '../../src/rpg/sim/bot-tuning.ts'
-import { FLAG_SHRINE_CHEST_FIRST, FLAG_SHRINE_CLEAR_FIRST } from '../../src/rpg/sim/flags.ts'
+import { FLAG_SHRINE_CHEST, FLAG_SHRINE_CLEAR } from '../../src/rpg/sim/flags.ts'
 import { TICKS_PER_MINUTE, playthrough, type Playthrough } from './e2e-harness.ts'
 
 const SEEDS = [1, 2, 3]
@@ -90,11 +90,11 @@ test('saving at checkpoints and continuing into a fresh state still reaches the 
   assert.equal(r.state.ending, ENDING_REFORGE)
 })
 
-test('the optional bot clears all three shrines and both corrupted dungeons, then still finishes', () => {
+test('the optional bot clears every shrine and both corrupted dungeons, then still finishes', () => {
   const r = playthrough(2, { mode: BOT_OPTIONAL, budget: 35 * TICKS_PER_MINUTE })
   for (let v = 0; v < SHRINE_COUNT; v++) {
-    assert.equal(r.state.flags[FLAG_SHRINE_CLEAR_FIRST + v], 1, 'shrine ' + v + ' cleared')
-    assert.equal(r.state.flags[FLAG_SHRINE_CHEST_FIRST + v], 1, 'shrine ' + v + ' chest taken')
+    assert.equal(r.state.flags[FLAG_SHRINE_CLEAR[v]!], 1, 'shrine ' + v + ' cleared')
+    assert.equal(r.state.flags[FLAG_SHRINE_CHEST[v]!], 1, 'shrine ' + v + ' chest taken')
   }
   for (const flag of BOT_CORRUPT_CHEST) assert.equal(r.state.flags[flag], 1, 'corrupted chest ' + flag + ' taken')
   assert.equal(r.state.phase, PHASE_ENDED)

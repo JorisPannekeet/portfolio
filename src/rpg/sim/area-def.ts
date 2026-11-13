@@ -14,6 +14,7 @@ export interface Cell {
   readonly minChapter?: number
   readonly maxChapter?: number
   readonly variant?: number
+  readonly spawn?: number
 }
 
 export interface AreaDef {

@@ -33,6 +33,7 @@ import {
   OBJ_PEDESTAL,
   OBJ_SWITCH,
   OBJ_WINDMILL,
+  SHRINE_COUNT,
   TILE,
   TILE_BARRICADE,
   TILE_BLOCKS_WALK,
@@ -63,7 +64,7 @@ test('every exit lands on a walkable spawn that is not itself an exit', () => {
       if (a.oKind[k] !== OBJ_EXIT) continue
       const to = AREAS[a.oArg[k]!]!
       const first = a.oData[k]! & EXIT_SPAWN_MASK
-      const last = a.id === AREA_SHRINE ? first + 2 : first
+      const last = a.id === AREA_SHRINE ? first + SHRINE_COUNT - 1 : first
       for (let sp = first; sp <= last; sp++) {
         assert.ok((to.spawnSet & (1 << sp)) !== 0, 'area ' + a.id + ' exit to ' + to.id + ' spawn ' + sp)
         const tx = Math.floor(to.spawnX[sp]! / TILE)
@@ -90,6 +91,12 @@ test('flag ids are unique, fit FLAG_COUNT, and no object flag is reused', () => 
       seen.add(f)
     }
   }
+})
+
+test('flags that already shipped keep their save slots when new ones are added', () => {
+  assert.equal(FLAG_NAMES.indexOf('SHRINE_CLEAR_0'), 13)
+  assert.equal(FLAG_NAMES.indexOf('SHRINE_CHEST_2'), 18)
+  assert.equal(FLAG_NAMES.indexOf('CIT_CHEST'), 66)
 })
 
 test('every dungeon has a waystone, a key and door, a pedestal and a boss', () => {
@@ -234,11 +241,11 @@ test('the corrupted reward chests are reachable in their variant', () => {
 })
 
 const HUB_STEPS: [number, string[], string[]][] = [
-  [CH_BARROW, ['U', 'M'], ['V', 'Y', 'Z', 'O', 'j', 'l', 'q']],
-  [CH_TIDE, ['V', 'j'], ['Y', 'Z', 'O', 'l', 'q']],
-  [CH_EMBER, ['Y', 'l'], ['Z', 'O', 'q']],
-  [CH_GALE, ['Z', 'q'], ['O']],
-  [CH_CITADEL, ['O', 'M', 'U', 'V', 'Y', 'Z'], []],
+  [CH_BARROW, ['U', 'M'], ['V', 'Y', 'Z', 'O', 'j', 'l', 'q', 'x']],
+  [CH_TIDE, ['V', 'j'], ['Y', 'Z', 'O', 'l', 'q', 'x']],
+  [CH_EMBER, ['Y', 'l'], ['Z', 'O', 'q', 'x']],
+  [CH_GALE, ['Z', 'q'], ['O', 'x']],
+  [CH_CITADEL, ['O', 'M', 'U', 'V', 'Y', 'Z', 'x'], []],
 ]
 
 for (const [chapter, open, shut] of HUB_STEPS) {

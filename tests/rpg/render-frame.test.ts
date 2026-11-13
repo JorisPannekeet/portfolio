@@ -11,6 +11,8 @@ import { nightAmount } from '../../src/rpg/render/light.hot.ts'
 import { createState } from '../../src/rpg/sim/state.ts'
 import { emit } from '../../src/rpg/sim/events.hot.ts'
 import * as C from '../../src/rpg/sim/content.ts'
+import { LANDMARK_FRAME } from '../../src/rpg/render/sheet-world.ts'
+import { SPR_TILES } from '../../src/rpg/render/sheet-ids.ts'
 
 function recordingContext(): { ctx: CanvasRenderingContext2D; calls: { draws: number; bad: number } } {
   const calls = { draws: 0, bad: 0 }
@@ -111,6 +113,11 @@ test('scale keeps the view near 18-26 tiles across on desktop and a full card at
   assert.ok(wide >= 18 && wide <= 28, `${wide}`)
   const full = 1920 / pickScale(1920, 1080) / C.TILE
   assert.ok(full >= 18 && full <= 28, `${full}`)
+  for (const [w, h] of [[390, 700], [844, 390], [1280, 720], [1366, 768], [1440, 900], [1920, 1080], [2560, 1440]] as const) {
+    const scale = pickScale(w, h)
+    assert.ok(scale === 1 || scale % 2 === 0, `${w}x${h}: an art pixel must cover whole screen pixels at ratio 1, got scale ${scale}`)
+  }
+  assert.equal(pickScale(1280, 720, 2), 3)
 })
 
 test('night fades in after dusk and out before dawn', () => {
@@ -128,7 +135,7 @@ test('the canvas HUD fits the agreed top-left box and the boss bar sits under th
     const v = createView(recordingContext().ctx, rpgAtlas(), {} as CanvasImageSource)
     layoutView(v, w, h, scale, false)
     const small = w <= 300 || h <= 300
-    const top = small ? 40 : Math.min(80, Math.max(56, Math.min(w, h) * 0.12))
+    const top = small ? 40 : Math.min(96, Math.max(56, Math.min(w, h) * 0.12))
     assert.ok(HUD_HEIGHT * scale <= top, `${w}x${h}: HUD ${HUD_HEIGHT * scale}px tall, box ${top}px`)
     assert.ok(HUD_WIDTH * scale <= w - v.clearRight * scale, `${w}x${h}: HUD runs under the top-right buttons`)
     assert.ok(Math.abs(v.bossBarY * scale - (top + 26)) <= scale, `${w}x${h}: boss bar at ${v.bossBarY * scale}`)
@@ -147,4 +154,35 @@ test('every exit on every map points its chevron at the blocked side', () => {
       assert.equal(blocksWalk(s, s.objX[i]! + dx * C.TILE, s.objY[i]! + dy * C.TILE), 1, `area ${area} exit ${i} heading ${heading}`)
     }
   }
+})
+
+test('each element dungeon entrance on Valdmere draws its own landmark once, from in front of the stairs', () => {
+  const atlas = rpgAtlas()
+  const seen = new Set<number>()
+  const s = createState()
+  loadArea(s, C.AREA_VALDMERE, 0)
+  for (let i = 0; i < C.MAX_OBJECTS; i++) {
+    const area = s.objArg[i]!
+    if (s.objKind[i] !== C.OBJ_EXIT || area < C.AREA_BARROW || area > C.AREA_VELLIN) continue
+    const tx = Math.floor(s.objX[i]! / C.TILE)
+    const ty = Math.floor(s.objY[i]! / C.TILE)
+    if (s.tiles[ty * s.mapW + tx - 1] === C.TILE_STAIRS) continue
+    const frame = atlas.base[SPR_TILES]! + LANDMARK_FRAME[area]! * atlas.variants[SPR_TILES]!
+    const sources: number[] = []
+    const ctx = {
+      globalAlpha: 1, fillStyle: '', strokeStyle: '', lineWidth: 1, imageSmoothingEnabled: false,
+      drawImage: (_image: unknown, sx: number, sy: number) => { if (sx === atlas.rx[frame] && sy === atlas.ry[frame]) sources.push(sx) },
+      fillRect: () => {}, beginPath: () => {}, ellipse: () => {}, arc: () => {}, stroke: () => {}, fill: () => {},
+    } as unknown as CanvasRenderingContext2D
+    const v = createView(ctx, atlas, {} as CanvasImageSource)
+    v.width = 320
+    v.height = 180
+    s.playerX = s.playerPrevX = (tx + 1) * C.TILE
+    s.playerY = s.playerPrevY = (ty + 2) * C.TILE
+    drawFrame(v, s, 1)
+    assert.equal(sources.length, 1, 'area ' + area)
+    assert.ok(!seen.has(frame), 'area ' + area + ' shares a landmark')
+    seen.add(frame)
+  }
+  assert.equal(seen.size, 4)
 })

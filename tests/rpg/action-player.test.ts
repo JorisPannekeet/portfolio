@@ -68,6 +68,20 @@ test('attack presses run the three-step combo, buffer during a swing, then wrap 
   assert.deepEqual(swings(s, since).slice(0, 4), [0, 1, 2, 0])
 })
 
+test('holding a new direction while chaining attacks turns the next swing that way', () => {
+  const s = arena(1)
+  const west = 9
+  s.playerFace = 0
+  tick(s, IN_ATTACK)
+  run(s, west, 4)
+  assert.equal(s.playerFace, 0)
+  tick(s, west | IN_ATTACK)
+  const since = s.evHead
+  for (let k = 0; k < 40 && events(s, EV_SWING, since).length === 0; k++) tick(s, west)
+  assert.equal(s.playerState, PL_ATTACK)
+  assert.equal(s.playerFace, 512)
+})
+
 test('an attack press without a buffered follow-up returns to idle and resets the combo', () => {
   const s = arena(1)
   s.stancesUnlocked = 1

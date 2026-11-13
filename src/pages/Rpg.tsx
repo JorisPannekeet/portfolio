@@ -4,8 +4,8 @@ import { createState } from '@/rpg/sim/state.ts'
 import { command } from '@/rpg/sim/step.hot.ts'
 import { continueGame, newGame } from '@/rpg/sim/game.ts'
 import { serializeProgress } from '@/rpg/sim/progress.ts'
-import { createRenderer } from '@/rpg/render/renderer.ts'
 import { createAudio } from '@/rpg/audio/audio.ts'
+import type { Renderer } from '@/rpg/render/renderer.ts'
 import { pressButton, queueCommand, releaseButton, resetLoop, setLoopRunning, startLoop, stopLoop, type Loop } from '@/rpg/loop.hot.ts'
 import { attachMovement } from '@/game/ui/input.ts'
 import { keyAction, mouseButtonBit, nextStance } from '@/rpg/ui/controls.ts'
@@ -22,6 +22,8 @@ import {
   TitleOverlay,
   Toasts,
   TouchControls,
+  TOAST_HOLD_MS,
+  type ArtState,
   type EndStats,
   type Toast,
   type TouchHandlers,
@@ -31,7 +33,6 @@ import '@/game/ui/play.css'
 import '@/rpg/ui/rpg.css'
 
 const MUTE_STORAGE_KEY = 'shards-fourfold-crown-muted'
-const TOAST_HOLD_MS = 3200
 const TOAST_MAX = 3
 const COMMAND_QUEUE = 16
 
@@ -80,6 +81,7 @@ export function Rpg() {
   const [saveError, setSaveError] = useState(false)
   const [heroName, setHeroName] = useState(() => save?.name ?? strings.heroDefault)
   const [endStats, setEndStats] = useState<EndStats>({ ending: 0, time: formatClock(0), level: 1 })
+  const [art, setArt] = useState<ArtState>('loading')
   const fieldRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const zoneRef = useRef<HTMLDivElement | null>(null)
@@ -112,7 +114,24 @@ export function Rpg() {
     const stick = stickRef.current
     const knob = knobRef.current
     if (!field || !canvas || !zone || !stick || !knob) return
-    const renderer = createRenderer(canvas)
+    let cancelled = false
+    let unmount: (() => void) | null = null
+    import('@/rpg/render/renderer.ts')
+      .then(({ createRenderer }) => {
+        if (cancelled) return
+        unmount = mount(createRenderer(canvas), field, zone, stick, knob)
+        setArt('ready')
+      })
+      .catch(() => {
+        if (!cancelled) setArt('failed')
+      })
+    return () => {
+      cancelled = true
+      unmount?.()
+    }
+  }, [])
+
+  function mount(renderer: Renderer, field: HTMLDivElement, zone: HTMLDivElement, stick: HTMLDivElement, knob: HTMLDivElement): () => void {
     const audio = createAudio()
     const loop: Loop = {
       s: createState(),
@@ -149,7 +168,7 @@ export function Rpg() {
         const text = toastFor(strings, s, type, a, b)
         if (text) {
           toastCount.current++
-          const toast = { ...text, id: toastCount.current }
+          const toast = { ...text, id: toastCount.current, born: performance.now() }
           setToasts(list => [...list, toast].slice(-TOAST_MAX))
         }
         bump()
@@ -190,7 +209,7 @@ export function Rpg() {
       audio.dispose()
       loopRef.current = null
     }
-  }, [])
+  }
 
   useEffect(() => {
     const loop = loopRef.current
@@ -201,19 +220,22 @@ export function Rpg() {
       loop.latched = 0
     }
     loop.audio.setPaused(shell.mode === 'paused' || shell.mode === 'menu')
-  }, [shell.mode])
+  }, [shell.mode, art])
 
   useEffect(() => {
     if (toasts.length === 0) return
-    const oldest = toasts[0]!.id
-    const timer = window.setTimeout(() => setToasts(list => list.filter(toast => toast.id !== oldest)), TOAST_HOLD_MS)
+    const oldest = toasts[0]!
+    const timer = window.setTimeout(
+      () => setToasts(list => list.filter(toast => toast.id !== oldest.id)),
+      Math.max(0, oldest.born + TOAST_HOLD_MS - performance.now()),
+    )
     return () => window.clearTimeout(timer)
   }, [toasts])
 
   useEffect(() => {
     loopRef.current?.audio.setMuted(muted)
     writeMuted(muted)
-  }, [muted])
+  }, [muted, art])
 
   useEffect(() => {
     const pause = () => {
@@ -413,6 +435,8 @@ export function Rpg() {
           heroName={heroName}
           canContinue={save !== null}
           saveError={saveError}
+          art={art}
+          onRetryArt={() => window.location.reload()}
           onNewGame={startNew}
           onContinue={startContinue}
           onToggleSound={toggleSound}

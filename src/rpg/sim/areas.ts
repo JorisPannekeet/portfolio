@@ -75,7 +75,7 @@ export const TILE_CHARS: Readonly<Record<string, number>> = {
 export const ENEMY_CHARS: Readonly<Record<string, number>> = {
   f: ENEMY_FOOTMAN, b: ENEMY_ARCHER, k: ENEMY_KNIGHT, w: ENEMY_WIGHT, d: ENEMY_DROWNED, h: ENEMY_ASH_HOUND, y: ENEMY_GALE_WISP, c: ENEMY_CHAINED,
 }
-export const SPAWN_SLOTS = 10
+export const SPAWN_SLOTS = 11
 const LOOT_OBJECT_RESERVE = 48
 
 export const TILE_OPENED = new Uint8Array(TILE_COUNT)
@@ -166,6 +166,13 @@ function parseArea(def: AreaDef): ParsedArea {
   const spawnX = new Float32Array(SPAWN_SLOTS)
   const spawnY = new Float32Array(SPAWN_SLOTS)
   let spawnSet = 0
+  const placeSpawn = (id: number, tx: number, ty: number): void => {
+    if (id < 0 || id >= SPAWN_SLOTS) fail(def, 'spawn ' + id + ' out of range')
+    if ((spawnSet & (1 << id)) !== 0) fail(def, 'spawn ' + id + ' placed twice')
+    spawnSet |= 1 << id
+    spawnX[id] = center(tx)
+    spawnY[id] = center(ty)
+  }
   for (let ty = 0; ty < h; ty++) {
     const line = def.rows[ty]!
     if (line.length !== w) fail(def, 'row ' + ty + ' has length ' + line.length + ', expected ' + w)
@@ -180,14 +187,11 @@ function parseArea(def: AreaDef): ParsedArea {
         tiles[i] = def.floor
         enemies.push({ cell: {}, kind: enemy, tx, ty })
       } else if (ch >= '0' && ch <= '9') {
-        const id = ch.charCodeAt(0) - 48
-        if ((spawnSet & (1 << id)) !== 0) fail(def, 'spawn ' + id + ' placed twice')
-        spawnSet |= 1 << id
-        spawnX[id] = center(tx)
-        spawnY[id] = center(ty)
+        placeSpawn(ch.charCodeAt(0) - 48, tx, ty)
         tiles[i] = def.floor
       } else if (cell !== undefined) {
         tiles[i] = cell.tile ?? def.floor
+        if (cell.spawn !== undefined) placeSpawn(cell.spawn, tx, ty)
         if (cell.flag !== undefined && cell.obj === undefined && cell.enemy === undefined) {
           if (!PERSISTENT_TILES.includes(tiles[i]!)) fail(def, 'flagged tile ' + ch + ' is not a persistent kind')
           const f = flagId(cell.flag)

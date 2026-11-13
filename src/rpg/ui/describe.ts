@@ -44,7 +44,7 @@ import {
   scrapOre,
 } from '../sim/content.ts'
 import type { State } from '../sim/state.ts'
-import { activeBoss } from '../render/hud.hot.ts'
+import { activeBoss } from '../render/boss.hot.ts'
 import { skillCharge } from '../sim/player.hot.ts'
 import type { ControlKeys, Line, Strings } from './i18n.ts'
 
@@ -155,6 +155,7 @@ export interface ItemDescription {
   name: string
   tier: string
   slot: string
+  power: string
   lines: string[]
   handling: string
   set: string
@@ -162,7 +163,7 @@ export interface ItemDescription {
 }
 
 export function describeItem(t: Strings, item: ItemView): ItemDescription {
-  const lines = [powerLine(t, item.base, item.tier, item.level)]
+  const lines: string[] = []
   for (let k = 0; k < item.affixes.length; k++) lines.push(describeAffix(t, item.affixes[k]!, item.values[k] ?? 0))
   if (item.rune >= 0) lines.push(runeLine(t, item.rune))
   const slot = itemSlot(item.base)
@@ -171,6 +172,7 @@ export function describeItem(t: Strings, item: ItemView): ItemDescription {
     name: itemName(t, item),
     tier: t.tierName[item.tier] ?? '',
     slot: t.slotName[slot] ?? '',
+    power: powerLine(t, item.base, item.tier, item.level),
     lines,
     handling: slot !== SLOT_WEAPON ? '' : item.base === ITEM_GREATSWORD ? t.twoHanded : t.swordShield,
     set: set === SET_NONE ? '' : t.setName[set] ?? '',
@@ -207,18 +209,32 @@ export function scrapLine(t: Strings, item: ItemView): string {
   return fill(t.scrapGain, [scrapOre(item.tier, item.level)])
 }
 
+export interface PowerCompare {
+  text: string
+  delta: number
+}
+
+export function powerCompare(t: Strings, s: State, index: number): PowerCompare | null {
+  const item = readItem(s, index)
+  if (!item || equippedSlot(s, index) >= 0) return null
+  const slot = itemSlot(item.base)
+  const worn = readItem(s, s.equipped[slot] ?? -1)
+  if (!worn) return null
+  const before = itemPower(worn.base, worn.tier, worn.level)
+  const after = itemPower(item.base, item.tier, item.level)
+  return { text: fill(slot === SLOT_WEAPON ? t.compareAttack : t.compareArmor, [before, after]), delta: after - before }
+}
+
 export interface ForgeOption {
   opcode: number
   element: number
   label: string
-  cost: string
+  gold: number
+  ore: number
+  note: string
   before: string
   after: string
   enabled: boolean
-}
-
-function costText(t: Strings, gold: number, ore: number): string {
-  return ore > 0 ? fill(t.costLine, [gold, ore]) : fill(t.costGold, [gold])
 }
 
 function affordable(s: State, gold: number, ore: number): boolean {
@@ -234,7 +250,9 @@ export function forgeOptions(t: Strings, s: State, item: ItemView): ForgeOption[
     opcode: CMD_UPGRADE,
     element: -1,
     label: t.upgrade,
-    cost: maxed ? fill(t.maxLevel, [ITEM_MAX_LEVEL]) : costText(t, upGold, upOre),
+    gold: maxed ? 0 : upGold,
+    ore: maxed ? 0 : upOre,
+    note: maxed ? fill(t.maxLevel, [ITEM_MAX_LEVEL]) : '',
     before: powerLine(t, item.base, item.tier, item.level),
     after: maxed ? '' : powerLine(t, item.base, item.tier, item.level + 1),
     enabled: s.nearForge === 1 && !maxed && affordable(s, upGold, upOre),
@@ -246,7 +264,9 @@ export function forgeOptions(t: Strings, s: State, item: ItemView): ForgeOption[
     opcode: CMD_REFORGE,
     element: -1,
     label: t.reforge,
-    cost: rerollable ? costText(t, reGold, reOre) : t.reforgeCommon,
+    gold: rerollable ? reGold : 0,
+    ore: rerollable ? reOre : 0,
+    note: rerollable ? '' : t.reforgeCommon,
     before: item.affixes.map((affix, k) => describeAffix(t, affix, item.values[k] ?? 0)).join(', ') || t.emptySlot,
     after: fill(t.reforgeEffect, [AFFIX_SLOTS]),
     enabled: s.nearForge === 1 && rerollable && affordable(s, reGold, reOre),
@@ -260,7 +280,9 @@ export function forgeOptions(t: Strings, s: State, item: ItemView): ForgeOption[
       opcode: CMD_SOCKET,
       element,
       label: fill(t.socket, [t.elementName[element] ?? '']),
-      cost: item.rune >= 0 ? t.socketFull : `${costText(t, soGold, soOre)} · ${fill(t.runesHeld, [held])}`,
+      gold: item.rune >= 0 ? 0 : soGold,
+      ore: item.rune >= 0 ? 0 : soOre,
+      note: item.rune >= 0 ? t.socketFull : fill(t.runesHeld, [held]),
       before: item.rune >= 0 ? runeLine(t, item.rune) : t.emptySlot,
       after: runeLine(t, element),
       enabled: s.nearForge === 1 && item.rune < 0 && affordable(s, soGold, soOre),
