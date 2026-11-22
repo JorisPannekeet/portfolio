@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 
 const Builder = lazy(() => import('./builder/Builder'))
+const Preview = lazy(() => import('./builder/Preview'))
 const Play = lazy(() => import('./pages/Play').then(m => ({ default: m.Play })))
 const Rpg = lazy(() => import('./pages/Rpg').then(m => ({ default: m.Rpg })))
 
@@ -15,6 +16,7 @@ export default function App() {
       <Routes>
         <Route path="/play" element={<Play />} />
         <Route path="/rpg" element={<Rpg />} />
+        <Route path="/preview" element={<Preview />} />
         <Route path="*" element={<Builder />} />
       </Routes>
     </Suspense>
