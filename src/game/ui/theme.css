@@ -1,0 +1,121 @@
+.play {
+  --hangar-0: #0D0F12;
+  --hangar-1: #15181D;
+  --hangar-2: #1E222A;
+  --hangar-line: #2B313B;
+  --armor-0: #F4F5F7;
+  --armor-1: #E6E8EC;
+  --armor-2: #C9CED6;
+  --armor-3: #8F96A3;
+  --ink: #14161A;
+  --ink-soft: #4A505B;
+  --text-hi: #E6E8EC;
+  --text-lo: #9AA1AD;
+  --core: #FF2B3D;
+  --core-deep: #C8102E;
+  --core-glow: rgb(255 43 61 / 0.5);
+
+  --font-head: 'Chakra Petch', 'Avenir Next Condensed', sans-serif;
+  --font-body: 'Barlow', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --armor-face:
+    linear-gradient(90deg, rgb(20 22 26 / 0.06), transparent 10%, transparent 86%, rgb(20 22 26 / 0.09)),
+    linear-gradient(180deg, var(--armor-0) 0, var(--armor-1) 34%, #DCDFE4 100%);
+  --frame-face:
+    linear-gradient(90deg, rgb(255 255 255 / 0.028) 1px, transparent 1px) 0 0 / 72px 100%,
+    linear-gradient(180deg, #181B21, var(--hangar-1) 40%);
+
+  --slot: #050608;
+
+  font: 400 17px/1.65 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+:where(.play) :where(*),
+:where(.play) :where(*)::before,
+:where(.play) :where(*)::after {
+  all: revert;
+}
+
+:where(.play) :where(*),
+:where(.play) :where(*)::before,
+:where(.play) :where(*)::after {
+  box-sizing: border-box;
+}
+
+:where(.play) img { display: block; max-width: 100%; }
+
+:where(.play) :is(h1, h2, h3, h4) {
+  margin: 0 0 0.55em;
+  font-family: var(--font-head);
+  color: var(--text-hi);
+  text-wrap: balance;
+}
+
+:where(.play) :is(h1, h2) {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.04;
+}
+
+:where(.play) h1 { font-size: clamp(2.3rem, 5.2vw, 4.1rem); }
+:where(.play) h2 { font-size: clamp(1.55rem, 2.6vw, 2.15rem); }
+:where(.play) h3 { font-size: 1.2rem; font-weight: 600; line-height: 1.2; }
+
+:where(.play) p { margin: 0 0 1em; }
+
+:where(.play) a { color: #FF2B3D; text-underline-offset: 3px; }
+
+:where(.play) :focus-visible {
+  outline: 2px solid var(--core);
+  outline-offset: 3px;
+}
+
+:where(.play) .btn {
+  --cut: 12px;
+  --btn-edge: var(--armor-3);
+  --btn-face: var(--armor-face);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 22px;
+  color: var(--ink);
+  font: 600 14px/1 var(--font-head);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+:where(.play) .btn::before,
+:where(.play) .btn::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+:where(.play) .btn::before { inset: 0; background: var(--btn-edge); }
+:where(.play) .btn::after { inset: 1px; background: var(--btn-face); }
+
+:where(.play) .btn--primary {
+  --btn-edge: #7E0A1D;
+  --btn-face: linear-gradient(180deg, #D8243F, var(--core-deep) 55%, #A90D27);
+  color: #fff;
+}
+:where(.play) .btn--frame {
+  --cut: 9px;
+  --btn-edge: var(--hangar-line);
+  --btn-face: linear-gradient(180deg, #262B34, var(--hangar-2));
+  min-height: 40px;
+  padding: 0 16px;
+  color: var(--text-hi);
+  font-size: 13px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.play) .btn:hover { --btn-edge: var(--core); }
+  :where(.play) .btn--primary:hover { --btn-face: linear-gradient(180deg, #E8304B, #D41633 55%, #B50F2B); }
+}
