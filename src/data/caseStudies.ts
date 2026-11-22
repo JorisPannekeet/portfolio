@@ -71,7 +71,3 @@ function mapCaseStudy(raw: RawCaseStudy): CaseStudyDetail {
 }
 
 export const caseStudies: CaseStudyDetail[] = caseStudys.map(mapCaseStudy)
-
-export function getCaseStudyBySlug(slug: string): CaseStudyDetail | undefined {
-  return caseStudies.find((study) => study.slug === slug)
-}
