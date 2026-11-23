@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 
 const Builder = lazy(() => import('./builder/Builder'))
 const Preview = lazy(() => import('./builder/Preview'))
@@ -12,13 +13,16 @@ function PageLoader() {
 
 export default function App() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route path="/play" element={<Play />} />
-        <Route path="/rpg" element={<Rpg />} />
-        <Route path="/preview" element={<Preview />} />
-        <Route path="*" element={<Builder />} />
-      </Routes>
-    </Suspense>
+    <>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/play" element={<Play />} />
+          <Route path="/rpg" element={<Rpg />} />
+          <Route path="/preview" element={<Preview />} />
+          <Route path="*" element={<Builder />} />
+        </Routes>
+      </Suspense>
+      <Analytics />
+    </>
   )
 }
