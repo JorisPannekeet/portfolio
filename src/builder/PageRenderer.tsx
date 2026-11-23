@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 import { registry, isRenderable } from './registry'
 import type { Block, BlockStyle } from './model'
 
@@ -33,14 +34,25 @@ export function blockVars(style: BlockStyle): CSSProperties {
     '--block-align': style.align,
     '--block-justify': style.align === 'center' ? 'center' : 'flex-start',
     '--block-inline': style.align === 'center' ? 'auto' : '0',
+    '--span': style.width,
     textAlign: style.align,
   } as CSSProperties
 }
 
-export function BlockView({ block }: { block: Block }) {
+export const SPAN = 'col-span-4 @xl/page:[grid-column:span_var(--span)]'
+
+export function PageGrid({ children }: { children: ReactNode }) {
+  return (
+    <div className="@container/page">
+      <div className="grid grid-cols-4">{children}</div>
+    </div>
+  )
+}
+
+export function BlockView({ block, className }: { block: Block; className?: string }) {
   const { Render } = registry[block.type] as { Render: (props: { block: Block }) => ReactNode }
   return (
-    <section className="@container bg-block font-block text-block-fg antialiased" style={blockVars(block.style)}>
+    <section className={cn('@container min-w-0 bg-block font-block text-block-fg antialiased [overflow-wrap:anywhere]', className)} style={blockVars(block.style)}>
       <Render block={block} />
     </section>
   )
@@ -48,10 +60,10 @@ export function BlockView({ block }: { block: Block }) {
 
 export function PageRenderer({ blocks }: { blocks: readonly Block[] }) {
   return (
-    <>
+    <PageGrid>
       {blocks.filter(isRenderable).map(block => (
-        <BlockView key={block.id} block={block} />
+        <BlockView key={block.id} block={block} className={SPAN} />
       ))}
-    </>
+    </PageGrid>
   )
 }

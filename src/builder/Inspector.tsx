@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type ReactNode } from 'react'
 import { AlignCenter, AlignLeft, MousePointerClick } from 'lucide-react'
+import { HexColorPicker } from 'react-colorful'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -15,6 +16,13 @@ import { FONTS, fieldsOf, safeUrl, type Action, type Block, type BlockStyle, typ
 
 const HEX = /^#[0-9a-f]{6}$/i
 const FONT_LABELS: Record<BlockStyle['font'], string> = { sans: 'Geist', serif: 'Fraunces', display: 'Space Grotesk', mono: 'JetBrains Mono', hand: 'Caveat' }
+const WIDTH_OPTIONS = [
+  { value: '1', label: '1/4', name: 'One quarter' },
+  { value: '2', label: '2/4', name: 'Half' },
+  { value: '3', label: '3/4', name: 'Three quarters' },
+  { value: '4', label: '4/4', name: 'Full width' },
+] as const
+
 const SCALE_OPTIONS = [
   { value: 'sm', label: 'S', name: 'Small' },
   { value: 'md', label: 'M', name: 'Medium' },
@@ -60,13 +68,7 @@ function ColorControl({ label, value, onChange }: { label: string; value: string
           {value}
         </PopoverTrigger>
         <PopoverContent align="end" className="w-60 gap-3">
-          <input
-            type="color"
-            value={value}
-            onChange={event => onChange(event.target.value)}
-            aria-label={`${label} color picker`}
-            className="h-28 w-full cursor-pointer rounded-md border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
-          />
+          <HexColorPicker color={value} onChange={onChange} aria-label={`${label} color picker`} className="!h-40 !w-full" />
           <Input
             value={draft ?? value}
             spellCheck={false}
@@ -194,6 +196,9 @@ export function Inspector({ block, dispatch }: { block: Block | null; dispatch: 
               ))}
             </SelectContent>
           </Select>
+        </Row>
+        <Row label="Width">
+          <Segmented label="Width" value={style.width} options={WIDTH_OPTIONS} onChange={width => patch({ width: width as BlockStyle['width'] })} />
         </Row>
         <Row label="Size">
           <Segmented label="Size" value={style.size} options={SCALE_OPTIONS} onChange={size => patch({ size: size as BlockStyle['size'] })} />

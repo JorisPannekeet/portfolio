@@ -103,6 +103,13 @@ test('parsePage drops unknown types and duplicate ids, repairs bad style fields'
   assert.deepEqual(page.blocks[0]?.props, { text: 'Hi' })
 })
 
+test('parsePage keeps a valid block width and falls back to full width', () => {
+  const style = (width: unknown) => parsePage({ version: 1, blocks: [{ id: 'a', type: 'text', props: {}, style: { width } }] }).blocks[0]?.style.width
+  assert.equal(style('2'), '2')
+  assert.equal(style('9'), '4')
+  assert.equal(style(undefined), '4')
+})
+
 test('parsePage strips a javascript: button URL', () => {
   const page = parsePage({ version: 1, blocks: [{ id: 'a', type: 'button', props: { label: 'Go', url: 'javascript:alert(1)' }, style: {} }] })
   assert.deepEqual(page.blocks[0]?.props, { label: 'Go', url: '' })

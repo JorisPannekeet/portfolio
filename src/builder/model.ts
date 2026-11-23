@@ -6,6 +6,7 @@ export type BlockType = (typeof BLOCK_TYPES)[number]
 export const FONTS = ['sans', 'serif', 'display', 'mono', 'hand'] as const
 export const SCALES = ['sm', 'md', 'lg'] as const
 export const ALIGNS = ['left', 'center'] as const
+export const WIDTHS = ['1', '2', '3', '4'] as const
 
 export type BlockStyle = {
   background: string
@@ -15,6 +16,7 @@ export type BlockStyle = {
   size: (typeof SCALES)[number]
   align: (typeof ALIGNS)[number]
   padding: (typeof SCALES)[number]
+  width: (typeof WIDTHS)[number]
 }
 
 export const DEFAULT_STYLE: BlockStyle = {
@@ -25,6 +27,7 @@ export const DEFAULT_STYLE: BlockStyle = {
   size: 'md',
   align: 'left',
   padding: 'md',
+  width: '4',
 }
 
 type TextField = { kind: 'text' | 'longText' | 'url'; label: string; max: number; fallback: string }
@@ -145,6 +148,7 @@ function cleanStyle(raw: unknown): BlockStyle {
     size: oneOf(SCALES, source.size, DEFAULT_STYLE.size),
     align: oneOf(ALIGNS, source.align, DEFAULT_STYLE.align),
     padding: oneOf(SCALES, source.padding, DEFAULT_STYLE.padding),
+    width: oneOf(WIDTHS, source.width, DEFAULT_STYLE.width),
   }
 }
 
