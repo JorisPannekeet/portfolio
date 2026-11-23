@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Dispatch, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { ArrowDown, ArrowUp, Copy, GripVertical, Paintbrush, Sparkles, Trash2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { GlassButton } from '@/components/liquid-glass/glass-button'
 import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass/glass-button-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -232,6 +242,8 @@ export function Canvas({ blocks, selectedId, drop, drag, scrollRef, landing, dis
   const { setNodeRef, isOver } = useDroppable({ id: CANVAS_ID })
   const frameRef = useRef<HTMLDivElement>(null)
   const [corners, setCorners] = useState<Record<string, string>>({})
+  const [exit, setExit] = useState('')
+  const [asking, setAsking] = useState(false)
   useBlockMotion(frameRef, scrollRef, landing, `${blocks.map(block => `${block.id}:${block.style.width}`).join()}|${drop}`)
   const measure = useCallback(() => {
     if (!frameRef.current) return
@@ -275,7 +287,12 @@ export function Canvas({ blocks, selectedId, drop, drag, scrollRef, landing, dis
         <div
           ref={frameRef}
           onClickCapture={event => {
-            if ((event.target as Element).closest('a')) event.preventDefault()
+            const link = (event.target as Element).closest('a')
+            if (!link) return
+            event.preventDefault()
+            if (link.origin === window.location.origin) return void window.open(link.href, '_blank', 'noopener')
+            setExit(link.href)
+            setAsking(true)
           }}
           className={cn(
             'min-h-[calc(100dvh-8rem)] overflow-clip rounded-xl border bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-8px_rgb(0_0_0/0.08)] transition-shadow duration-150',
@@ -289,6 +306,24 @@ export function Canvas({ blocks, selectedId, drop, drag, scrollRef, landing, dis
           )}
         </div>
       </div>
+      <AlertDialog open={asking} onOpenChange={setAsking}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>You're leaving jorispannekeet.dev</AlertDialogTitle>
+            <AlertDialogDescription>
+              This link goes to <span className="font-medium break-all text-foreground">{exit.replace(/^mailto:/, '')}</span>. Are you sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay here</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <a href={exit} target={exit.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer">
+                Continue
+              </a>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }

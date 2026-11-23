@@ -53,7 +53,7 @@ function loadInitial(): ReturnType<typeof initialState> {
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
-  return target.isContentEditable || target.matches('input, textarea, select') || target.closest('[role="dialog"], [role="listbox"], [data-radix-popper-content-wrapper]') !== null
+  return target.isContentEditable || target.matches('input, textarea, select') || target.closest('[role="dialog"], [role="alertdialog"], [role="listbox"], [data-radix-popper-content-wrapper]') !== null
 }
 
 type Point = { x: number; y: number }
