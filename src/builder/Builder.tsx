@@ -11,6 +11,7 @@ import {
   useSensors,
   type Announcements,
   type CollisionDetection,
+  type DropAnimation,
   type DragMoveEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
@@ -30,13 +31,17 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { CANVAS_ID, Canvas, Hint } from './Canvas'
+import { Canvas, Hint } from './Canvas'
 import { Inspector } from './Inspector'
-import { Palette, type DragData } from './Palette'
+import { CSS } from '@dnd-kit/utilities'
+import { CARD, ItemBody, Palette, type DragData } from './Palette'
+import { EASE, launch, reducedMotion, type Landing, type Origin } from './motion'
 import { starterPage } from './presets'
 import { isRenderable, paletteKey, type PaletteItem } from './registry'
 import { createBlock, initialState, reduce } from './model'
 import { readPage, writePage } from './storage'
+
+const LIFT = 'origin-center scale-[1.03] -rotate-2 transition-[scale,rotate] duration-200 ease-snap starting:scale-100 starting:rotate-0 motion-reduce:scale-100 motion-reduce:rotate-0 motion-reduce:transition-none'
 
 const collision: CollisionDetection = args => (args.pointerCoordinates ? pointerWithin(args) : rectIntersection(args))
 
@@ -50,15 +55,29 @@ function isTyping(target: EventTarget | null): boolean {
   return target.isContentEditable || target.matches('input, textarea, select') || target.closest('[role="dialog"], [role="listbox"], [data-radix-popper-content-wrapper]') !== null
 }
 
-function pointerY(event: DragMoveEvent): number | null {
-  const start = event.activatorEvent
-  if (start instanceof MouseEvent) return start.clientY + event.delta.y
-  if (typeof TouchEvent !== 'undefined' && start instanceof TouchEvent) {
-    const touch = start.touches[0] ?? start.changedTouches[0]
-    return touch ? touch.clientY + event.delta.y : null
-  }
+type Point = { x: number; y: number }
+
+function pointerAt(event: DragMoveEvent, pointer: Point | null): Point | null {
+  if (pointer && !(event.activatorEvent instanceof KeyboardEvent)) return pointer
   const rect = event.active.rect.current.translated
-  return rect ? rect.top + rect.height / 2 : null
+  return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
+}
+
+function locate(scroller: HTMLElement | null, point: Point): number | null {
+  if (!scroller) return null
+  const view = scroller.getBoundingClientRect()
+  if (point.x < view.left || point.x > view.right || point.y < view.top || point.y > view.bottom) return null
+  const x = point.x - view.left + scroller.scrollLeft
+  const y = point.y - view.top + scroller.scrollTop
+  let index = 0
+  for (const element of scroller.querySelectorAll<HTMLElement>('[data-block-id]')) {
+    const stacked = element.offsetWidth > (element.parentElement?.clientWidth ?? 0) - 2
+    if (y < element.offsetTop) return index
+    const before = stacked ? y < element.offsetTop + element.offsetHeight / 2 : x < element.offsetLeft + element.offsetWidth / 2
+    if (y <= element.offsetTop + element.offsetHeight && before) return index
+    index++
+  }
+  return index
 }
 
 function labelOf(data: unknown): string {
@@ -77,12 +96,15 @@ const announcements: Announcements = {
 export default function Builder() {
   const [state, dispatch] = useReducer(reduce, undefined, loadInitial)
   const [drag, setDrag] = useState<DragData | null>(null)
-  const [dropIndex, setDropIndex] = useState<number | null>(null)
+  const [drop, setDrop] = useState<number | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const scrollRef = useRef<HTMLElement | null>(null)
-  const lastProbe = useRef<number | null>(null)
+  const lastProbe = useRef<Point | null>(null)
+  const pointer = useRef<Point | null>(null)
   const revealId = useRef<string | null>(null)
+  const landing = useRef<Landing | null>(null)
+  const placed = useRef(false)
   const blocks = state.page.blocks
   const selected = blocks.find(block => block.id === state.selectedId) ?? null
   const usedKeys = useMemo(() => new Set(blocks.map(paletteKey)), [blocks])
@@ -94,6 +116,14 @@ export default function Builder() {
   )
 
   useEffect(() => writePage(state.page), [state.page])
+
+  useEffect(() => {
+    const track = (event: PointerEvent) => {
+      pointer.current = { x: event.clientX, y: event.clientY }
+    }
+    window.addEventListener('pointermove', track, { passive: true })
+    return () => window.removeEventListener('pointermove', track)
+  }, [])
 
   useEffect(() => {
     const id = revealId.current
@@ -128,51 +158,53 @@ export default function Builder() {
     return () => window.removeEventListener('keydown', onKey)
   }, [state.selectedId, drag])
 
-  const addItem = (item: PaletteItem, index = blocks.length) => {
+  const addItem = (item: PaletteItem, index = blocks.length, origin?: Origin) => {
     const block = createBlock(item.type, crypto.randomUUID(), item.ref)
     revealId.current = block.id
+    landing.current = origin ? { ...origin, id: block.id } : null
     dispatch({ type: 'add', block, index })
   }
 
-  const gapAt = useCallback((y: number): number => {
-    const elements = scrollRef.current?.querySelectorAll<HTMLElement>('[data-block-id]') ?? []
-    let index = 0
-    for (const element of elements) {
-      const rect = element.getBoundingClientRect()
-      if (y < rect.top + rect.height / 2) return index
-      index++
-    }
-    return index
-  }, [])
-
   const updateDrop = useCallback(
-    (y: number | null, overCanvas: boolean, data: DragData | null) => {
-      lastProbe.current = y
-      if (!overCanvas || y === null || !data) return setDropIndex(null)
-      const gap = gapAt(y)
-      if (data.kind === 'block') {
+    (point: Point | null, data: DragData | null) => {
+      lastProbe.current = point
+      const next = point && data ? locate(scrollRef.current, point) : null
+      if (next !== null && data?.kind === 'block') {
         const from = blocks.findIndex(block => block.id === data.id)
-        if (gap === from || gap === from + 1) return setDropIndex(null)
+        if (next === from || next === from + 1) return setDrop(null)
       }
-      setDropIndex(gap)
+      setDrop(next)
     },
-    [blocks, gapAt],
+    [blocks],
   )
 
   useEffect(() => {
     const scroller = scrollRef.current
     if (!drag || !scroller) return
     const onScroll = () => {
-      if (dropIndex !== null) updateDrop(lastProbe.current, true, drag)
+      updateDrop(lastProbe.current, drag)
     }
     scroller.addEventListener('scroll', onScroll, { passive: true })
     return () => scroller.removeEventListener('scroll', onScroll)
-  }, [drag, dropIndex, updateDrop])
+  }, [drag, updateDrop])
 
   const endDrag = () => {
     setDrag(null)
-    setDropIndex(null)
+    setDrop(null)
     lastProbe.current = null
+  }
+
+  const dropAnimation: DropAnimation = ({ dragOverlay, transform }) => {
+    if (reducedMotion()) return
+    const card = dragOverlay.node.firstElementChild
+    const settled = placed.current
+      ? card?.animate([{ opacity: 1 }, { opacity: 0, scale: '1', rotate: '0deg' }], { duration: 180, easing: EASE, fill: 'forwards' })
+      : dragOverlay.node.animate([{ transform: CSS.Transform.toString(transform) }, { transform: 'translate3d(0px, 0px, 0)' }], {
+          duration: Math.min(Math.max(Math.hypot(transform.x, transform.y) / 4, 160), 280),
+          easing: EASE,
+          fill: 'forwards',
+        })
+    return settled?.finished.then(() => undefined)
   }
 
   const loadStarter = () => dispatch({ type: 'load', page: starterPage() })
@@ -237,13 +269,16 @@ export default function Builder() {
           collisionDetection={collision}
           accessibility={{ announcements, screenReaderInstructions: { draggable: 'To pick up a block, press space or enter. Use the arrow keys to move it, then press space or enter again to drop it, or escape to cancel.' } }}
           onDragStart={(event: DragStartEvent) => setDrag((event.active.data.current as DragData | undefined) ?? null)}
-          onDragMove={event => updateDrop(pointerY(event), event.over?.id === CANVAS_ID, drag)}
-          onDragOver={event => updateDrop(lastProbe.current, event.over?.id === CANVAS_ID, drag)}
+          onDragMove={event => updateDrop(pointerAt(event, pointer.current), drag)}
           onDragCancel={endDrag}
           onDragEnd={event => {
-            if (drag && event.over?.id === CANVAS_ID) {
-              const index = empty ? 0 : dropIndex
-              if (index !== null && drag.kind === 'palette') addItem(drag.item, index)
+            placed.current = false
+            if (drag) {
+              const index = drop
+              const slot = scrollRef.current?.querySelector('[data-drop-placeholder]')?.getBoundingClientRect()
+              const from = slot ?? event.active.rect.current.translated
+              placed.current = index !== null
+              if (index !== null && drag.kind === 'palette') addItem(drag.item, index, from ? { from, solid: slot !== undefined } : undefined)
               if (index !== null && drag.kind === 'block') {
                 dispatch({ type: 'move', id: drag.id, index })
                 dispatch({ type: 'select', id: drag.id })
@@ -258,32 +293,38 @@ export default function Builder() {
                 <h2 className="text-sm font-semibold">Components</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">Drag onto the page, or click to add.</p>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                <Palette usedKeys={usedKeys} draggable onPick={item => addItem(item)} />
+              <div className="relative min-h-0 flex-1 overflow-y-auto">
+                <Palette usedKeys={usedKeys} draggable onPick={(item, source) => addItem(item, blocks.length, launch(source, CARD))} />
               </div>
             </aside>
 
             <Canvas
               blocks={blocks}
               selectedId={state.selectedId}
-              dropIndex={dropIndex}
-              dragging={drag !== null}
+              drop={drop}
+              drag={drag}
               scrollRef={scrollRef}
+              landing={landing}
               dispatch={dispatch}
               onStyle={() => setInspectorOpen(true)}
               onBuild={loadStarter}
             />
 
-            <aside aria-label="Inspector" className="hidden w-80 shrink-0 overflow-y-auto border-l bg-background lg:block">
+            <aside aria-label="Inspector" className="relative hidden w-80 shrink-0 overflow-y-auto border-l bg-background lg:block">
               <Inspector key={selected?.id} block={selected} dispatch={dispatch} />
             </aside>
           </div>
 
-          <DragOverlay dropAnimation={null}>
-            {drag && (
-              <div className="flex w-max cursor-grabbing items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-lg ring-1 ring-[var(--selection)]/30">
-                {drag.kind === 'palette' ? <drag.item.icon className="size-4 text-muted-foreground" aria-hidden /> : <GripVertical className="size-4 text-muted-foreground" aria-hidden />}
-                {drag.kind === 'palette' ? drag.item.label : drag.label}
+          <DragOverlay dropAnimation={dropAnimation}>
+            {drag?.kind === 'palette' && (
+              <div className={cn(CARD, LIFT, 'size-full cursor-grabbing')}>
+                <ItemBody item={drag.item} used={false} />
+              </div>
+            )}
+            {drag?.kind === 'block' && (
+              <div className={cn(LIFT, 'flex w-max cursor-grabbing items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-lg ring-1 ring-[var(--selection)]/30')}>
+                <GripVertical className="size-4 text-muted-foreground" aria-hidden />
+                {drag.label}
               </div>
             )}
           </DragOverlay>
@@ -300,7 +341,7 @@ export default function Builder() {
               <SheetTitle>Add a block</SheetTitle>
               <SheetDescription>Tap a block to add it to the end of your page.</SheetDescription>
             </SheetHeader>
-            <div className="min-h-0 overflow-y-auto">
+            <div className="relative min-h-0 overflow-y-auto">
               <Palette
                 usedKeys={usedKeys}
                 draggable={false}

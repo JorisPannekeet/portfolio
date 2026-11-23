@@ -1,15 +1,39 @@
-import type { Dispatch, MouseEvent, ReactNode, RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Dispatch, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { ArrowDown, ArrowUp, Copy, GripVertical, Paintbrush, Sparkles, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { BlockView } from './PageRenderer'
+import { BlockView, PageGrid, SPAN } from './PageRenderer'
 import { blockName } from './registry'
 import type { Action, Block } from './model'
 import type { DragData } from './Palette'
+import { appear, fade, land, reducedMotion, slide, type Landing } from './motion'
 
 export const CANVAS_ID = 'canvas'
+
+const FRAME_CORNERS = {
+  tl: 'rounded-tl-[calc(var(--radius-xl)-1px)]',
+  tr: 'rounded-tr-[calc(var(--radius-xl)-1px)]',
+  bl: 'rounded-bl-[calc(var(--radius-xl)-1px)]',
+  br: 'rounded-br-[calc(var(--radius-xl)-1px)]',
+}
+
+function frameCorners(frame: HTMLElement): Record<string, string> {
+  const outer = frame.getBoundingClientRect()
+  const near = (a: number, b: number) => Math.abs(a - b) < 2
+  const corners: Record<string, string> = {}
+  for (const element of frame.querySelectorAll<HTMLElement>('[data-block-id]')) {
+    const rect = element.getBoundingClientRect()
+    const top = near(rect.top, outer.top)
+    const bottom = near(rect.bottom, outer.bottom)
+    const left = near(rect.left, outer.left)
+    const right = near(rect.right, outer.right)
+    const classes = cn(top && left && FRAME_CORNERS.tl, top && right && FRAME_CORNERS.tr, bottom && left && FRAME_CORNERS.bl, bottom && right && FRAME_CORNERS.br)
+    if (classes) corners[element.dataset.blockId ?? ''] = classes
+  }
+  return corners
+}
 
 export function Hint({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -42,12 +66,14 @@ function DragHandle({ block }: { block: Block }) {
   )
 }
 
-function CanvasBlock({ block, index, count, selected, dragging, dispatch, onStyle }: {
+function CanvasBlock({ block, index, count, selected, dragging, moving, corners, dispatch, onStyle }: {
   block: Block
   index: number
   count: number
   selected: boolean
   dragging: boolean
+  moving: boolean
+  corners: string | undefined
   dispatch: Dispatch<Action>
   onStyle: () => void
 }) {
@@ -59,7 +85,8 @@ function CanvasBlock({ block, index, count, selected, dragging, dispatch, onStyl
       role="group"
       aria-label={name}
       aria-current={selected || undefined}
-      className="group/block relative outline-none"
+      className={cn('group/block relative min-w-0 outline-none transition-opacity duration-150', moving && 'opacity-40', SPAN)}
+      style={{ '--span': block.style.width } as CSSProperties}
       onFocus={() => {
         if (!selected) dispatch({ type: 'select', id: block.id })
       }}
@@ -68,10 +95,11 @@ function CanvasBlock({ block, index, count, selected, dragging, dispatch, onStyl
         if (!selected) dispatch({ type: 'select', id: block.id })
       }}
     >
-      <BlockView block={block} />
+      <BlockView block={block} className="h-full" />
       <div
         className={cn(
           'pointer-events-none absolute inset-0 z-10 transition-shadow duration-150',
+          corners,
           selected ? 'shadow-[inset_0_0_0_2px_var(--selection)]' : !dragging && 'group-hover/block:shadow-[inset_0_0_0_1px_var(--selection)]',
         )}
       >
@@ -92,10 +120,10 @@ function CanvasBlock({ block, index, count, selected, dragging, dispatch, onStyl
               onClick={event => event.stopPropagation()}
             >
               <DragHandle block={block} />
-              <ToolButton label="Move up" disabled={index === 0} onClick={() => dispatch({ type: 'move', id: block.id, index: index - 1 })}>
+              <ToolButton label="Move earlier" disabled={index === 0} onClick={() => dispatch({ type: 'move', id: block.id, index: index - 1 })}>
                 <ArrowUp />
               </ToolButton>
-              <ToolButton label="Move down" disabled={index === count - 1} onClick={() => dispatch({ type: 'move', id: block.id, index: index + 2 })}>
+              <ToolButton label="Move later" disabled={index === count - 1} onClick={() => dispatch({ type: 'move', id: block.id, index: index + 2 })}>
                 <ArrowDown />
               </ToolButton>
               <ToolButton label="Duplicate" onClick={() => dispatch({ type: 'duplicate', id: block.id, newId: crypto.randomUUID() })}>
@@ -115,17 +143,16 @@ function CanvasBlock({ block, index, count, selected, dragging, dispatch, onStyl
   )
 }
 
-const LINE_OFFSET = { start: 'top-[3px]', middle: '-top-px', end: '-top-[5px]' } as const
+const PLACEHOLDER = 'drop-placeholder'
 
-function DropLine({ edge }: { edge: keyof typeof LINE_OFFSET }) {
+function DropPlaceholder({ drag, span }: { drag: DragData; span: string }) {
+  const Icon = drag.kind === 'palette' ? drag.item.icon : GripVertical
   return (
-    <div className="relative z-20 h-0" aria-hidden>
-      <div
-        className={cn(
-          'absolute inset-x-2 h-0.5 rounded-full bg-[var(--selection)] before:absolute before:-top-[3px] before:-left-1 before:size-2 before:rounded-full before:border-2 before:border-[var(--selection)] before:bg-background after:absolute after:-top-[3px] after:-right-1 after:size-2 after:rounded-full after:border-2 after:border-[var(--selection)] after:bg-background',
-          LINE_OFFSET[edge],
-        )}
-      />
+    <div data-drop-placeholder aria-hidden className={cn('min-w-0 p-2', SPAN)} style={{ '--span': span } as CSSProperties}>
+      <div className="flex h-full min-h-20 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[var(--selection)]/50 bg-[var(--selection)]/5 px-3 text-sm font-medium text-[var(--selection)]">
+        <Icon className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{drag.kind === 'palette' ? drag.item.label : drag.label}</span>
+      </div>
     </div>
   )
 }
@@ -161,17 +188,83 @@ function EmptyState({ onBuild }: { onBuild: () => void }) {
   )
 }
 
-export function Canvas({ blocks, selectedId, dropIndex, dragging, scrollRef, dispatch, onStyle, onBuild }: {
+function useBlockMotion(frameRef: RefObject<HTMLElement | null>, scrollRef: RefObject<HTMLElement | null>, landing: RefObject<Landing | null>, layout: string) {
+  const positions = useRef<Map<string, { x: number; y: number }> | null>(null)
+  const lastLayout = useRef(layout)
+  useLayoutEffect(() => {
+    if (!frameRef.current) return
+    const elements = [...frameRef.current.querySelectorAll<HTMLElement>('[data-block-id], [data-drop-placeholder]')]
+    const idOf = (element: HTMLElement) => element.dataset.blockId ?? PLACEHOLDER
+    const before = positions.current
+    const now = new Map(elements.map(element => [idOf(element), { x: element.offsetLeft, y: element.offsetTop }]))
+    positions.current = now
+    const changed = lastLayout.current !== layout
+    lastLayout.current = layout
+    if (!before || !changed) return
+    const origin = landing.current
+    landing.current = null
+    const reduced = reducedMotion()
+    let entering = 0
+    let landed = false
+    for (const element of elements) {
+      const id = idOf(element)
+      const from = before.get(id)
+      const to = now.get(id)
+      if (!from) {
+        if (reduced) fade(element)
+        else if (origin?.id === id) {
+          landed = true
+          land(element, origin, scrollRef.current)
+        } else appear(element, entering++)
+      } else if (!reduced && to && (from.x !== to.x || from.y !== to.y)) slide(element, from.x - to.x, from.y - to.y)
+    }
+    if (!landed) origin?.ghost?.remove()
+  })
+}
+
+export function Canvas({ blocks, selectedId, drop, drag, scrollRef, landing, dispatch, onStyle, onBuild }: {
   blocks: readonly Block[]
   selectedId: string | null
-  dropIndex: number | null
-  dragging: boolean
+  drop: number | null
+  drag: DragData | null
   scrollRef: RefObject<HTMLElement | null>
+  landing: RefObject<Landing | null>
   dispatch: Dispatch<Action>
   onStyle: () => void
   onBuild: () => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: CANVAS_ID })
+  const frameRef = useRef<HTMLDivElement>(null)
+  const [corners, setCorners] = useState<Record<string, string>>({})
+  useBlockMotion(frameRef, scrollRef, landing, `${blocks.map(block => `${block.id}:${block.style.width}`).join()}|${drop}`)
+  const measure = useCallback(() => {
+    if (!frameRef.current) return
+    const next = frameCorners(frameRef.current)
+    setCorners(previous => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next))
+  }, [])
+  useLayoutEffect(measure)
+  useEffect(() => {
+    if (!frameRef.current) return
+    const observer = new ResizeObserver(measure)
+    observer.observe(frameRef.current)
+    return () => observer.disconnect()
+  }, [measure])
+  const moved = drag?.kind === 'block' ? blocks.find(block => block.id === drag.id) : undefined
+  const cells = blocks.map((block, index) => (
+    <CanvasBlock
+      key={block.id}
+      block={block}
+      index={index}
+      count={blocks.length}
+      selected={block.id === selectedId}
+      dragging={drag !== null}
+      moving={block === moved}
+      corners={corners[block.id]}
+      dispatch={dispatch}
+      onStyle={onStyle}
+    />
+  ))
+  if (drag && drop !== null) cells.splice(drop, 0, <DropPlaceholder key={PLACEHOLDER} drag={drag} span={moved?.style.width ?? '4'} />)
   const deselect = (event: MouseEvent) => {
     if (event.target === event.currentTarget) dispatch({ type: 'select', id: null })
   }
@@ -184,6 +277,7 @@ export function Canvas({ blocks, selectedId, dropIndex, dragging, scrollRef, dis
     >
       <div ref={setNodeRef} onClick={deselect} className="mx-auto min-h-full max-w-[900px] px-3 pt-4 pb-28 sm:px-6 lg:px-10 lg:pt-10 lg:pb-16">
         <div
+          ref={frameRef}
           onClickCapture={event => {
             if ((event.target as Element).closest('a')) event.preventDefault()
           }}
@@ -195,23 +289,7 @@ export function Canvas({ blocks, selectedId, dropIndex, dragging, scrollRef, dis
           {blocks.length === 0 ? (
             <EmptyState onBuild={onBuild} />
           ) : (
-            <>
-              {blocks.map((block, index) => (
-                <div key={block.id}>
-                  {dropIndex === index && <DropLine edge={index === 0 ? 'start' : 'middle'} />}
-                  <CanvasBlock
-                    block={block}
-                    index={index}
-                    count={blocks.length}
-                    selected={block.id === selectedId}
-                    dragging={dragging}
-                    dispatch={dispatch}
-                    onStyle={onStyle}
-                  />
-                </div>
-              ))}
-              {dropIndex === blocks.length && <DropLine edge="end" />}
-            </>
+            <PageGrid>{cells}</PageGrid>
           )}
         </div>
       </div>

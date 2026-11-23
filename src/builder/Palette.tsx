@@ -6,13 +6,37 @@ import { palette, type PaletteItem } from './registry'
 
 export type DragData = { kind: 'palette'; item: PaletteItem } | { kind: 'block'; id: string; label: string }
 
-function Item({ item, used, draggable, onPick }: { item: PaletteItem; used: boolean; draggable: boolean; onPick: (item: PaletteItem) => void }) {
+export const CARD = 'flex items-start gap-3 rounded-lg border bg-background px-2.5 py-2 text-left text-foreground shadow-xl ring-1 ring-[var(--selection)]/30'
+
+export function ItemBody({ item, used }: { item: PaletteItem; used: boolean }) {
+  const Icon = item.icon
+  return (
+    <>
+      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-md border bg-background text-muted-foreground shadow-xs transition-colors group-hover:text-foreground">
+        <Icon className="size-3.5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5 text-[13px] font-medium leading-5">
+          <span className="truncate">{item.label}</span>
+          {used && (
+            <span className="shrink-0 text-emerald-600" title="On your page">
+              <Check className="size-3.5" aria-hidden />
+              <span className="sr-only">(on your page)</span>
+            </span>
+          )}
+        </span>
+        <span className="block truncate text-xs leading-4 text-muted-foreground">{item.description}</span>
+      </span>
+    </>
+  )
+}
+
+function Item({ item, used, draggable, onPick }: { item: PaletteItem; used: boolean; draggable: boolean; onPick: (item: PaletteItem, source: HTMLElement) => void }) {
   const { listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette:${item.key}`,
     data: { kind: 'palette', item } satisfies DragData,
     disabled: !draggable,
   })
-  const Icon = item.icon
   return (
     <li>
       <button
@@ -20,34 +44,20 @@ function Item({ item, used, draggable, onPick }: { item: PaletteItem; used: bool
         type="button"
         {...listeners}
         onKeyDown={undefined}
-        onClick={() => onPick(item)}
+        onClick={event => onPick(item, event.currentTarget)}
         className={cn(
-          'group flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left outline-none transition-colors duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
+          'group flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left outline-none transition-[color,background-color,opacity] duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
           draggable && 'cursor-grab active:cursor-grabbing',
-          isDragging && 'opacity-50',
+          isDragging && 'opacity-40',
         )}
       >
-        <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-md border bg-background text-muted-foreground shadow-xs transition-colors group-hover:text-foreground">
-          <Icon className="size-3.5" aria-hidden />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5 text-[13px] font-medium leading-5">
-            <span className="truncate">{item.label}</span>
-            {used && (
-              <span className="shrink-0 text-emerald-600" title="On your page">
-                <Check className="size-3.5" aria-hidden />
-                <span className="sr-only">(on your page)</span>
-              </span>
-            )}
-          </span>
-          <span className="block truncate text-xs leading-4 text-muted-foreground">{item.description}</span>
-        </span>
+        <ItemBody item={item} used={used} />
       </button>
     </li>
   )
 }
 
-export function Palette({ usedKeys, draggable, onPick }: { usedKeys: ReadonlySet<string>; draggable: boolean; onPick: (item: PaletteItem) => void }) {
+export function Palette({ usedKeys, draggable, onPick }: { usedKeys: ReadonlySet<string>; draggable: boolean; onPick: (item: PaletteItem, source: HTMLElement) => void }) {
   return (
     <div className="space-y-1 px-2 pb-6">
       {palette.map(({ group, items }) => (
