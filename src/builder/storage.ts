@@ -1,6 +1,5 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { EMPTY_PAGE, parsePage, type PageConfig } from './model'
-import { starterPage } from './presets'
 
 const STORAGE_KEY = 'portfolio-builder:v1'
 
@@ -13,7 +12,7 @@ function readRaw(): string | null {
 }
 
 function toPage(raw: string | null): PageConfig {
-  if (raw === null) return starterPage()
+  if (raw === null) return EMPTY_PAGE
   try {
     return parsePage(JSON.parse(raw))
   } catch {
