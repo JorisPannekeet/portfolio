@@ -27,7 +27,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { GlassButton } from '@/components/liquid-glass/glass-button'
+import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -249,18 +250,18 @@ export default function Builder() {
               </AlertDialogContent>
             </AlertDialog>
             <div className="mx-1 h-5 w-px bg-border" />
-            <a
-              href="/preview"
-              target="_blank"
-              rel="noopener"
-              aria-disabled={empty || undefined}
-              tabIndex={empty ? -1 : undefined}
-              onClick={event => empty && event.preventDefault()}
-              className={cn(buttonVariants(), empty && 'pointer-events-none opacity-50')}
-            >
-              <Eye />
-              Preview
-            </a>
+            <GlassButton asChild material="tinted" size="sm" icon={<Eye />} iconPosition="start" className={cn('bg-neutral-900 text-white', empty && 'pointer-events-none')}>
+              <a
+                href="/preview"
+                target="_blank"
+                rel="noopener"
+                aria-disabled={empty || undefined}
+                tabIndex={empty ? -1 : undefined}
+                onClick={event => empty && event.preventDefault()}
+              >
+                Preview
+              </a>
+            </GlassButton>
           </div>
         </header>
 
@@ -330,10 +331,9 @@ export default function Builder() {
           </DragOverlay>
         </DndContext>
 
-        <Button type="button" onClick={() => setPaletteOpen(true)} className="fixed bottom-5 left-1/2 z-30 h-11 -translate-x-1/2 rounded-full px-5 shadow-lg lg:hidden">
-          <Plus />
+        <GlassButton size="lg" tint={0.35} icon={<Plus />} iconPosition="start" onClick={() => setPaletteOpen(true)} className="fixed bottom-5 left-1/2 z-30 -translate-x-1/2 lg:hidden">
           Add block
-        </Button>
+        </GlassButton>
 
         <Sheet open={paletteOpen} onOpenChange={setPaletteOpen}>
           <SheetContent side="bottom" className="max-h-[80dvh] gap-0 rounded-t-2xl lg:hidden">

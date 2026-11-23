@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Dispatch, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { ArrowDown, ArrowUp, Copy, GripVertical, Paintbrush, Sparkles, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { GlassButton } from '@/components/liquid-glass/glass-button'
+import { GlassButtonGroup, GlassButtonGroupItem } from '@/components/liquid-glass/glass-button-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { BlockView, PageGrid, SPAN } from './PageRenderer'
@@ -47,9 +48,9 @@ export function Hint({ label, children }: { label: string; children: ReactNode }
 function ToolButton({ label, onClick, disabled, children, className }: { label: string; onClick?: () => void; disabled?: boolean; children: ReactNode; className?: string }) {
   return (
     <Hint label={label}>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label={label} disabled={disabled} onClick={onClick} className={className}>
+      <GlassButtonGroupItem aria-label={label} disabled={disabled} onClick={onClick} className={cn('!px-0', className)}>
         {children}
-      </Button>
+      </GlassButtonGroupItem>
     </Hint>
   )
 }
@@ -57,11 +58,12 @@ function ToolButton({ label, onClick, disabled, children, className }: { label: 
 function DragHandle({ block }: { block: Block }) {
   const label = blockName(block)
   const { attributes, listeners, setNodeRef } = useDraggable({ id: `block:${block.id}`, data: { kind: 'block', id: block.id, label } satisfies DragData })
+  const handle = { ref: setNodeRef, ...attributes, ...listeners }
   return (
     <Hint label="Drag to move">
-      <Button ref={setNodeRef} type="button" variant="ghost" size="icon-sm" {...attributes} {...listeners} aria-label={`Move ${label}`} className="cursor-grab touch-none active:cursor-grabbing">
+      <GlassButtonGroupItem {...handle} aria-label={`Move ${label}`} className="cursor-grab touch-none !px-0 active:cursor-grabbing">
         <GripVertical />
-      </Button>
+      </GlassButtonGroupItem>
     </Hint>
   )
 }
@@ -113,12 +115,7 @@ function CanvasBlock({ block, index, count, selected, dragging, moving, corners,
         </span>
         {selected && (
           <div className="sticky top-3 flex justify-end px-3 pt-3">
-            <div
-              role="toolbar"
-              aria-label={`${name} actions`}
-              className="pointer-events-auto flex items-center gap-0.5 rounded-lg border bg-background p-0.5 text-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none"
-              onClick={event => event.stopPropagation()}
-            >
+            <GlassButtonGroup role="toolbar" aria-label={`${name} actions`} material="clear" className="pointer-events-auto" onClick={event => event.stopPropagation()}>
               <DragHandle block={block} />
               <ToolButton label="Move earlier" disabled={index === 0} onClick={() => dispatch({ type: 'move', id: block.id, index: index - 1 })}>
                 <ArrowUp />
@@ -132,10 +129,10 @@ function CanvasBlock({ block, index, count, selected, dragging, moving, corners,
               <ToolButton label="Style" onClick={onStyle} className="lg:hidden">
                 <Paintbrush />
               </ToolButton>
-              <ToolButton label="Delete" onClick={() => dispatch({ type: 'remove', id: block.id })} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <ToolButton label="Delete" onClick={() => dispatch({ type: 'remove', id: block.id })} className="text-red-500">
                 <Trash2 />
               </ToolButton>
-            </div>
+            </GlassButtonGroup>
           </div>
         )}
       </div>
@@ -180,10 +177,9 @@ function EmptyState({ onBuild }: { onBuild: () => void }) {
           Hey, welcome to my portfolio! It's a bit empty here… Why not start by dragging some blocks over?
         </p>
       </div>
-      <Button type="button" variant="ghost" onClick={onBuild} className="text-muted-foreground">
-        <Sparkles />
+      <GlassButton material="tinted" size="lg" icon={<Sparkles />} iconPosition="start" onClick={onBuild} className="bg-neutral-900 text-white">
         Or let me build it for you
-      </Button>
+      </GlassButton>
     </div>
   )
 }

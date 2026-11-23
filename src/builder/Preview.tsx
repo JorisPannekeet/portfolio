@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, PencilLine } from 'lucide-react'
+import { GlassButton } from '@/components/liquid-glass/glass-button'
 import { buttonVariants } from '@/components/ui/button'
 import { PageRenderer } from './PageRenderer'
 import { isRenderable } from './registry'
@@ -39,18 +40,17 @@ export default function Preview() {
       <main>
         <PageRenderer blocks={blocks} />
       </main>
-      <Link
-        to="/"
-        className="fixed right-4 bottom-4 z-50 inline-flex items-center gap-2 rounded-full border bg-background/90 py-1.5 pr-3 pl-1.5 text-xs font-medium text-foreground shadow-lg backdrop-blur transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-      >
-        <img src="/me.jpeg" alt="" width={24} height={24} className="size-6 rounded-full object-cover object-[40%_30%]" />
-        <span>Built with Joris' page builder</span>
-        <span className="text-muted-foreground" aria-hidden>·</span>
-        <span className="inline-flex items-center gap-1 text-[var(--selection)]">
-          <PencilLine className="size-3.5" aria-hidden />
-          Edit
-        </span>
-      </Link>
+      <GlassButton asChild tint={0.5} className="fixed right-4 bottom-4 z-50 pr-4 pl-1.5 text-xs">
+        <Link to="/">
+          <img src="/me.jpeg" alt="" width={28} height={28} className="size-7 rounded-full object-cover object-[40%_30%]" />
+          <span>Built with Joris' page builder</span>
+          <span className="opacity-50" aria-hidden>·</span>
+          <span className="inline-flex items-center gap-1">
+            <PencilLine aria-hidden />
+            Edit
+          </span>
+        </Link>
+      </GlassButton>
     </>
   )
 }

@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, ChevronDown, ImageIcon, Mail } from 'lucide-react'
+import { GlassButton } from '@/components/liquid-glass/glass-button'
 import { cn } from '@/lib/utils'
 import { safeUrl, type BlockOf } from './model'
 import { caseStudies, content, experiences, games, howIWork, projects, stories, type RichNode } from './sources'
@@ -9,13 +10,13 @@ export function Column({ children, className }: { children: ReactNode; className
   return <div className={cn('mx-auto w-full max-w-[760px] px-5 py-[var(--block-pad)] @2xl:px-8', className)}>{children}</div>
 }
 
-function SmartLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
+function SmartLink({ href, children, ...rest }: { href: string; className?: string; children: ReactNode }) {
   const url = safeUrl(href)
-  if (!url) return <span className={className}>{children}</span>
-  if (url.startsWith('/')) return <Link to={url} className={className}>{children}</Link>
+  if (!url) return <span {...rest}>{children}</span>
+  if (url.startsWith('/')) return <Link to={url} {...rest}>{children}</Link>
   const external = !url.startsWith('mailto:')
   return (
-    <a href={url} className={className} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
+    <a href={url} {...rest} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
       {children}
     </a>
   )
@@ -451,12 +452,9 @@ export function ButtonBlock({ block }: { block: BlockOf<'button'> }) {
   return (
     <Column>
       <div className="block-row">
-        <SmartLink
-          href={block.props.url}
-          className="inline-flex h-11 items-center rounded-lg bg-block-accent px-5 text-b-sm font-semibold text-block-on-accent shadow-sm transition-opacity duration-150 outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-block-accent focus-visible:ring-offset-2 focus-visible:ring-offset-block"
-        >
-          {block.props.label}
-        </SmartLink>
+        <GlassButton key={block.style.accent + block.style.background} asChild material="tinted" size="lg" className="bg-block-accent text-b-sm text-block-on-accent">
+          <SmartLink href={block.props.url}>{block.props.label}</SmartLink>
+        </GlassButton>
       </div>
     </Column>
   )
