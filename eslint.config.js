@@ -57,7 +57,7 @@ const simProperties = [
 const assetImports = { group: ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.svg', '*.mp3', '*.ogg', '*.wav'], message: 'Game art and audio are source code.' }
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'src/components/liquid-glass'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
