@@ -52,7 +52,7 @@ export function PageGrid({ children }: { children: ReactNode }) {
 export function BlockView({ block, className }: { block: Block; className?: string }) {
   const { Render } = registry[block.type] as { Render: (props: { block: Block }) => ReactNode }
   return (
-    <section className={cn('@container min-w-0 bg-block font-block text-block-fg antialiased [overflow-wrap:anywhere]', className)} style={blockVars(block.style)}>
+    <section className={cn('@container min-w-0 bg-block font-block text-block-fg antialiased [overflow-wrap:anywhere]', (block.type === 'heading' || block.type === 'button') && 'content-center', className)} style={blockVars(block.style)}>
       <Render block={block} />
     </section>
   )
