@@ -1,3 +1,5 @@
+@import './theme.css';
+
 .play {
   --play-pad: 16px;
   --play-cut: 14px;
