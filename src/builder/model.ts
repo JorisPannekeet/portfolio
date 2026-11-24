@@ -1,6 +1,6 @@
 import { content } from '../data/content.ts'
 
-export const BLOCK_TYPES = ['hero', 'skills', 'experience', 'caseStudy', 'project', 'game', 'approach', 'techStack', 'story', 'howIWork', 'passions', 'contact', 'heading', 'text', 'button', 'image', 'divider', 'spacer'] as const
+export const BLOCK_TYPES = ['hero', 'skills', 'experience', 'project', 'game', 'approach', 'story', 'howIWork', 'passions', 'contact', 'heading', 'text', 'button', 'image', 'divider', 'spacer'] as const
 export type BlockType = (typeof BLOCK_TYPES)[number]
 
 export const FONTS = ['sans', 'serif', 'display', 'mono', 'hand'] as const
@@ -61,9 +61,6 @@ export const PROP_FIELDS = {
   },
   spacer: {
     size: choice('Height', SIZE_OPTIONS, 'md'),
-  },
-  caseStudy: {
-    detail: choice('Detail', [{ value: 'summary', label: 'Summary' }, { value: 'full', label: 'Full' }], 'summary'),
   },
   hero: {
     photo: choice('Photo', [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }], 'show'),

@@ -1,10 +1,10 @@
-import { useId, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, ChevronDown, ImageIcon, Mail } from 'lucide-react'
+import { ArrowUpRight, ImageIcon, Mail } from 'lucide-react'
 import { GlassButton } from '@/components/liquid-glass/glass-button'
 import { cn } from '@/lib/utils'
 import { safeUrl, type BlockOf } from './model'
-import { caseStudies, content, experiences, games, howIWork, projects, stories, type RichNode } from './sources'
+import { content, experiences, games, howIWork, projects, stories, type RichNode } from './sources'
 
 export function Column({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn('mx-auto w-full max-w-[760px] px-5 py-[var(--block-pad)] @2xl:px-8', className)}>{children}</div>
@@ -90,31 +90,6 @@ function Rich({ nodes }: { nodes: readonly RichNode[] }) {
   )
 }
 
-function textNodes(text: string): RichNode[] {
-  const nodes: RichNode[] = []
-  let lines: string[] = []
-  let items: string[] = []
-  const flush = () => {
-    if (lines.length) nodes.push({ kind: 'p', text: lines.join('\n') })
-    if (items.length) nodes.push({ kind: 'ul', items: items.map(item => ({ text: item })) })
-    lines = []
-    items = []
-  }
-  for (const raw of text.split('\n')) {
-    const line = raw.trim()
-    if (line === '') flush()
-    else if (line.startsWith('- ')) {
-      if (lines.length) flush()
-      items.push(line.slice(2))
-    } else {
-      if (items.length) flush()
-      lines.push(line)
-    }
-  }
-  flush()
-  return nodes
-}
-
 export function HeroBlock({ block }: { block: BlockOf<'hero'> }) {
   const centered = block.style.align === 'center'
   const { hero } = content
@@ -192,123 +167,6 @@ export function ExperienceBlock({ block }: { block: BlockOf<'experience'> }) {
   )
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="mt-10 first:mt-0">
-      <h3 className="text-b-lg font-semibold tracking-tight">{title}</h3>
-      <div className="mt-3">{children}</div>
-    </section>
-  )
-}
-
-function Label({ children }: { children: ReactNode }) {
-  return <span className="mr-2 text-b-xs font-semibold tracking-[0.08em] text-block-fg uppercase">{children}</span>
-}
-
-function CaseStudyDetails({ study }: { study: (typeof caseStudies)[number] }) {
-  return (
-    <div className="text-left">
-      <Section title="Context"><Rich nodes={textNodes(study.context)} /></Section>
-      <Section title="The problem"><Rich nodes={textNodes(study.problem)} /></Section>
-      {study.constraints.length > 0 && (
-        <Section title="Constraints"><Rich nodes={[{ kind: 'ul', items: study.constraints.map(text => ({ text })) }]} /></Section>
-      )}
-      {study.architecturalDecisions.length > 0 && (
-        <Section title="Architectural decisions">
-          <div className="space-y-4">
-            {study.architecturalDecisions.map(decision => (
-              <article key={decision.title} className="rounded-xl border border-block-line bg-block-soft p-5">
-                <h4 className="text-b-base font-semibold">{decision.title}</h4>
-                <p className="mt-2 text-b-sm text-block-muted"><Label>Decision</Label>{decision.decision}</p>
-                <p className="mt-2 text-b-sm text-block-muted"><Label>Rationale</Label>{decision.rationale}</p>
-              </article>
-            ))}
-          </div>
-        </Section>
-      )}
-      {study.tradeoffs.length > 0 && (
-        <Section title="Trade-offs">
-          <div className="divide-y divide-block-line">
-            {study.tradeoffs.map(tradeoff => (
-              <div key={tradeoff.choice} className="py-4 first:pt-0 last:pb-0">
-                <h4 className="text-b-base font-semibold">{tradeoff.choice}</h4>
-                <p className="measure mt-1 text-b-sm text-block-muted">{tradeoff.tradeoff}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-      {study.result && (
-        <Section title="Result">
-          <div className="rounded-xl border-l-2 border-block-accent bg-block-soft px-5 py-4"><Rich nodes={textNodes(study.result)} /></div>
-        </Section>
-      )}
-      {study.codeSnippets.length > 0 && (
-        <Section title="Code examples">
-          <p className="text-b-sm text-block-muted italic">{content.codeDisclaimer}</p>
-          {study.codeSnippets.map(snippet => (
-            <figure key={snippet.title} className="mt-5 overflow-hidden rounded-xl border border-block-line">
-              <figcaption className="flex items-center justify-between gap-3 border-b border-block-line bg-block-soft px-4 py-2.5 text-b-sm font-medium">
-                <span>{snippet.title}</span>
-                <span className="font-mono text-b-xs text-block-muted">{snippet.language}</span>
-              </figcaption>
-              <pre className="overflow-x-auto p-4 font-mono text-[0.8125rem] leading-relaxed" tabIndex={0}><code>{snippet.code}</code></pre>
-              {snippet.explanation && <p className="border-t border-block-line px-4 py-3 text-b-sm text-block-muted">{snippet.explanation}</p>}
-            </figure>
-          ))}
-        </Section>
-      )}
-      {study.diagrams && study.diagrams.length > 0 && (
-        <Section title="Diagrams">
-          {study.diagrams.map(diagram => (
-            <div key={diagram.title} className="mt-5 first:mt-0">
-              <h4 className="text-b-base font-semibold">{diagram.title}</h4>
-              <p className="mt-1 text-b-sm text-block-muted">{diagram.description}</p>
-              <div className="mt-3 rounded-xl border border-dashed border-block-line px-5 py-6 text-center font-mono text-b-xs leading-relaxed text-block-muted">{diagram.placeholder}</div>
-            </div>
-          ))}
-        </Section>
-      )}
-    </div>
-  )
-}
-
-export function CaseStudyBlock({ block }: { block: BlockOf<'caseStudy'> }) {
-  const [open, setOpen] = useState(false)
-  const panelId = useId()
-  const study = caseStudies.find(entry => entry.slug === block.ref)
-  if (!study) return null
-  const full = block.props.detail === 'full'
-  return (
-    <Column>
-      <Eyebrow>{study.company} · {study.year}</Eyebrow>
-      <Title>{study.title}</Title>
-      <p className="measure mt-3 text-b-lg text-block-fg/85">{study.subtitle}</p>
-      <Tags tags={study.tags} />
-      <p className="measure mt-5 text-b-base text-block-muted">{study.summary}</p>
-      {full ? (
-        <div className="mt-10 border-t border-block-line pt-10"><CaseStudyDetails study={study} /></div>
-      ) : (
-        <>
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-controls={panelId}
-            onClick={() => setOpen(value => !value)}
-            className={cn('mt-6 inline-flex items-center gap-1.5 text-b-sm font-semibold text-block-accent', focusRing)}
-          >
-            {open ? 'Hide the full case study' : 'Read the full case study'}
-            <ChevronDown className={cn('size-4 transition-transform duration-200 motion-reduce:transition-none', open && 'rotate-180')} aria-hidden />
-          </button>
-          <div id={panelId} hidden={!open} className="mt-8 border-t border-block-line pt-8">
-            {open && <CaseStudyDetails study={study} />}
-          </div>
-        </>
-      )}
-    </Column>
-  )
-}
-
 function Showcase({ eyebrow, title, pitch, tags, image, width, height, href, cta }: {
   eyebrow: string
   title: string
@@ -359,26 +217,6 @@ export function ApproachBlock() {
             <h3 className="mt-2 text-b-lg font-semibold tracking-tight">{item.title}</h3>
             <p className="mt-2 text-b-sm text-block-muted">{item.text}</p>
           </div>
-        ))}
-      </div>
-    </Column>
-  )
-}
-
-export function TechStackBlock() {
-  return (
-    <Column>
-      <Title>Tech stack</Title>
-      <div className="mt-8 grid gap-7 @xl:grid-cols-2">
-        {content.about.techStack.map(group => (
-          <section key={group.category}>
-            <h3 className="text-b-sm font-semibold">{group.category}</h3>
-            <ul className="block-row mt-3">
-              {group.items.map(item => (
-                <li key={item} className="rounded-md bg-block-soft px-2.5 py-1 text-b-sm text-block-fg ring-1 ring-block-line">{item}</li>
-              ))}
-            </ul>
-          </section>
         ))}
       </div>
     </Column>

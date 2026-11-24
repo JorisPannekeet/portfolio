@@ -1,5 +1,5 @@
 import { createBlock, type Block, type BlockStyle, type BlockType, type PageConfig } from './model'
-import { caseStudies, experiences, games, projects } from './sources'
+import { experiences, games, projects } from './sources'
 
 export const STYLE_PRESETS = [
   { name: 'Paper', background: '#ffffff', text: '#0a0a0a', accent: '#2563eb' },
@@ -35,7 +35,6 @@ function quad(text: string, look: Look, type: BlockType, refs: readonly (string 
 }
 
 export function starterPage(): PageConfig {
-  const [fiscal, dashboard, , generator] = caseStudies
   return {
     version: 1,
     blocks: [
@@ -44,8 +43,6 @@ export function starterPage(): PageConfig {
       half('skills', BONE),
       ...quad('Experience', INDIGO, 'experience', experiences.map(item => item.id)),
       tile('approach', LIME),
-      ...quad('Selected work', INDIGO, 'caseStudy', [fiscal, dashboard, generator].map(study => study?.slug)),
-      tile('techStack', BONE),
       ...quad('Side projects', LIME, 'project', projects.map(project => project.key)),
       ...quad('Games', INDIGO, 'game', games.map(game => game.key)),
       tile('contact', LIME, { width: '2', size: 'lg', padding: 'lg' }),

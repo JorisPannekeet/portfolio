@@ -106,19 +106,7 @@ export const content = {
     },
   ],
 
-  caseStudiesIntro:
-    "Detailed breakdowns of projects I've worked on. Each case study includes context, constraints, architectural decisions, and honest discussion of trade-offs.",
-
-  codeDisclaimer:
-    'Disclaimer: These examples are simplified and do not reflect the actual codebase.',
-
   about: {
-    techStack: [
-      { category: 'Core', items: ['React', 'TypeScript', 'JavaScript', 'HTML', 'CSS'] },
-      { category: 'Styling', items: ['Tailwind', 'Styled Components', 'CSS Modules'] },
-      { category: 'State', items: ['Redux', 'Zustand', 'React Query'] },
-      { category: 'Tools', items: ['Git', 'NPM', 'Jest', 'Node.js'] },
-    ],
     passions: [
       { label: 'Being a father' },
       { label: 'Yoshi (my dog)' },
