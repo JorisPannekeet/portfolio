@@ -28,12 +28,12 @@ src/
 │   ├── model.ts         # Page model, reducer with undo/redo, parsePage, safeUrl (pure, tested)
 │   ├── registry.tsx     # One table of block types; drives palette, canvas, preview and inspector
 │   ├── blocks.tsx       # Block renderers, styled only through the block CSS variables
-│   ├── sources.ts       # Content lookups for blocks (experience, case studies, projects, games)
+│   ├── sources.ts       # Content lookups for blocks (experience, projects, games)
 │   ├── PageRenderer.tsx # Renders a list of blocks; shared by canvas and preview
 │   ├── Builder.tsx      # The builder at /
 │   └── Preview.tsx      # The saved page at /preview, live-updating across tabs
 ├── components/ui/       # shadcn/ui components
-├── data/                # Site copy (content.ts, caseStudies.ts)
+├── data/                # Site copy (content.ts)
 ├── game/, rpg/          # The two games; game/ui/theme.css holds their scoped theme
 └── pages/               # Play and Rpg game shells
 ```

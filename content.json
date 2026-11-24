@@ -5,7 +5,6 @@
     "name": "Joris Pannekeet"
   },
   "navigation": [
-    { "path": "/case-studies", "label": "Work" },
     { "path": "/how-i-work", "label": "Approach" },
     { "path": "/components", "label": "Components" },
     { "path": "/about", "label": "About" }
@@ -45,17 +44,6 @@
       { "title": "Team Leadership", "text": "I lead and maintain large codebases, build NPM packages and micro-services. Good architecture comes from good collaboration." }
     ]
   },
-  "caseStudiesPage": {
-    "heading": "Case Studies",
-    "intro": "Detailed breakdowns of projects I've worked on. Each case study includes context, constraints, architectural decisions, and honest discussion of trade-offs.",
-    "codeDisclaimer": "Disclaimer: These examples are simplified and do not reflect the actual codebase.",
-    "source": "src/data/caseStudies.ts — kept verbatim, all 3 studies with full context/problem/constraints/decisions/tradeoffs/results/code/diagrams",
-    "studies": [
-      { "slug": "ai-application-generator", "title": "Building an AI Service for Application Generation", "company": "Betty Blocks", "year": 2025 },
-      { "slug": "scalable-component-tree", "title": "Building a Fast and Scalable Component Tree", "company": "Betty Blocks", "year": 2024 },
-      { "slug": "team-performance-alignment", "title": "Helping Development Teams Perform", "company": "Betty Blocks", "year": 2023 }
-    ]
-  },
   "howIWork": {
     "heading": "How I Work",
     "intro": "My approach to frontend architecture and development. Written for technical collaborators who want to understand how I think about building software.",
@@ -82,12 +70,6 @@
     ],
     "beyondCode": "When I'm not coding, you'll probably find spending time with my family, walking my dog Yoshi, riding motorcycle, playing games or watching movies. I believe balance is essential—the best ideas often come when you step away from the screen.",
     "letsConnect": "I'm always interested in discussing new opportunities, especially those involving complex frontend challenges, team leadership, or building developer tools. The best way to reach me is via LinkedIn or my email.",
-    "techStack": [
-      { "category": "Core", "items": ["React", "TypeScript", "JavaScript", "HTML", "CSS"] },
-      { "category": "Styling", "items": ["Tailwind", "Styled Components", "CSS Modules"] },
-      { "category": "State", "items": ["Redux", "Zustand", "React Query"] },
-      { "category": "Tools", "items": ["Git", "NPM", "Jest", "Node.js"] }
-    ],
     "passions": [
       { "emoji": "👶", "label": "Being a father" },
       { "emoji": "🐕", "label": "Yoshi (my dog)" },

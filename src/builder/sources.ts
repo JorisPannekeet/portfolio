@@ -1,5 +1,4 @@
 import { content } from '@/data/content'
-import { caseStudies } from '@/data/caseStudies'
 import { getExperienceItems } from '../../lib/data'
 
 export type RichNode =
@@ -16,7 +15,6 @@ const formatMonth = (date: string | null | undefined) => (date ? month.format(ne
 
 export const stories: readonly Article[] = [
   ...content.about.story,
-  { key: 'case-studies', title: 'Case Studies', body: [{ kind: 'p', text: content.caseStudiesIntro }] },
   { key: 'games', title: 'Games', body: [{ kind: 'p', text: content.gamesIntro }] },
 ]
 
@@ -29,4 +27,4 @@ export const experiences = [...getExperienceItems()]
 export const projects = content.projects.map(project => ({ ...project, key: slug(project.title) }))
 export const games = content.games.map(game => ({ ...game, key: slug(game.title) }))
 
-export { caseStudies, content }
+export { content }

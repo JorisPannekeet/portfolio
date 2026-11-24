@@ -5,13 +5,11 @@ import {
   Briefcase,
   ChartBar,
   Compass,
-  FileText,
   FolderGit2,
   Gamepad2,
   Heading,
   Heart,
   Image,
-  Layers,
   Lightbulb,
   Minus,
   MoveVertical,
@@ -22,9 +20,9 @@ import {
 } from 'lucide-react'
 import * as B from './blocks'
 import type { Block, BlockOf, BlockType } from './model'
-import { caseStudies, experiences, games, howIWork, projects, stories } from './sources'
+import { experiences, games, howIWork, projects, stories } from './sources'
 
-export const GROUPS = ['About me', 'Experience', 'Case studies', 'Side projects', 'Games', 'How I work', 'Basics'] as const
+export const GROUPS = ['About me', 'Experience', 'Side projects', 'Games', 'How I work', 'Basics'] as const
 type Group = (typeof GROUPS)[number]
 
 type RefOption = { ref: string; label: string; description: string; group?: Group }
@@ -38,13 +36,12 @@ type Entry<T extends BlockType> = {
   refs?: readonly RefOption[]
 }
 
-const storyGroup: Record<string, Group> = { 'case-studies': 'Case studies', games: 'Games' }
+const storyGroup: Record<string, Group> = { games: 'Games' }
 
 export const registry: { [T in BlockType]: Entry<T> } = {
   hero: { label: 'Intro', description: 'Greeting, role, photo and links', icon: User, group: 'About me', Render: B.HeroBlock },
   skills: { label: 'Skills', description: 'Skills with years of experience', icon: ChartBar, group: 'About me', Render: B.SkillsBlock },
   approach: { label: 'My approach', description: 'Three working principles', icon: Compass, group: 'About me', Render: B.ApproachBlock },
-  techStack: { label: 'Tech stack', description: 'Tools I use, grouped', icon: Layers, group: 'About me', Render: B.TechStackBlock },
   story: {
     label: 'Story',
     description: 'A section of my story',
@@ -67,14 +64,6 @@ export const registry: { [T in BlockType]: Entry<T> } = {
     group: 'Experience',
     Render: B.ExperienceBlock,
     refs: experiences.map(item => ({ ref: item.id, label: item.company ?? item.title, description: `${item.title} · ${item.period}` })),
-  },
-  caseStudy: {
-    label: 'Case study',
-    description: 'A project breakdown',
-    icon: FileText,
-    group: 'Case studies',
-    Render: B.CaseStudyBlock,
-    refs: caseStudies.map(study => ({ ref: study.slug, label: study.title, description: `${study.company} · ${study.year}` })),
   },
   project: {
     label: 'Side project',
